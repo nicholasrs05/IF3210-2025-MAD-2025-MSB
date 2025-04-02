@@ -37,12 +37,29 @@ android {
     kotlinOptions {
         jvmTarget = "11"
     }
+
+    // Jetpack Compose
+    buildFeatures{
+        compose = true
+    }
 }
 
 dependencies {
     // Hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.android.compiler)
+
+    // Jetpack Compose
+    val composeBom = platform("androidx.compose:compose-bom:2025.02.00")
+    implementation(composeBom)
+    androidTestImplementation(composeBom)
+    implementation(libs.androidx.material3)
+    implementation(libs.androidx.ui.tooling.preview) // Android Studio Preview Support
+    debugImplementation(libs.androidx.ui.tooling)
+    androidTestImplementation(libs.androidx.ui.test.junit4) // UI Test
+    debugImplementation(libs.androidx.ui.test.manifest)
+    implementation(libs.androidx.lifecycle.viewmodel.compose) // Integration with ViewModel
+    implementation(libs.androidx.activity.compose)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
