@@ -15,7 +15,7 @@ android {
     defaultConfig {
         applicationId = "com.msb.purrytify"
         minSdk = 29
-        targetSdk = 35
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
@@ -63,6 +63,11 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose) // Integration with ViewModel
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.media)
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.session)
+    implementation(libs.androidx.media3.ui)
+    implementation(libs.androidx.ui.text.google.fonts)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
