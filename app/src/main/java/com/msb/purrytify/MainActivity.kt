@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import dagger.hilt.android.AndroidEntryPoint
+import com.msb.purrytify.ui.navigation.NavigationComponent
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -21,35 +22,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         // TODO: Use AppTheme
         setContent {
-            Surface(
-                modifier = Modifier.fillMaxSize(),
-                color = MaterialTheme.colorScheme.background
-            ) {
-                Greeting("Hello World!")
-            }
+            NavigationComponent()
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = " $name",
-            modifier = modifier
-        )
-    }
-
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    Surface(color = MaterialTheme.colorScheme.background) {
-        Greeting("Hello World!")
     }
 }
