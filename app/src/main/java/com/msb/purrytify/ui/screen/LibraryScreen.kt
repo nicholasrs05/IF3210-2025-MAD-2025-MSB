@@ -26,24 +26,52 @@ fun LibraryScreen() {
 
 @Composable
 fun Header(){
-    Row(
-        modifier = Modifier.fillMaxWidth()
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        Text(
-            text = "Your Library",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.W800
-        )
-        IconButton(onClick = { /* ini jan */ }) {
-            Icon(
-                painter = painterResource(id = R.drawable.add),
-                contentDescription = "Search",
-                modifier = Modifier.size(32.dp)
+        Row(
+            modifier = Modifier.fillMaxWidth()
+                .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = "Your Library",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.W800
             )
+            IconButton(onClick = { /* ini jan */ }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.add),
+                    contentDescription = "Search",
+                    modifier = Modifier.size(32.dp)
+                )
+            }
         }
+
+        Row (
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 2.dp),
+            horizontalArrangement = Arrangement.Start
+        ) {
+            FilterButton(label = "All")
+            FilterButton(label = "Liked")
+        }
+    }
+
+}
+
+@Composable
+fun FilterButton(label: String) {
+    Button(
+        onClick = { /* filter nanti */ },
+        modifier = Modifier
+            .padding(4.dp)
+    ) {
+        Text(text = label)
     }
 }
 
