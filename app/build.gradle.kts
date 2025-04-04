@@ -68,6 +68,17 @@ dependencies {
     implementation(libs.androidx.media3.session)
     implementation(libs.androidx.media3.ui)
     implementation(libs.androidx.ui.text.google.fonts)
+    implementation(libs.androidx.material.icons.extended)
+
+    // Data Store
+    implementation("androidx.datastore:datastore-preferences:1.1.4")
+    implementation("androidx.datastore:datastore-preferences-core:1.1.4")
+
+    // Retrofit, Moshi, OkHTTP
+    implementation("com.squareup.moshi:moshi-kotlin:1.15.2")
+    implementation ("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation("com.squareup.retrofit2:converter-moshi:2.11.0")
+    ksp("com.squareup.moshi:moshi-kotlin-codegen:1.15.2")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
