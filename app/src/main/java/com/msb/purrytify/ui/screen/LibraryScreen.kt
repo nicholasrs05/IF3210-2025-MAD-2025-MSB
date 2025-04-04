@@ -12,6 +12,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import com.msb.purrytify.R
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.platform.LocalContext
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import android.content.Context
+import com.msb.purrytify.ui.component.LibraryAdapter
+import com.msb.purrytify.ui.component.Song
+
 
 @Composable
 fun LibraryScreen() {
@@ -21,6 +29,29 @@ fun LibraryScreen() {
             .padding(8.dp),
     ) {
         Header()
+
+        val context = LocalContext.current
+        val songs = listOf(
+            Song("Song 1", "Artist 1"),
+            Song("Song 2", "Artist 2"),
+            Song("Song 3", "Artist 3"),
+            Song("Song 4", "Artist 4"),
+            Song("Song 5", "Artist 5")
+        )
+
+        AndroidView(
+            factory = { ctx: Context ->
+                RecyclerView(ctx).apply {
+                    layoutManager = LinearLayoutManager(ctx)
+                    adapter = LibraryAdapter(songs)
+                    layoutParams = RecyclerView.LayoutParams(
+                        RecyclerView.LayoutParams.MATCH_PARENT,
+                        RecyclerView.LayoutParams.MATCH_PARENT
+                    )
+                }
+            },
+            modifier = Modifier.fillMaxSize()
+        )
     }
 }
 
