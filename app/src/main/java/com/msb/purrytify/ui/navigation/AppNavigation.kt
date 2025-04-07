@@ -20,7 +20,7 @@ import com.msb.purrytify.R
 import androidx.compose.ui.res.painterResource
 
 
-sealed class Screen(val route: String, val label: String, val icon: @Composable (isSelected: Boolean) -> Unit) {
+sealed class Screen(val route: String, val label: String, val icon: @Composable (isSelected: Boolean) -> Unit = { _ -> }) {
     data object Home : Screen("home", "Home", { isSelected ->
         Icon(
             painter = painterResource(
@@ -48,7 +48,7 @@ sealed class Screen(val route: String, val label: String, val icon: @Composable 
             modifier = Modifier.size(24.dp)
         )
     })
-    data object Login : Screen("login", "Login", {})
+    data object Login : Screen("login", "Login")
 }
 
 @Preview(
@@ -68,7 +68,7 @@ fun NavigationComponent() {
         ) { innerPadding ->
             NavHost(navController, startDestination = Screen.Home.route, Modifier.padding(innerPadding)) {
                 composable(Screen.Home.route) { HomeScreen() }
-                composable(Screen.Library.route) { LibraryScreen() }
+                composable(Screen.Library.route) { LibraryScreen(navController) }
                 composable(Screen.Profile.route) { ProfileScreen(navController) }
                 composable(Screen.Login.route) { LoginScreen(navController) }
             }
