@@ -1,3 +1,4 @@
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -68,6 +69,12 @@ dependencies {
     implementation(libs.androidx.media3.session)
     implementation(libs.androidx.media3.ui)
     implementation(libs.androidx.ui.text.google.fonts)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.runtime.livedata)
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.room.ktx)
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
