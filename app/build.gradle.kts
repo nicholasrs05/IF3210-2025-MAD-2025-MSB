@@ -76,14 +76,14 @@ dependencies {
     implementation(libs.coil.network.okhttp)
 
     // Data Store
-    implementation("androidx.datastore:datastore-preferences:1.1.4")
-    implementation("androidx.datastore:datastore-preferences-core:1.1.4")
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.datastore.preferences.core)
 
     // Retrofit, Moshi, OkHTTP
-    implementation("com.squareup.moshi:moshi-kotlin:1.15.2")
-    implementation ("com.squareup.retrofit2:retrofit:2.11.0")
-    implementation("com.squareup.retrofit2:converter-moshi:2.11.0")
-    ksp("com.squareup.moshi:moshi-kotlin-codegen:1.15.2")
+    implementation(libs.moshi.kotlin)
+    implementation (libs.retrofit)
+    implementation(libs.converter.moshi)
+    ksp(libs.moshi.kotlin.codegen)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
