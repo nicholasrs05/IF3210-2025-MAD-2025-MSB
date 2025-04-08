@@ -14,7 +14,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.msb.purrytify.viewmodel.AuthViewModel
-//import com.msb.purrytify.MainActivity
 import com.msb.purrytify.ui.component.NavigationBarComponent
 import com.msb.purrytify.ui.screen.*
 import androidx.compose.ui.unit.dp
@@ -22,7 +21,7 @@ import com.msb.purrytify.R
 import androidx.compose.ui.res.painterResource
 
 
-sealed class Screen(val route: String, val label: String, val icon: @Composable (isSelected: Boolean) -> Unit) {
+sealed class Screen(val route: String, val label: String, val icon: @Composable (isSelected: Boolean) -> Unit = { _ -> }) {
     data object Home : Screen("home", "Home", { isSelected ->
         Icon(
             painter = painterResource(
@@ -50,7 +49,7 @@ sealed class Screen(val route: String, val label: String, val icon: @Composable 
             modifier = Modifier.size(24.dp)
         )
     })
-    data object Login : Screen("login", "Login", {})
+    data object Login : Screen("login", "Login")
 }
 
 @Preview(
@@ -64,19 +63,21 @@ sealed class Screen(val route: String, val label: String, val icon: @Composable 
 
 @Composable
 fun NavigationComponent(authViewModel: AuthViewModel = hiltViewModel()) {
-    val navController = rememberNavController()
-    val isLoggedIn = authViewModel.uiState.collectAsState().value.isLoggedIn
+    AppTheme {
+        val navController = rememberNavController()
+        val isLoggedIn = authViewModel.uiState.collectAsState().value.isLoggedIn
 
-    val startDestination = if (isLoggedIn) Screen.Home.route else Screen.Login.route
+        val startDestination = if (isLoggedIn) Screen.Home.route else Screen.Login.route
 
-    Scaffold(
-        bottomBar = { if (isLoggedIn) NavigationBarComponent(navController) else null }
-    ) { innerPadding ->
-        NavHost(navController, startDestination = startDestination, Modifier.padding(innerPadding)) {
-            composable(Screen.Home.route) { HomeScreen() }
-            composable(Screen.Library.route) { LibraryScreen() }
-            composable(Screen.Profile.route) { ProfileScreen() }
-            composable(Screen.Login.route) { LoginScreen(navController) }
+        Scaffold(
+            bottomBar = { if (isLoggedIn) NavigationBarComponent(navController) else null }
+        ) { innerPadding ->
+            NavHost(navController, startDestination = startDestination, Modifier.padding(innerPadding)) {
+                composable(Screen.Home.route) { HomeScreen() }
+                composable(Screen.Library.route) { LibraryScreen(navController) }
+                composable(Screen.Profile.route) { ProfileScreen(navController) }
+                composable(Screen.Login.route) { LoginScreen(navController) }
+            }
         }
     }
 }
