@@ -30,12 +30,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import android.content.Context
 import com.msb.purrytify.ui.component.LibraryAdapter
-//import com.msb.purrytify.ui.component.Song
 import com.msb.purrytify.data.local.entity.Song
 import com.msb.purrytify.ui.theme.AppTheme
 import com.msb.purrytify.viewmodel.SongViewModel
-import java.io.File
-import java.util.concurrent.TimeUnit
 
 @Composable
 fun LibraryScreen(
@@ -59,7 +56,7 @@ fun LibraryScreen(
             .fillMaxSize()
             .padding(8.dp),
     ) {
-        Header(navController, showAddSongSheet = { showAddSongSheet = true })
+        Header(showAddSongSheet = { showAddSongSheet = true })
 
         // State of which tab is selected (All or Liked)
         var selectedTab by remember { mutableStateOf(0) }
@@ -82,11 +79,9 @@ fun LibraryScreen(
             )
         }
 
-        // Observe song lists
         val allSongs by songViewModel.allSongs.observeAsState(initial = emptyList())
         val likedSongs by songViewModel.likedSongs.observeAsState(initial = emptyList())
 
-        // Display songs based on selected tab
         val songsToDisplay = if (selectedTab == 0) allSongs else likedSongs
 
         if (songsToDisplay.isEmpty()) {
@@ -101,51 +96,27 @@ fun LibraryScreen(
                 )
             }
         } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(top = 8.dp)
-            ) {
-                items(songsToDisplay.size) { index ->
-                    SongItem(
-                        song = songsToDisplay[index],
-                        onSongClick = {
-                            songViewModel.markAsPlayed(songId = songsToDisplay[index].id)
+            AndroidView(
+                factory = { ctx: Context ->
+                    RecyclerView(ctx).apply {
+                        layoutManager = LinearLayoutManager(ctx)
+                        adapter = LibraryAdapter(songsToDisplay) {
+                            clickedSong -> songViewModel.markAsPlayed(songId = clickedSong.id)
                         }
-                    )
-                }
-            }
+                        layoutParams = RecyclerView.LayoutParams(
+                            RecyclerView.LayoutParams.MATCH_PARENT,
+                            RecyclerView.LayoutParams.MATCH_PARENT
+                        )
+                    }
+                },
+                modifier = Modifier.fillMaxSize()
+            )
         }
     }
 }
 
-/*
-    val context = LocalContext.current
-        val songs = listOf(
-            Song("Song 1", "Artist 1"),
-            Song("Song 2", "Artist 2"),
-            Song("Song 3", "Artist 3"),
-            Song("Song 4", "Artist 4"),
-            Song("Song 5", "Artist 5")
-        )
-
-        AndroidView(
-            factory = { ctx: Context ->
-                RecyclerView(ctx).apply {
-                    layoutManager = LinearLayoutManager(ctx)
-                    adapter = LibraryAdapter(songs)
-                    layoutParams = RecyclerView.LayoutParams(
-                        RecyclerView.LayoutParams.MATCH_PARENT,
-                        RecyclerView.LayoutParams.MATCH_PARENT
-                    )
-                }
-            },
-            modifier = Modifier.fillMaxSize()
-        )
- */
-
 @Composable
-fun Header(navController: NavController, showAddSongSheet: () -> Unit = {}) {
+fun Header(showAddSongSheet: () -> Unit = {}) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -184,80 +155,6 @@ fun FilterButton(label: String, isSelected: Boolean = false, onClick: () -> Unit
         )
     ) {
         Text(text = label)
-    }
-}
-
-@Composable
-fun SongItem(song: Song, onSongClick: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .clickable { onSongClick() }
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Artwork
-            Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-            ) {
-                if (song.artworkPath.isNotEmpty() && File(song.artworkPath).exists()) {
-                    Image(
-                        painter = rememberAsyncImagePainter(File(song.artworkPath)),
-                        contentDescription = "Album Artwork",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Icon(
-                        painter = painterResource(id = R.drawable.library),
-                        contentDescription = "Music Icon",
-                        modifier = Modifier
-                            .size(24.dp)
-                            .align(Alignment.Center),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            // Song info
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = song.title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = song.artist,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-
-            // Duration
-            val minutes = TimeUnit.MILLISECONDS.toMinutes(song.duration)
-            val seconds = TimeUnit.MILLISECONDS.toSeconds(song.duration) -
-                    TimeUnit.MINUTES.toSeconds(minutes)
-            Text(
-                text = "${minutes}:${String.format("%02d", seconds)}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
     }
 }
 
