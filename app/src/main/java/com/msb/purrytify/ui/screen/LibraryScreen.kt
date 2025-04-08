@@ -19,7 +19,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import coil3.compose.rememberAsyncImagePainter
@@ -33,10 +33,11 @@ import java.util.concurrent.TimeUnit
 @Composable
 fun LibraryScreen(
     navController: NavController = rememberNavController(),
-    songViewModel: SongViewModel = viewModel()
+    songViewModel: SongViewModel = hiltViewModel()
 ) {
     // State for controlling the add song bottom sheet
     var showAddSongSheet by remember { mutableStateOf(false) }
+
     // Show the AddSongScreen as a bottom sheet when showAddSongSheet is true
     if (showAddSongSheet) {
         AddSongScreen(
@@ -102,7 +103,6 @@ fun LibraryScreen(
                     SongItem(
                         song = songsToDisplay[index],
                         onSongClick = {
-                            // Handle song click (play song)
                             songViewModel.markAsPlayed(songId = songsToDisplay[index].id)
                         }
                     )

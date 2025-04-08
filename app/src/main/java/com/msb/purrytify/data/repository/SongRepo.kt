@@ -1,12 +1,15 @@
-package com.msb.purrytify.di
+package com.msb.purrytify.data.repository
 
 import android.content.Context
 import android.media.MediaMetadataRetriever
 import com.msb.purrytify.data.local.dao.SongDao
 import com.msb.purrytify.data.local.entity.Song
 import kotlinx.coroutines.flow.Flow
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class SongRepository(private val songDao: SongDao) {
+@Singleton
+class SongRepository @Inject constructor(private val songDao: SongDao) {
 
     val allSongs: Flow<List<Song>> = songDao.getAllSongs()
     val likedSongs: Flow<List<Song>> = songDao.getLikedSongs()

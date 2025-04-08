@@ -85,6 +85,7 @@ dependencies {
     implementation(libs.converter.moshi)
     ksp(libs.moshi.kotlin.codegen)
 
+    implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
