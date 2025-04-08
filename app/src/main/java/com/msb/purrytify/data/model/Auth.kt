@@ -18,3 +18,9 @@ data class LoginResponse(
     @Json(name = "refreshToken")
     val refreshToken: String,
 )
+
+@JsonClass(generateAdapter = true)
+data class LoginError(
+    @Json(name = "error")
+    val error: String
+)

@@ -16,7 +16,6 @@ import androidx.navigation.compose.rememberNavController
 import com.msb.purrytify.viewmodel.AuthViewModel
 import com.msb.purrytify.ui.component.NavigationBarComponent
 import com.msb.purrytify.ui.screen.*
-import com.msb.purrytify.ui.theme.AppTheme
 import androidx.compose.ui.unit.dp
 import com.msb.purrytify.R
 import androidx.compose.ui.res.painterResource
