@@ -23,6 +23,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.msb.purrytify.data.model.Song
 import com.msb.purrytify.ui.theme.AppTheme
 import com.msb.purrytify.viewmodel.HomeViewModel
@@ -31,7 +32,7 @@ import com.msb.purrytify.viewmodel.HomeViewModel
 @Composable
 fun HomeScreen(
     onSongClick: (Song) -> Unit = {},
-    viewModel: HomeViewModel = viewModel()
+    viewModel: HomeViewModel = hiltViewModel()
 ) {
     val recentlyPlayed = viewModel.recentlyPlayedSongs
     val newSongs = viewModel.newSongs
