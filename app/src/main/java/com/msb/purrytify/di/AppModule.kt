@@ -1,13 +1,22 @@
 package com.msb.purrytify.di
 
 import com.msb.purrytify.data.api.ApiService
+import com.msb.purrytify.data.api.AuthInterceptor
 import com.msb.purrytify.data.api.RetrofitClient
+import com.msb.purrytify.data.api.TokenAuthenticator
+import com.msb.purrytify.data.api.TokenInterceptor
+import com.msb.purrytify.data.model.OffsetDateTimeAdapter
+import com.msb.purrytify.data.storage.DataStoreManager
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
+import java.time.OffsetDateTime
 import javax.inject.Singleton
 
 @Module
@@ -17,10 +26,40 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideRetrofit(): Retrofit {
+    fun provideMoshiConverterFactory(moshi: Moshi): MoshiConverterFactory {
+        return MoshiConverterFactory.create(moshi)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAuthInterceptor(dataStoreManager: DataStoreManager): AuthInterceptor {
+        return AuthInterceptor(dataStoreManager)
+    }
+
+    @Provides
+    @Singleton
+    fun provideOkHttpClient(
+        authInterceptor: AuthInterceptor,
+        tokenAuthenticator: TokenAuthenticator,
+        tokenInterceptor: TokenInterceptor
+    ): OkHttpClient {
+        return OkHttpClient.Builder()
+            .addInterceptor(authInterceptor)
+            .addInterceptor(tokenInterceptor)
+            .authenticator(tokenAuthenticator)
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideRetrofit(
+        okHttpClient: OkHttpClient,
+        moshiConverterFactory: MoshiConverterFactory
+    ): Retrofit {
         return Retrofit.Builder()
             .baseUrl(BASE_URL)
-            .addConverterFactory(MoshiConverterFactory.create())
+            .client(okHttpClient)
+            .addConverterFactory(moshiConverterFactory)
             .build()
     }
 
@@ -29,4 +68,14 @@ object AppModule {
     fun provideApiService(retrofitClient: RetrofitClient): ApiService{
         return retrofitClient.createApiService(ApiService::class.java)
     }
+
+    @Provides
+    @Singleton
+    fun provideMoshi(): Moshi {
+        return Moshi.Builder()
+            .add(OffsetDateTime::class.java, OffsetDateTimeAdapter())
+            .add(KotlinJsonAdapterFactory())
+            .build()
+    }
+
 }
