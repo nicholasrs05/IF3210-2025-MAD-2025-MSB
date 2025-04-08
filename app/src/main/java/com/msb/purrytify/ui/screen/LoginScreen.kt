@@ -1,5 +1,6 @@
 package com.msb.purrytify.ui.screen
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -20,7 +21,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
@@ -41,6 +44,7 @@ fun LoginScreen (
     authViewModel: AuthViewModel = hiltViewModel()
 ) {
     val state = authViewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
     LaunchedEffect(authViewModel.navigateToHome) {
         authViewModel.navigateToHome.collectLatest { shouldNavigate ->
@@ -52,6 +56,13 @@ fun LoginScreen (
                     launchSingleTop = true
                 }
             }
+        }
+    }
+
+    LaunchedEffect(state.value.loginError) {
+        if (!state.value.loginError.isNullOrEmpty()) {
+            Toast.makeText(context, state.value.loginError, Toast.LENGTH_LONG).show()
+            authViewModel.clearLoginError()
         }
     }
 
@@ -93,7 +104,7 @@ fun LoginScreen (
                 text = "Millions of Songs.\n" +
                         "Only on Purritify.",
                 fontSize = 24.sp,
-                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
                 color = Color.White
             )
@@ -119,7 +130,7 @@ fun LoginScreen (
                     Text(
                         text = "Email",
                         fontSize = 14.sp,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                        fontWeight = FontWeight.SemiBold,
                         color = Color.White
                     )
                     Spacer(modifier = Modifier.height(8.dp))
@@ -132,7 +143,16 @@ fun LoginScreen (
                         colors = TextFieldDefaults.colors(focusedContainerColor = Color(0xFF535353), unfocusedContainerColor = Color(0xFF535353)),
                         shape = RoundedCornerShape(8.dp),
                         singleLine = true,
-                        placeholder = { Text("Enter your email", color = Color.Gray, fontSize = 12.sp) }
+                        placeholder = { Text("Enter your email", color = Color.Gray, fontSize = 12.sp) },
+                        isError = state.value.emailError != null,
+                        supportingText = {
+                            if (state.value.emailError != null) {
+                                Text(
+                                    text = state.value.emailError!!,
+                                    color = Color.Red
+                                )
+                            }
+                        }
                     )
                 }
 
@@ -172,6 +192,15 @@ fun LoginScreen (
                             IconButton(onClick = { passwordVisible = !passwordVisible }) {
                                 Icon(imageVector = image, description, tint = Color(0xFF9a9a9a))
                             }
+                        },
+                        isError = state.value.passwordError != null,
+                        supportingText = {
+                            if (state.value.passwordError != null) {
+                                Text(
+                                    text = state.value.passwordError!!,
+                                    color = Color.Red
+                                )
+                            }
                         }
                     )
                 }
@@ -183,7 +212,7 @@ fun LoginScreen (
                     .fillMaxWidth(0.85f)
                     .height(44.dp)
                     .background(Color(0xFF1DB955), RoundedCornerShape(48.dp)),
-                onClick = {authViewModel.login()},
+                onClick = { authViewModel.loginWithValidation() },
                 enabled = !state.value.isLoading,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF1DB955),
@@ -204,8 +233,6 @@ fun LoginScreen (
                     )
                 }
             }
-
-
         }
     }
 }
