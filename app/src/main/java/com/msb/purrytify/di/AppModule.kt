@@ -5,7 +5,6 @@ import com.msb.purrytify.data.api.ApiService
 import com.msb.purrytify.data.api.AuthInterceptor
 import com.msb.purrytify.data.api.RetrofitClient
 import com.msb.purrytify.data.api.TokenAuthenticator
-import com.msb.purrytify.data.api.TokenInterceptor
 import com.msb.purrytify.data.model.OffsetDateTimeAdapter
 import com.msb.purrytify.data.storage.DataStoreManager
 import com.squareup.moshi.Moshi
@@ -48,11 +47,9 @@ object AppModule {
     fun provideOkHttpClient(
         authInterceptor: AuthInterceptor,
         tokenAuthenticator: TokenAuthenticator,
-        tokenInterceptor: TokenInterceptor
     ): OkHttpClient {
         return OkHttpClient.Builder()
             .addInterceptor(authInterceptor)
-            .addInterceptor(tokenInterceptor)
             .authenticator(tokenAuthenticator)
             .build()
     }
