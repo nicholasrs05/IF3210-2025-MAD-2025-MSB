@@ -4,6 +4,9 @@ import android.content.Context
 import android.media.MediaPlayer
 import androidx.compose.runtime.mutableStateOf
 import com.msb.purrytify.data.local.entity.Song
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 enum class RepeatMode {
     NONE,
@@ -21,7 +24,7 @@ class MediaPlayerManager(private val context: Context) {
 
     fun setPlaylist(songs: List<Song>) {
         playlist = songs
-        currentSongIdx = -1
+        currentSongIdx = 0
     }
 
     fun addSongToPlaylist(song: Song) {
