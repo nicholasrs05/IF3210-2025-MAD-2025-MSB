@@ -1,15 +1,18 @@
 package com.msb.purrytify.ui.profile
 
 import androidx.compose.runtime.State
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.msb.purrytify.data.local.dao.SongDao
 import com.msb.purrytify.data.model.Profile
 import com.msb.purrytify.model.ProfileModel
 import com.msb.purrytify.model.ProfileResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
@@ -23,7 +26,8 @@ sealed class ProfileUiState {
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-    private val profileModel: ProfileModel
+    private val profileModel: ProfileModel,
+    private val songDao: SongDao
 ) : ViewModel() {
 
     private val _profileState = MutableStateFlow<ProfileUiState>(ProfileUiState.Loading)
@@ -37,16 +41,26 @@ class ProfileViewModel @Inject constructor(
     fun fetchProfileData() {
         viewModelScope.launch {
             _profileState.value = ProfileUiState.Loading
-            when (val result = profileModel.fetchProfile()) {
-                is ProfileResult.Success -> {
-                    _profileState.value = ProfileUiState.Success(result.data)
+
+            val profileResult = profileModel.fetchProfile()
+
+            if (profileResult is ProfileResult.Success) {
+                combine(
+                    songDao.getSongCount(),
+                    songDao.getLikedSongCount(),
+                    songDao.getListenedSongCount()
+                ) { total, liked, listened ->
+                    Triple(total, liked, listened)
+                }.collect { (total, liked, listened) ->
+                    val updatedProfile = profileResult.data.copy(
+                        addedSongsCount = total,
+                        likedSongsCount = liked,
+                        listenedSongsCount = listened
+                    )
+                    _profileState.value = ProfileUiState.Success(updatedProfile)
                 }
-                is ProfileResult.Error -> {
-                    _profileState.value = ProfileUiState.Error(result.message)
-                }
-                ProfileResult.Loading -> {
-                    _profileState.value = ProfileUiState.Loading
-                }
+            } else if (profileResult is ProfileResult.Error) {
+                _profileState.value = ProfileUiState.Error(profileResult.message)
             }
         }
     }

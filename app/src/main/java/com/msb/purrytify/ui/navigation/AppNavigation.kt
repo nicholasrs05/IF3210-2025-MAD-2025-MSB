@@ -30,7 +30,11 @@ import com.msb.purrytify.ui.theme.AppTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.graphics.Color
 
-sealed class Screen(val route: String, val label: String, val icon: @Composable (isSelected: Boolean) -> Unit = { _ -> }) {
+sealed class Screen(
+    val route: String,
+    val label: String,
+    val icon: @Composable (isSelected: Boolean) -> Unit = { _ -> }
+) {
     data object Home : Screen("home", "Home", { isSelected ->
         Icon(
             painter = painterResource(
@@ -40,6 +44,7 @@ sealed class Screen(val route: String, val label: String, val icon: @Composable 
             modifier = Modifier.size(24.dp)
         )
     })
+
     data object Library : Screen("library", "Your Library", { isSelected ->
         Icon(
             painter = painterResource(
@@ -49,6 +54,7 @@ sealed class Screen(val route: String, val label: String, val icon: @Composable 
             modifier = Modifier.size(24.dp)
         )
     })
+
     data object Profile : Screen("profile", "Profile", { isSelected ->
         Icon(
             painter = painterResource(
@@ -58,6 +64,7 @@ sealed class Screen(val route: String, val label: String, val icon: @Composable 
             modifier = Modifier.size(24.dp)
         )
     })
+
     data object Login : Screen("login", "Login")
 }
 
@@ -120,10 +127,10 @@ fun NavigationComponent(
                 content = {
                     Scaffold(
                         bottomBar = {
-                    if (isLoggedIn && currentRoute != Screen.Login.route) {
-                        NavigationBarComponent(navController)
-                    }
-                }
+                            if (isLoggedIn && currentRoute != Screen.Login.route) {
+                                NavigationBarComponent(navController)
+                            }
+                        }
                     ) { innerPadding ->
                         NavHost(
                             navController = navController,
