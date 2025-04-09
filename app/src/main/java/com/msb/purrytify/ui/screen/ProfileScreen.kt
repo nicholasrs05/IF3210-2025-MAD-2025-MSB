@@ -54,6 +54,10 @@ fun ProfileScreen(viewModel: ProfileViewModel = hiltViewModel()) {
             is ProfileUiState.Error -> {
                 ErrorScreen(errorMessage = (profileUiState as ProfileUiState.Error).errorMessage)
             }
+
+            else -> {
+                // SKIP
+            }
         }
     }
 }

@@ -78,20 +78,26 @@ object FileUtils {
     private fun isMediaDocument(uri: Uri): Boolean {
         return "com.android.providers.media.documents" == uri.authority
     }
-    
+
     fun saveFileToAppStorage(context: Context, uri: Uri, subfolder: String): String {
         val contentResolver = context.contentResolver
         val inputStream = contentResolver.openInputStream(uri) ?: return ""
-        
-        val fileName = "${System.currentTimeMillis()}_${uri.lastPathSegment}"
-        val directory = File(context.filesDir, subfolder).apply { 
-            if (!exists()) mkdirs() 
+
+        val rawName = "${System.currentTimeMillis()}_${uri.lastPathSegment}"
+        val safeFileName = sanitizeFileName(rawName)
+
+        val directory = File(context.filesDir, subfolder).apply {
+            if (!exists()) mkdirs()
         }
-        val file = File(directory, fileName)
-        
+
+        val file = File(directory, safeFileName)
         saveInputStreamToFile(inputStream, file)
-        
+
         return file.absolutePath
+    }
+
+    private fun sanitizeFileName(fileName: String): String {
+        return fileName.replace(Regex("[^a-zA-Z0-9._-]"), "_")
     }
     
     private fun saveInputStreamToFile(inputStream: InputStream, file: File) {

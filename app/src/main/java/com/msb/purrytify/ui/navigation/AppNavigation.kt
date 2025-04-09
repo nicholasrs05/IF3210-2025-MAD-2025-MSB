@@ -19,6 +19,7 @@ import com.msb.purrytify.ui.screen.*
 import androidx.compose.ui.unit.dp
 import com.msb.purrytify.R
 import androidx.compose.ui.res.painterResource
+import com.msb.purrytify.ui.theme.AppTheme
 
 
 sealed class Screen(val route: String, val label: String, val icon: @Composable (isSelected: Boolean) -> Unit = { _ -> }) {
@@ -75,7 +76,7 @@ fun NavigationComponent(authViewModel: AuthViewModel = hiltViewModel()) {
             NavHost(navController, startDestination = startDestination, Modifier.padding(innerPadding)) {
                 composable(Screen.Home.route) { HomeScreen() }
                 composable(Screen.Library.route) { LibraryScreen(navController) }
-                composable(Screen.Profile.route) { ProfileScreen(navController) }
+                composable(Screen.Profile.route) { ProfileScreen() }
                 composable(Screen.Login.route) { LoginScreen(navController) }
             }
         }
