@@ -27,19 +27,19 @@ class OffsetDateTimeAdapter : JsonAdapter<OffsetDateTime>() {
 @JsonClass(generateAdapter = true)
 data class Profile(
     @Json(name = "id")
-    val id: Int, // Assuming ID is an Integer based on your initial format
+    val id: Int = -1,
     @Json(name = "username")
-    val username: String,
+    val username: String = "",
     @Json(name = "email")
-    val email: String,
+    val email: String = "",
     @Json(name = "profilePhoto")
     val profilePhoto: String = "dummy.png",
     @Json(name = "location")
-    val location: String,
+    val location: String = "",
     @Json(name = "createdAt")
-    val createdAtString: String,
+    val createdAtString: String = "",
     @Json(name = "updatedAt")
-    val updatedAtString: String,
+    val updatedAtString: String = "",
     val addedSongsCount: Int = 0,
     val likedSongsCount: Int = 0,
     val listenedSongsCount: Int = 0
