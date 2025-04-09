@@ -2,14 +2,21 @@ package com.msb.purrytify.media
 
 import android.content.Context
 import android.media.MediaPlayer
+import androidx.compose.runtime.mutableStateOf
 import com.msb.purrytify.data.local.entity.Song
 import java.io.File
+
+enum class RepeatMode {
+    NONE,
+    ALL,
+    ONE
+}
 
 class MediaPlayerManager(private val context: Context) {
     private var mediaPlayer: MediaPlayer? = null
     private var playlist: List<Song> = emptyList()
     private var currentSongIdx: Int = -1
-    private var isRepeating: Boolean = false
+    private var repeatMode = mutableStateOf(RepeatMode.NONE)
 
     var onCompletion: (() -> Unit)? = null
 
@@ -41,7 +48,15 @@ class MediaPlayerManager(private val context: Context) {
 
                 setOnCompletionListener {
                     onCompletion?.invoke()
-                    playNext()
+
+                    when (repeatMode.value) {
+                        RepeatMode.ONE -> {
+                            play(song)
+                        }
+                        else -> {
+                            playNext()
+                        }
+                    }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -64,7 +79,7 @@ class MediaPlayerManager(private val context: Context) {
             return
         }
 
-        if (isRepeating) {
+        if (repeatMode.value == RepeatMode.ALL) {
             currentSongIdx = (currentSongIdx + 1) % playlist.size
             play(playlist[currentSongIdx])
         } else {
@@ -83,7 +98,7 @@ class MediaPlayerManager(private val context: Context) {
             return
         }
 
-        if (isRepeating) {
+        if (repeatMode.value == RepeatMode.ALL) {
             currentSongIdx = (currentSongIdx - 1 + playlist.size) % playlist.size
             play(playlist[currentSongIdx])
         } else {
@@ -135,7 +150,15 @@ class MediaPlayerManager(private val context: Context) {
         currentSongIdx = 0
     }
 
-    fun repeat(){
-        isRepeating = !isRepeating
+    fun noRepeat(){
+        repeatMode.value = RepeatMode.NONE
+    }
+
+    fun repeatAll(){
+        repeatMode.value = RepeatMode.ALL
+    }
+
+    fun repeatOne(){
+        repeatMode.value = RepeatMode.ONE
     }
 }
