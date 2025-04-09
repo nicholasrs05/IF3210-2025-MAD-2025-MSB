@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import com.msb.purrytify.ui.component.LibraryAdapter
 import com.msb.purrytify.ui.theme.AppTheme
 import com.msb.purrytify.viewmodel.PlaybackViewModel
+import com.msb.purrytify.viewmodel.PlayerViewModel
 import com.msb.purrytify.viewmodel.SongViewModel
 
 @Composable
@@ -31,13 +32,11 @@ fun LibraryScreen(
     navController: NavController = rememberNavController(),
     songViewModel: SongViewModel = hiltViewModel(),
     playbackViewModel: PlaybackViewModel = hiltViewModel(),
+    playerViewModel: PlayerViewModel = hiltViewModel()
 ) {
     val mediaPlayerManager = playbackViewModel.mediaPlayerManager
 
-    // State for controlling the add song bottom sheet
     var showAddSongSheet by remember { mutableStateOf(false) }
-
-    // Show the AddSongScreen as a bottom sheet when showAddSongSheet is true
     if (showAddSongSheet) {
         AddSongScreen(
             navController = navController,
@@ -59,7 +58,6 @@ fun LibraryScreen(
         ) {
             Header(showAddSongSheet = { showAddSongSheet = true })
 
-            // State of which tab is selected (All or Liked)
             var selectedTab by remember { mutableStateOf(0) }
 
             Row(
@@ -101,8 +99,17 @@ fun LibraryScreen(
                     factory = { ctx: Context ->
                         RecyclerView(ctx).apply {
                             layoutManager = LinearLayoutManager(ctx)
-                            adapter = LibraryAdapter(songsToDisplay) {
-                                clickedSong -> mediaPlayerManager.play(clickedSong)
+                            adapter = LibraryAdapter(songsToDisplay) { clickedSong ->
+                                mediaPlayerManager.setPlaylist(songsToDisplay)
+                                
+                                val songIndex = songsToDisplay.indexOfFirst { it.id == clickedSong.id }
+                                if (songIndex >= 0) {
+                                    val playlistSong = songsToDisplay[songIndex]
+                                    playerViewModel.playSong(playlistSong)
+                                } else {
+                                    playerViewModel.playSong(clickedSong)
+                                }
+                                
                                 songViewModel.markAsPlayed(clickedSong.id)
                             }
                             layoutParams = RecyclerView.LayoutParams(

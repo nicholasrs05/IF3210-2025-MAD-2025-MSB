@@ -5,6 +5,7 @@ import android.media.MediaMetadataRetriever
 import com.msb.purrytify.data.local.dao.SongDao
 import com.msb.purrytify.data.local.entity.Song
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -40,6 +41,10 @@ class SongRepository @Inject constructor(private val songDao: SongDao) {
 
     suspend fun updateLastPlayedAt(songId: Long) {
         songDao.updateLastPlayedAt(songId, System.currentTimeMillis())
+    }
+
+    fun fetchAllSongs(): Flow<List<Song>> {
+        return songDao.getAllSongs()
     }
 
     companion object {

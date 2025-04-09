@@ -11,10 +11,17 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalView
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.msb.purrytify.ui.navigation.NavigationComponent
-import com.msb.purrytify.ui.theme.AppTheme
 import com.msb.purrytify.viewmodel.AuthViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.platform.LocalContext
+import dagger.hilt.android.AndroidEntryPoint
+import com.msb.purrytify.ui.navigation.NavigationComponent
+import com.msb.purrytify.ui.theme.AppTheme
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.fillMaxSize
+import com.msb.purrytify.ui.component.NetworkPopUp
+import com.msb.purrytify.utils.NetworkStatusListener
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -22,7 +29,13 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             AppTheme {
-                MainContent()
+                val isConnected = NetworkStatusListener()
+
+                Box(modifier = Modifier.fillMaxSize()) {
+                    MainContent()
+
+                    NetworkPopUp(isConnected = isConnected)
+                }
             }
         }
     }
@@ -34,7 +47,6 @@ fun MainContent() {
     val uiState by authViewModel.uiState.collectAsState()
     val isLoggedInCheckDone = uiState.isLoggedInCheckDone
 
-    // Add debugging log
     Log.d("MainActivity", "isLoggedInCheckDone: $isLoggedInCheckDone")
 
     val localView = LocalView.current

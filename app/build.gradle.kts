@@ -77,6 +77,7 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
+    implementation(libs.palette.ktx)
 
     // Data Store
     implementation(libs.androidx.datastore.preferences)
