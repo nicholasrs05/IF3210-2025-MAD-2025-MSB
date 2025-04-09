@@ -314,9 +314,9 @@ fun PlayerScreen(
                 IconButton(onClick = { viewModel.toggleRepeat() }) {
                     Icon(
                         imageVector = when (viewModel.repeatMode.value) {
-                            PlayerViewModel.RepeatMode.NONE -> Icons.Filled.RepeatOne
-                            PlayerViewModel.RepeatMode.ONE -> Icons.Filled.Repeat
-                            PlayerViewModel.RepeatMode.ALL -> Icons.Filled.Repeat
+                            PlayerViewModel.RepeatMode.NONE -> Icons.Filled.Repeat
+                            PlayerViewModel.RepeatMode.ONE -> Icons.Filled.RepeatOne
+                            PlayerViewModel.RepeatMode.ALL -> Icons.Filled.RepeatOn
                         },
                         contentDescription = "Repeat",
                         tint = if (viewModel.repeatMode.value != PlayerViewModel.RepeatMode.NONE) 
