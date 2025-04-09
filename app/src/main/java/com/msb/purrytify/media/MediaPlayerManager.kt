@@ -3,7 +3,6 @@ package com.msb.purrytify.media
 import android.content.Context
 import android.media.MediaPlayer
 import com.msb.purrytify.data.local.entity.Song
-import java.io.File
 
 class MediaPlayerManager(private val context: Context) {
     private var mediaPlayer: MediaPlayer? = null

@@ -1,8 +1,9 @@
 package com.msb.purrytify.ui.screen
 
-import android.graphics.drawable.BitmapDrawable
+import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -14,172 +15,170 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
+import androidx.compose.ui.zIndex
 import androidx.core.graphics.ColorUtils
-import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.palette.graphics.Palette
+import coil3.compose.AsyncImage
 import com.msb.purrytify.R
-import com.msb.purrytify.ui.theme.AppTheme
+import com.msb.purrytify.data.local.entity.Song
+import com.msb.purrytify.viewmodel.PlayerViewModel
+import com.msb.purrytify.viewmodel.PlaybackViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 
 @Composable
 fun PlayerScreen(
-    navController: NavController,
-    // viewModel: PlayerViewModel = hiltViewModel()
+    song: Song,
+    onDismiss: () -> Unit,
+    viewModel: PlayerViewModel = hiltViewModel(),
+    playbackViewModel: PlaybackViewModel = hiltViewModel()
 ) {
-    // Default colors (will be overridden by palette extraction)
-    var backgroundColor by remember { mutableStateOf(Color(0xFF8B0032)) }
-    var textColor by remember { mutableStateOf(Color.White) }
-    var buttonTintColor by remember { mutableStateOf(Color.White) }
+    val mediaPlayerManager = playbackViewModel.mediaPlayerManager
 
-    var isPlaying by remember { mutableStateOf(false) }
-    var isLiked by remember { mutableStateOf(false) }
-    var currentPosition by remember { mutableFloatStateOf(104f) }
-    var totalDuration by remember { mutableFloatStateOf(230f) }
-
-    // Context for accessing resources
-    val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
+    LaunchedEffect(song.id) {
+        mediaPlayerManager.setPlaylist(listOf(song))
+        viewModel.playSong(song)
+    }
     
-    // Extract dominant color from album art
-    LaunchedEffect(Unit) {
-        coroutineScope.launch {
-            withContext(Dispatchers.IO) {
+    var backgroundColor by remember { mutableStateOf(Color(0xFF121212)) }
+    var textColor by remember { mutableStateOf(Color.White) }
+    var accentColor by remember { mutableStateOf(Color(0xFF1DB954)) }
+    
+    // Player state
+    val isPlaying by viewModel.isPlaying
+    val isLiked by viewModel.isLiked
+    val currentPosition by viewModel.currentPosition
+    val duration by viewModel.duration
+    
+    DisposableEffect(song.id) {
+        val extractColors = suspend {
+            if (song.artworkPath.isNotEmpty() && File(song.artworkPath).exists()) {
                 try {
-                    // Get the drawable
-                    val drawable = ContextCompat.getDrawable(context, R.drawable.image)
-                    val bitmap = (drawable as BitmapDrawable).bitmap
-                    
-                    // Generate palette from  bitmap
-                    val palette = Palette.from(bitmap).generate()
-                    
-                    // Extract dominant dark color
-                    val darkVibrantColor = palette.getDarkVibrantColor(Color(0xFF8B0032).toArgb())
-
-                    // Vibrant color
-                    backgroundColor = Color(darkVibrantColor)
-                    
-                    // Extract vibrant color
-                    val vibrantColor = palette.getVibrantColor(Color.White.toArgb())
-                    buttonTintColor = Color(vibrantColor)
-                    
-                    // Brightness
-                    val luminance = ColorUtils.calculateLuminance(darkVibrantColor)
-                    textColor = if (luminance > 0.5) Color.Black else Color.White
-                    
+                    val bitmap = BitmapFactory.decodeFile(song.artworkPath)
+                    withContext(Dispatchers.Default) {
+                        val palette = Palette.from(bitmap).generate()
+                        val darkColor = palette.getDarkVibrantColor(palette.getDarkMutedColor(Color(0xFF121212).toArgb()))
+                        val vibrantColor = palette.getVibrantColor(palette.getLightVibrantColor(Color(0xFF1DB954).toArgb()))
+                        
+                        backgroundColor = Color(darkColor)
+                        accentColor = Color(vibrantColor)
+                        textColor = if (ColorUtils.calculateLuminance(darkColor) > 0.5) Color.Black else Color.White
+                    }
                 } catch (_: Exception) {
-                    // Fallback to default colors on error
-                    backgroundColor = Color(0xFF8B0032)
-                    textColor = Color.White
-                    buttonTintColor = Color.White
+                }
+            }
+        }
+        
+        val job = viewModel.viewModelScope.launch { extractColors() }
+        onDispose { job.cancel() }
+    }
+    
+    // Update position continuously
+    LaunchedEffect(Unit) {
+        while (true) {
+            kotlinx.coroutines.delay(100)
+            viewModel.updatePosition()
+        }
+    }
+    
+    // Cache artwork image to prevent recomposition delays
+    val artworkContent = remember(song.artworkPath) {
+        @Composable {
+            Box(
+                modifier = Modifier
+                    .size(280.dp)
+                    .clip(RoundedCornerShape(8.dp))
+            ) {
+                if (song.artworkPath.isNotEmpty() && File(song.artworkPath).exists()) {
+                    AsyncImage(
+                        model = File(song.artworkPath),
+                        contentDescription = "Album Artwork",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Image(
+                        painter = painterResource(id = R.drawable.image),
+                        contentDescription = "Default Album Art",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
                 }
             }
         }
     }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(backgroundColor)
-            .padding(16.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            IconButton(onClick = { /* TODO: Navigate back */ }) {
-                Icon(
-                    imageVector = Icons.Filled.KeyboardArrowDown,
-                    contentDescription = "Back",
-                    tint = textColor
-                )
-            }
-            
-            IconButton(onClick = { /* TODO: Show menu */ }) {
-                Icon(
-                    imageVector = Icons.Filled.MoreVert,
-                    contentDescription = "More options",
-                    tint = textColor
-                )
-            }
-        }
-
-        // Content Column
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxSize()
-        ) {
-            Spacer(modifier = Modifier.height(64.dp))
-            
-            // Album artwork
-            Box(
-                modifier = Modifier
-                    .size(300.dp)
-                    .clip(RoundedCornerShape(8.dp))
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.image),
-                    contentDescription = "Album Art",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(32.dp))
-            
-            // Song info and like button
+    
+    // Cache player controls to reduce recomposition cost
+    val playerControls = remember(isPlaying, accentColor, backgroundColor, textColor) {
+        @Composable {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Starboy",
-                        color = textColor,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "The Weeknd, Daft Punk",
-                        color = textColor.copy(alpha = 0.7f),
-                        fontSize = 16.sp
+                IconButton(
+                    onClick = { viewModel.skipToPrevious() },
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.SkipPrevious,
+                        contentDescription = "Previous",
+                        tint = textColor,
+                        modifier = Modifier.size(48.dp)
                     )
                 }
                 
-                IconButton(onClick = { isLiked = !isLiked }) {
+                IconButton(
+                    onClick = { viewModel.togglePlayPause() },
+                    modifier = Modifier
+                        .size(64.dp)
+                        .background(accentColor, RoundedCornerShape(32.dp))
+                ) {
                     Icon(
-                        imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                        contentDescription = "Like",
-                        tint = if (isLiked) Color.Red else textColor
+                        imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                        contentDescription = if (isPlaying) "Pause" else "Play",
+                        tint = backgroundColor,
+                        modifier = Modifier.size(36.dp)
+                    )
+                }
+                
+                IconButton(
+                    onClick = { viewModel.skipToNext() },
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.SkipNext,
+                        contentDescription = "Next",
+                        tint = textColor,
+                        modifier = Modifier.size(48.dp)
                     )
                 }
             }
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // Progress bar
+        }
+    }
+    
+    val progressSlider = remember(duration) {
+        @Composable {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Slider(
                     value = currentPosition,
-                    onValueChange = { currentPosition = it },
-                    valueRange = 0f..totalDuration,
+                    onValueChange = { viewModel.seekTo(it) },
+                    valueRange = 0f..duration.coerceAtLeast(1f),
                     colors = SliderDefaults.colors(
-                        thumbColor = buttonTintColor,
-                        activeTrackColor = buttonTintColor,
-                        inactiveTrackColor = buttonTintColor.copy(alpha = 0.3f)
+                        thumbColor = accentColor,
+                        activeTrackColor = accentColor,
+                        inactiveTrackColor = accentColor.copy(alpha = 0.3f)
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -195,73 +194,145 @@ fun PlayerScreen(
                         fontSize = 12.sp
                     )
                     Text(
-                        text = formatDuration(totalDuration.toInt()),
+                        text = formatDuration(duration.toInt()),
                         color = textColor.copy(alpha = 0.7f),
                         fontSize = 12.sp
                     )
                 }
             }
-            
-            Spacer(modifier = Modifier.height(32.dp))
-            
-            // Playback controls
+        }
+    }
+    
+    // Main screen content with drag gesture
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(backgroundColor)
+            .zIndex(10f)
+            .pointerInput(Unit) {
+                detectVerticalDragGestures(
+                    onDragEnd = {
+                        onDismiss()
+                    },
+                    onVerticalDrag = { change, dragAmount ->
+                        // If dragged down significantly, dismiss
+                        if (dragAmount > 20) {
+                            change.consume()
+                            onDismiss()
+                        }
+                    }
+                )
+            }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(
-                    onClick = { /* TODO: Previous track */ },
-                    modifier = Modifier.size(48.dp)
-                ) {
+                IconButton(onClick = onDismiss) {
                     Icon(
-                        imageVector = Icons.Filled.SkipPrevious,
-                        contentDescription = "Previous",
-                        tint = textColor,
-                        modifier = Modifier.size(48.dp)
+                        imageVector = Icons.Filled.KeyboardArrowDown,
+                        contentDescription = "Close",
+                        tint = textColor
                     )
                 }
                 
-                IconButton(
-                    onClick = { isPlaying = !isPlaying },
-                    modifier = Modifier
-                        .size(64.dp)
-                        .background(buttonTintColor, RoundedCornerShape(32.dp))
-                ) {
-                    Icon(
-                        imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                        contentDescription = if (isPlaying) "Pause" else "Play",
-                        tint = backgroundColor,
-                        modifier = Modifier.size(36.dp)
-                    )
-                }
+                Text(
+                    text = "Now Playing",
+                    color = textColor,
+                    style = MaterialTheme.typography.titleMedium
+                )
                 
-                IconButton(
-                    onClick = { /* TODO: Next track */ },
-                    modifier = Modifier.size(48.dp)
-                ) {
+                IconButton(onClick = { /* Menu */ }) {
                     Icon(
-                        imageVector = Icons.Filled.SkipNext,
-                        contentDescription = "Next",
-                        tint = textColor,
-                        modifier = Modifier.size(48.dp)
+                        imageVector = Icons.Filled.MoreVert,
+                        contentDescription = "Menu",
+                        tint = textColor
                     )
                 }
             }
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            artworkContent()
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = song.title,
+                        color = textColor,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = song.artist,
+                        color = textColor.copy(alpha = 0.7f),
+                        fontSize = 16.sp
+                    )
+                }
+                
+                IconButton(onClick = { viewModel.toggleLike() }) {
+                    Icon(
+                        imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                        contentDescription = if (isLiked) "Unlike" else "Like",
+                        tint = if (isLiked) Color.Red else textColor
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            progressSlider()
+            Spacer(modifier = Modifier.weight(1f))
+            playerControls()
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                IconButton(onClick = { viewModel.toggleShuffle() }) {
+                    Icon(
+                        imageVector = Icons.Filled.Shuffle,
+                        contentDescription = "Shuffle",
+                        tint = if (viewModel.isShuffle.value) accentColor else textColor.copy(alpha = 0.5f)
+                    )
+                }
+                
+                IconButton(onClick = { viewModel.toggleRepeat() }) {
+                    Icon(
+                        imageVector = when (viewModel.repeatMode.value) {
+                            PlayerViewModel.RepeatMode.NONE -> Icons.Filled.RepeatOne
+                            PlayerViewModel.RepeatMode.ONE -> Icons.Filled.Repeat
+                            PlayerViewModel.RepeatMode.ALL -> Icons.Filled.Repeat
+                        },
+                        contentDescription = "Repeat",
+                        tint = if (viewModel.repeatMode.value != PlayerViewModel.RepeatMode.NONE) 
+                            accentColor else textColor.copy(alpha = 0.5f)
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(80.dp))
         }
     }
 }
 
-private fun formatDuration(seconds: Int): String {
+private fun formatDuration(miliseconds: Int): String {
+    val seconds = miliseconds / 1000
     val minutes = seconds / 60
     val remainingSeconds = seconds % 60
     return "$minutes:${remainingSeconds.toString().padStart(2, '0')}"
-}
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewPlayerScreen() {
-    AppTheme {
-        PlayerScreen(navController = rememberNavController())
-    }
 }
