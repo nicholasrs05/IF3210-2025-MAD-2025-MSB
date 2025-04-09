@@ -13,6 +13,7 @@ import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.msb.purrytify.data.local.PurrytifyDatabase
 import com.msb.purrytify.data.local.dao.SongDao
 import com.msb.purrytify.data.repository.SongRepository
+import com.msb.purrytify.media.MediaPlayerManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -99,5 +100,11 @@ object AppModule {
     @Singleton
     fun provideSongRepository(songDao: SongDao): SongRepository {
         return SongRepository(songDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideMediaPlayerManager(@ApplicationContext context: Context): MediaPlayerManager {
+        return MediaPlayerManager(context)
     }
 }

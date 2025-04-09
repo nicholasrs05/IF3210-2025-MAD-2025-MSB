@@ -1,44 +1,37 @@
 package com.msb.purrytify.ui.screen
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import coil3.compose.rememberAsyncImagePainter
 import com.msb.purrytify.R
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.compose.ui.platform.LocalContext
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import android.content.Context
 import com.msb.purrytify.ui.component.LibraryAdapter
-import com.msb.purrytify.data.local.entity.Song
 import com.msb.purrytify.ui.theme.AppTheme
+import com.msb.purrytify.viewmodel.PlaybackViewModel
 import com.msb.purrytify.viewmodel.SongViewModel
 
 @Composable
 fun LibraryScreen(
     navController: NavController = rememberNavController(),
-    songViewModel: SongViewModel = hiltViewModel()
+    songViewModel: SongViewModel = hiltViewModel(),
+    playbackViewModel: PlaybackViewModel = hiltViewModel(),
 ) {
+    val mediaPlayerManager = playbackViewModel.mediaPlayerManager
+
     // State for controlling the add song bottom sheet
     var showAddSongSheet by remember { mutableStateOf(false) }
 
@@ -101,7 +94,8 @@ fun LibraryScreen(
                     RecyclerView(ctx).apply {
                         layoutManager = LinearLayoutManager(ctx)
                         adapter = LibraryAdapter(songsToDisplay) {
-                            clickedSong -> songViewModel.markAsPlayed(songId = clickedSong.id)
+                            clickedSong -> mediaPlayerManager.play(clickedSong)
+                            songViewModel.markAsPlayed(clickedSong.id)
                         }
                         layoutParams = RecyclerView.LayoutParams(
                             RecyclerView.LayoutParams.MATCH_PARENT,
