@@ -67,7 +67,8 @@ fun ProfileContent(profile: com.msb.purrytify.data.model.Profile) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(16.dp)
+            .background(Color(0xFF121212)),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(modifier = Modifier.height(52.dp))

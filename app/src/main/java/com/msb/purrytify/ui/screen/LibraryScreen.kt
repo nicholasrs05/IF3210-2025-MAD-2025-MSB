@@ -19,6 +19,8 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import android.content.Context
+import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.Color
 import com.msb.purrytify.ui.component.LibraryAdapter
 import com.msb.purrytify.ui.theme.AppTheme
 import com.msb.purrytify.viewmodel.PlaybackViewModel
@@ -44,67 +46,74 @@ fun LibraryScreen(
         )
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(8.dp),
+            .background(Color(0xFF121212))
     ) {
-        Header(showAddSongSheet = { showAddSongSheet = true })
-
-        // State of which tab is selected (All or Liked)
-        var selectedTab by remember { mutableStateOf(0) }
-
-        Row(
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 2.dp),
-            horizontalArrangement = Arrangement.Start
+                .fillMaxSize()
+                .padding(8.dp)
+                .background(Color(0xFF121212)),
         ) {
-            FilterButton(
-                label = "All",
-                isSelected = selectedTab == 0,
-                onClick = { selectedTab = 0 }
-            )
-            FilterButton(
-                label = "Liked",
-                isSelected = selectedTab == 1,
-                onClick = { selectedTab = 1 }
-            )
-        }
+            Header(showAddSongSheet = { showAddSongSheet = true })
 
-        val allSongs by songViewModel.allSongs.observeAsState(initial = emptyList())
-        val likedSongs by songViewModel.likedSongs.observeAsState(initial = emptyList())
+            // State of which tab is selected (All or Liked)
+            var selectedTab by remember { mutableStateOf(0) }
 
-        val songsToDisplay = if (selectedTab == 0) allSongs else likedSongs
-
-        if (songsToDisplay.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 2.dp),
+                horizontalArrangement = Arrangement.Start
             ) {
-                Text(
-                    text = if (selectedTab == 0) "No songs in your library" else "No liked songs",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                FilterButton(
+                    label = "All",
+                    isSelected = selectedTab == 0,
+                    onClick = { selectedTab = 0 }
+                )
+                FilterButton(
+                    label = "Liked",
+                    isSelected = selectedTab == 1,
+                    onClick = { selectedTab = 1 }
                 )
             }
-        } else {
-            AndroidView(
-                factory = { ctx: Context ->
-                    RecyclerView(ctx).apply {
-                        layoutManager = LinearLayoutManager(ctx)
-                        adapter = LibraryAdapter(songsToDisplay) {
-                            clickedSong -> mediaPlayerManager.play(clickedSong)
-                            songViewModel.markAsPlayed(clickedSong.id)
+
+            val allSongs by songViewModel.allSongs.observeAsState(initial = emptyList())
+            val likedSongs by songViewModel.likedSongs.observeAsState(initial = emptyList())
+
+            val songsToDisplay = if (selectedTab == 0) allSongs else likedSongs
+
+            if (songsToDisplay.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = if (selectedTab == 0) "No songs in your library" else "No liked songs",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else {
+                AndroidView(
+                    factory = { ctx: Context ->
+                        RecyclerView(ctx).apply {
+                            layoutManager = LinearLayoutManager(ctx)
+                            adapter = LibraryAdapter(songsToDisplay) {
+                                clickedSong -> mediaPlayerManager.play(clickedSong)
+                                songViewModel.markAsPlayed(clickedSong.id)
+                            }
+                            layoutParams = RecyclerView.LayoutParams(
+                                RecyclerView.LayoutParams.MATCH_PARENT,
+                                RecyclerView.LayoutParams.MATCH_PARENT
+                            )
                         }
-                        layoutParams = RecyclerView.LayoutParams(
-                            RecyclerView.LayoutParams.MATCH_PARENT,
-                            RecyclerView.LayoutParams.MATCH_PARENT
-                        )
-                    }
-                },
-                modifier = Modifier.fillMaxSize()
-            )
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
         }
     }
 }
@@ -144,8 +153,8 @@ fun FilterButton(label: String, isSelected: Boolean = false, onClick: () -> Unit
         onClick = { onClick() },
         modifier = Modifier.padding(4.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-            contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+            containerColor = if (isSelected) Color(0xFF1DB954) else Color(0xFF212121),
+            contentColor = if (isSelected) Color(0xFF121212) else Color(0xFFFFFFFF)
         )
     ) {
         Text(text = label)
