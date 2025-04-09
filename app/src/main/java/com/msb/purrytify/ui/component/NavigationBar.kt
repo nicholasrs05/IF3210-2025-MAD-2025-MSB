@@ -16,17 +16,21 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.graphics.Color
 
 @Composable
 fun NavigationBarComponent(navController: NavHostController) {
     val items = listOf(Screen.Home, Screen.Library, Screen.Profile)
-    NavigationBar { // changed
+    NavigationBar (
+        containerColor = Color(0xFF121212),
+        contentColor = Color.White
+    ) {
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentDestination = navBackStackEntry?.destination
         items.forEach { screen ->
             val isSelected = currentDestination?.route == screen.route
 
-            NavigationBarItem( // changed
+            NavigationBarItem(
                 icon = {
                     screen.icon(isSelected)
                 },
