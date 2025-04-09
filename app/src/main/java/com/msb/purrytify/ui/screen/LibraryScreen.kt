@@ -1,11 +1,5 @@
 package com.msb.purrytify.ui.screen
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -27,10 +21,10 @@ import androidx.recyclerview.widget.RecyclerView
 import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.zIndex
 import com.msb.purrytify.ui.component.LibraryAdapter
 import com.msb.purrytify.ui.theme.AppTheme
 import com.msb.purrytify.viewmodel.PlaybackViewModel
+import com.msb.purrytify.viewmodel.PlayerViewModel
 import com.msb.purrytify.viewmodel.SongViewModel
 
 @Composable
@@ -38,43 +32,17 @@ fun LibraryScreen(
     navController: NavController = rememberNavController(),
     songViewModel: SongViewModel = hiltViewModel(),
     playbackViewModel: PlaybackViewModel = hiltViewModel(),
+    playerViewModel: PlayerViewModel = hiltViewModel()
 ) {
     val mediaPlayerManager = playbackViewModel.mediaPlayerManager
 
     var showAddSongSheet by remember { mutableStateOf(false) }
-    var showPlayerSheet by remember { mutableStateOf(false) }
-    var selectedSong by remember { mutableStateOf<com.msb.purrytify.data.local.entity.Song?>(null) }
-
     if (showAddSongSheet) {
         AddSongScreen(
             navController = navController,
             showBottomSheet = true,
             onDismiss = { showAddSongSheet = false }
         )
-    }
-    
-    val cachedPlayerScreen = remember {
-        mutableStateOf<@Composable (() -> Unit)?>(null)
-    }
-    
-    LaunchedEffect(selectedSong) {
-        selectedSong?.let {
-            cachedPlayerScreen.value = {
-                PlayerScreen(
-                    song = selectedSong!!,
-                    onDismiss = { showPlayerSheet = false },
-                )
-            }
-        }
-    }
-    
-    AnimatedVisibility(
-        visible = showPlayerSheet && selectedSong != null,
-        enter = slideInVertically(initialOffsetY = { it }) + fadeIn(tween(300)),
-        exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(tween(300)),
-        modifier = Modifier.zIndex(10f)
-    ) {
-        cachedPlayerScreen.value?.invoke()
     }
 
     Box(
@@ -90,7 +58,6 @@ fun LibraryScreen(
         ) {
             Header(showAddSongSheet = { showAddSongSheet = true })
 
-            // State of which tab is selected (All or Liked)
             var selectedTab by remember { mutableStateOf(0) }
 
             Row(
@@ -133,11 +100,16 @@ fun LibraryScreen(
                         RecyclerView(ctx).apply {
                             layoutManager = LinearLayoutManager(ctx)
                             adapter = LibraryAdapter(songsToDisplay) { clickedSong ->
-                                // Set the selected song and show player
-                                selectedSong = clickedSong
-                                showPlayerSheet = true
+                                mediaPlayerManager.setPlaylist(songsToDisplay)
                                 
-                                // Mark as played
+                                val songIndex = songsToDisplay.indexOfFirst { it.id == clickedSong.id }
+                                if (songIndex >= 0) {
+                                    val playlistSong = songsToDisplay[songIndex]
+                                    playerViewModel.playSong(playlistSong)
+                                } else {
+                                    playerViewModel.playSong(clickedSong)
+                                }
+                                
                                 songViewModel.markAsPlayed(clickedSong.id)
                             }
                             layoutParams = RecyclerView.LayoutParams(

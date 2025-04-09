@@ -1,6 +1,8 @@
 package com.msb.purrytify.ui.screen
 
 import android.graphics.BitmapFactory
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
@@ -17,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -41,15 +44,47 @@ import java.io.File
 fun PlayerScreen(
     song: Song,
     onDismiss: () -> Unit,
+    onDismissWithAnimation: () -> Unit = {},
+    isDismissing: Boolean = false,
+    onAnimationComplete: () -> Unit = {},
     viewModel: PlayerViewModel = hiltViewModel(),
     playbackViewModel: PlaybackViewModel = hiltViewModel()
 ) {
     val mediaPlayerManager = playbackViewModel.mediaPlayerManager
     val currentPlayingSong = viewModel.currentSong.value ?: song
     
+    var localIsDismissing by remember { mutableStateOf(false) }
+    val actualIsDismissing = isDismissing || localIsDismissing
+    
+    val density = LocalDensity.current
+    
+    BackHandler {
+        if (!actualIsDismissing) {
+            localIsDismissing = true
+            onDismissWithAnimation()
+        }
+    }
+    
+    val slideOffset by animateFloatAsState(
+        targetValue = if (actualIsDismissing) 1f else 0f,
+        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+        finishedListener = { 
+            if (actualIsDismissing) {
+                onAnimationComplete()
+                onDismiss() 
+            }
+        }
+    )
+    
     LaunchedEffect(Unit) {
-        mediaPlayerManager.setPlaylist(listOf(song))
-        viewModel.playSong(song)
+        val isAlreadyPlaying = mediaPlayerManager.getCurrentSong()?.id == song.id
+        
+        if (!isAlreadyPlaying) {
+            mediaPlayerManager.setPlaylist(listOf(song))
+            viewModel.playSong(song)
+        } else {
+            viewModel.resumeCurrentSong()
+        }
     }
     
     DisposableEffect(Unit) {
@@ -63,7 +98,8 @@ fun PlayerScreen(
                 viewModel.viewModelScope.launch {
                     kotlinx.coroutines.delay(300)
                     if (mediaPlayerManager.getCurrentSong() == null) {
-                        onDismiss()
+                        localIsDismissing = true
+                        onDismissWithAnimation()
                     }
                 }
             }
@@ -225,20 +261,25 @@ fun PlayerScreen(
         }
     }
     
+    val offsetY = with(density) { slideOffset * 1000.dp.toPx() }
+    
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .offset(y = offsetY.dp)
             .background(backgroundColor)
             .zIndex(10f)
             .pointerInput(Unit) {
                 detectVerticalDragGestures(
                     onDragEnd = {
-                        onDismiss()
+                        localIsDismissing = true
+                        onDismissWithAnimation()
                     },
                     onVerticalDrag = { change, dragAmount ->
                         if (dragAmount > 50) {
                             change.consume()
-                            onDismiss()
+                            localIsDismissing = true
+                            onDismissWithAnimation()
                         }
                     }
                 )
@@ -257,7 +298,10 @@ fun PlayerScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = onDismiss) {
+                IconButton(onClick = { 
+                    localIsDismissing = true
+                    onDismissWithAnimation() 
+                }) {
                     Icon(
                         imageVector = Icons.Filled.KeyboardArrowDown,
                         contentDescription = "Close",
