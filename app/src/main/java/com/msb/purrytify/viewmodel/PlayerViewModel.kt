@@ -22,8 +22,7 @@ class PlayerViewModel @Inject constructor(
 
     // Player state
     private val _currentSong = mutableStateOf<Song?>(null)
-    val currentSong: State<Song?> = _currentSong
-    
+
     private val _isPlaying = mutableStateOf(false)
     val isPlaying: State<Boolean> = _isPlaying
     
@@ -137,7 +136,11 @@ class PlayerViewModel @Inject constructor(
             RepeatMode.ALL -> RepeatMode.ONE
             RepeatMode.ONE -> RepeatMode.NONE
         }
-        mediaPlayerManager.repeat()
+       when (_repeatMode.value) {
+            RepeatMode.NONE -> mediaPlayerManager.noRepeat()
+            RepeatMode.ALL -> mediaPlayerManager.repeatAll()
+            RepeatMode.ONE -> mediaPlayerManager.repeatOne()
+        }
     }
     
     // Update position for the UI
@@ -163,7 +166,7 @@ class PlayerViewModel @Inject constructor(
     private fun checkLikedStatus(songId: Long) {
         viewModelScope.launch {
             val song = songRepository.getSongById(songId)
-            _isLiked.value = song?.isLiked ?: false
+            _isLiked.value = song?.isLiked == true
         }
     }
     
@@ -182,6 +185,5 @@ class PlayerViewModel @Inject constructor(
     
     override fun onCleared() {
         super.onCleared()
-        // Don't release the player on clear to keep music playing
     }
 }
