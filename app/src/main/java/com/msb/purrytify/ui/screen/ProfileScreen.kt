@@ -31,34 +31,51 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import com.msb.purrytify.ui.profile.ProfileUiState
 import com.msb.purrytify.ui.profile.ProfileViewModel
+import androidx.compose.runtime.*
+import com.msb.purrytify.utils.NetworkMonitor
+import kotlinx.coroutines.flow.collectLatest
+import android.content.Context
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun ProfileScreen(viewModel: ProfileViewModel = hiltViewModel()) {
+    val context = LocalContext.current
+    var isConnected by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        NetworkMonitor.observeNetworkStatus(context).collectLatest { connected ->
+            isConnected = connected
+        }
+    }
+
     val profileUiState by viewModel.profileState.collectAsState(initial = ProfileUiState.Loading)
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize().background(Color(0xFF101010))
-    ) {
+    if (isConnected) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize().background(Color(0xFF101010))
+        ) {
+            when (profileUiState) {
+                is ProfileUiState.Loading -> {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                }
 
-        when (profileUiState) {
-            is ProfileUiState.Loading -> {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            }
+                is ProfileUiState.Success -> {
+                    RectangleGradient()
+                    ProfileContent(profile = (profileUiState as ProfileUiState.Success).profile)
+                }
 
-            is ProfileUiState.Success -> {
-                RectangleGradient()
-                ProfileContent(profile = (profileUiState as ProfileUiState.Success).profile)
-            }
+                is ProfileUiState.Error -> {
+                    ErrorScreen(errorMessage = (profileUiState as ProfileUiState.Error).errorMessage)
+                }
 
-            is ProfileUiState.Error -> {
-                ErrorScreen(errorMessage = (profileUiState as ProfileUiState.Error).errorMessage)
-            }
-
-            else -> {
-                // SKIP
+                else -> {
+                    // SKIP
+                }
             }
         }
+    } else {
+        NoInternet()
     }
 }
 
@@ -67,8 +84,7 @@ fun ProfileContent(profile: com.msb.purrytify.data.model.Profile) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
-            .background(Color(0xFF121212)),
+            .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(modifier = Modifier.height(52.dp))
@@ -239,5 +255,28 @@ fun ErrorScreen(errorMessage: String) {
             color = Color.Red,
             textAlign = TextAlign.Center
         )
+    }
+}
+
+@Composable
+fun NoInternet() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF121212)),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = "No internet connection",
+                color = Color.White,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = "Don't worry! You can still play your music!",
+                color = Color.White,
+                fontWeight = FontWeight.Medium
+            )
+        }
     }
 }
