@@ -4,6 +4,7 @@ import android.util.Log
 import android.util.Patterns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.msb.purrytify.data.api.ApiService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,35 +14,64 @@ import com.msb.purrytify.model.AuthModel
 import com.msb.purrytify.model.AuthResult
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 
 data class UiState(
-    val isLoggedIn: Boolean = false,
     val loginError: String? = null,
     val email: String = "",
     val password: String = "",
     val isLoading: Boolean = false,
     val emailError: String? = null,
     val passwordError: String? = null,
+    val isLoggedInCheckDone: Boolean = false,
+    val isLoggedIn: Boolean = false,
 )
 
 @HiltViewModel
-class AuthViewModel @Inject constructor(private val dataStoreManager: DataStoreManager, private val authModel: AuthModel) : ViewModel() {
+class AuthViewModel @Inject constructor(
+    private val dataStoreManager: DataStoreManager,
+    private val authModel: AuthModel,
+    private val apiService: ApiService
+) : ViewModel() {
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState
 
     private val _navigateToHome = MutableSharedFlow<Boolean>()
     val navigateToHome: SharedFlow<Boolean> = _navigateToHome
 
+
     init {
         viewModelScope.launch {
-            dataStoreManager.authTokenFlow.collect { token ->
-                _uiState.value = _uiState.value.copy(isLoggedIn = !token.isNullOrEmpty())
-                if (_uiState.value.isLoggedIn) {
+            verifyToken()
+        }
+    }
+
+    private fun verifyToken() {
+        Log.d("AuthViewModel", "Verifying token")
+        viewModelScope.launch {
+            try {
+                val response = apiService.verifyToken()
+                if (response.isSuccessful) {
+                    Log.d("AuthViewModel", "Token verification successful")
+                    _uiState.value = _uiState.value.copy(isLoggedIn = true, isLoggedInCheckDone = true)
                     _navigateToHome.emit(true)
+                } else {
+                    Log.d("AuthViewModel", "Token verification failed: ${response.code()}")
+                    dataStoreManager.clearCredentials()
+                    _uiState.value = _uiState.value.copy(isLoggedIn = false, isLoggedInCheckDone = true)
                 }
+            } catch (e: Exception) {
+                Log.e("AuthViewModel", "Error verifying token: ${e.message}")
+                _uiState.value = _uiState.value.copy(isLoggedIn = false, isLoggedInCheckDone = true)
             }
         }
+
+    }
+
+    fun isLoggedInCheckDone(): Boolean {
+        Log.d("AuthViewModel", "isLoggedInCheckDone: ${_uiState.value.isLoggedInCheckDone}")
+        return _uiState.value.isLoggedInCheckDone
     }
 
     fun setEmail(email: String) {
@@ -103,6 +133,7 @@ class AuthViewModel @Inject constructor(private val dataStoreManager: DataStoreM
                     Log.d("AuthViewModel", "Refresh Token: ${result.data.refreshToken}")
 
                     _navigateToHome.emit(true)
+                    _uiState.value = _uiState.value.copy(isLoggedIn = true)
                 }
                 is AuthResult.Error -> {
                     _uiState.value = _uiState.value.copy(isLoading = false, loginError = result.message)
@@ -116,6 +147,7 @@ class AuthViewModel @Inject constructor(private val dataStoreManager: DataStoreM
     fun logout() {
         viewModelScope.launch {
             dataStoreManager.clearCredentials()
+            _uiState.value = _uiState.value.copy(isLoggedIn = false)
         }
     }
 }
