@@ -3,6 +3,7 @@ package com.msb.purrytify.media
 import android.content.Context
 import android.media.MediaPlayer
 import com.msb.purrytify.data.local.entity.Song
+import java.io.File
 
 class MediaPlayerManager(private val context: Context) {
     private var mediaPlayer: MediaPlayer? = null
@@ -17,6 +18,13 @@ class MediaPlayerManager(private val context: Context) {
         currentSongIdx = -1
     }
 
+    fun addSongToPlaylist(song: Song) {
+        playlist = playlist + song
+        if (currentSongIdx == -1) {
+            currentSongIdx = 0
+        }
+    }
+
     fun releasePlayer() {
         mediaPlayer?.release()
         mediaPlayer = null
@@ -26,14 +34,19 @@ class MediaPlayerManager(private val context: Context) {
         releasePlayer()
 
         mediaPlayer = MediaPlayer().apply {
-            setDataSource(song.filePath)
-            prepare()
-            start()
+            try {
+                setDataSource(song.filePath)
+                prepare()
+                start()
 
-            setOnCompletionListener {
-                onCompletion?.invoke()
-                playNext()
+                setOnCompletionListener {
+                    onCompletion?.invoke()
+                    playNext()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
+
         }
     }
 
