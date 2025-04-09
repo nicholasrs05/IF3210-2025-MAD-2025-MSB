@@ -102,6 +102,6 @@ object AppModule {
     @Provides
     @Singleton
     fun provideMediaPlayerManager(@ApplicationContext context: Context): MediaPlayerManager {
-        return MediaPlayerManager(context)
+        return MediaPlayerManager()
     }
 }

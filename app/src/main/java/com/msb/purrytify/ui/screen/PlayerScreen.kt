@@ -17,7 +17,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -30,6 +29,7 @@ import androidx.palette.graphics.Palette
 import coil3.compose.AsyncImage
 import com.msb.purrytify.R
 import com.msb.purrytify.data.local.entity.Song
+import com.msb.purrytify.media.MediaPlayerManager
 import com.msb.purrytify.viewmodel.PlayerViewModel
 import com.msb.purrytify.viewmodel.PlaybackViewModel
 import kotlinx.coroutines.Dispatchers
@@ -45,27 +45,50 @@ fun PlayerScreen(
     playbackViewModel: PlaybackViewModel = hiltViewModel()
 ) {
     val mediaPlayerManager = playbackViewModel.mediaPlayerManager
-
-    LaunchedEffect(song.id) {
+    val currentPlayingSong = viewModel.currentSong.value ?: song
+    
+    LaunchedEffect(Unit) {
         mediaPlayerManager.setPlaylist(listOf(song))
         viewModel.playSong(song)
+    }
+    
+    DisposableEffect(Unit) {
+        val songChangeListener = object : MediaPlayerManager.SongChangeListener {
+            override fun onSongChanged(newSong: Song) {
+                viewModel.updateCurrentSong()
+            }
+            
+            override fun onPlayerReleased() {
+                viewModel.resetCurrentSong()
+                viewModel.viewModelScope.launch {
+                    kotlinx.coroutines.delay(300)
+                    if (mediaPlayerManager.getCurrentSong() == null) {
+                        onDismiss()
+                    }
+                }
+            }
+        }
+        mediaPlayerManager.addSongChangeListener(songChangeListener)
+        
+        onDispose {
+            mediaPlayerManager.removeSongChangeListener(songChangeListener)
+        }
     }
     
     var backgroundColor by remember { mutableStateOf(Color(0xFF121212)) }
     var textColor by remember { mutableStateOf(Color.White) }
     var accentColor by remember { mutableStateOf(Color(0xFF1DB954)) }
     
-    // Player state
     val isPlaying by viewModel.isPlaying
     val isLiked by viewModel.isLiked
     val currentPosition by viewModel.currentPosition
     val duration by viewModel.duration
     
-    DisposableEffect(song.id) {
+    DisposableEffect(currentPlayingSong.id) {
         val extractColors = suspend {
-            if (song.artworkPath.isNotEmpty() && File(song.artworkPath).exists()) {
+            if (currentPlayingSong.artworkPath.isNotEmpty() && File(currentPlayingSong.artworkPath).exists()) {
                 try {
-                    val bitmap = BitmapFactory.decodeFile(song.artworkPath)
+                    val bitmap = BitmapFactory.decodeFile(currentPlayingSong.artworkPath)
                     withContext(Dispatchers.Default) {
                         val palette = Palette.from(bitmap).generate()
                         val darkColor = palette.getDarkVibrantColor(palette.getDarkMutedColor(Color(0xFF121212).toArgb()))
@@ -84,7 +107,6 @@ fun PlayerScreen(
         onDispose { job.cancel() }
     }
     
-    // Update position continuously
     LaunchedEffect(Unit) {
         while (true) {
             kotlinx.coroutines.delay(100)
@@ -92,17 +114,17 @@ fun PlayerScreen(
         }
     }
     
-    // Cache artwork image to prevent recomposition delays
-    val artworkContent = remember(song.artworkPath) {
+    // Cache artwork
+    val artworkContent = remember(currentPlayingSong.artworkPath) {
         @Composable {
             Box(
                 modifier = Modifier
                     .size(280.dp)
                     .clip(RoundedCornerShape(8.dp))
             ) {
-                if (song.artworkPath.isNotEmpty() && File(song.artworkPath).exists()) {
+                if (currentPlayingSong.artworkPath.isNotEmpty() && File(currentPlayingSong.artworkPath).exists()) {
                     AsyncImage(
-                        model = File(song.artworkPath),
+                        model = File(currentPlayingSong.artworkPath),
                         contentDescription = "Album Artwork",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
@@ -119,7 +141,7 @@ fun PlayerScreen(
         }
     }
     
-    // Cache player controls to reduce recomposition cost
+    // Cache player controls
     val playerControls = remember(isPlaying, accentColor, backgroundColor, textColor) {
         @Composable {
             Row(
@@ -203,7 +225,6 @@ fun PlayerScreen(
         }
     }
     
-    // Main screen content with drag gesture
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -215,8 +236,7 @@ fun PlayerScreen(
                         onDismiss()
                     },
                     onVerticalDrag = { change, dragAmount ->
-                        // If dragged down significantly, dismiss
-                        if (dragAmount > 20) {
+                        if (dragAmount > 50) {
                             change.consume()
                             onDismiss()
                         }
@@ -271,13 +291,13 @@ fun PlayerScreen(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = song.title,
+                        text = currentPlayingSong.title,
                         color = textColor,
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = song.artist,
+                        text = currentPlayingSong.artist,
                         color = textColor.copy(alpha = 0.7f),
                         fontSize = 16.sp
                     )

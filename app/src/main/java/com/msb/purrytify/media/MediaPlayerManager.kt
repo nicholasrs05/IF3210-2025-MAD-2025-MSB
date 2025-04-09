@@ -1,12 +1,8 @@
 package com.msb.purrytify.media
 
-import android.content.Context
 import android.media.MediaPlayer
 import androidx.compose.runtime.mutableStateOf
 import com.msb.purrytify.data.local.entity.Song
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 enum class RepeatMode {
     NONE,
@@ -14,13 +10,31 @@ enum class RepeatMode {
     ONE
 }
 
-class MediaPlayerManager(private val context: Context) {
+class MediaPlayerManager() {
+    interface SongChangeListener {
+        fun onSongChanged(newSong: Song)
+        fun onPlayerReleased()
+    }
+
     private var mediaPlayer: MediaPlayer? = null
     private var playlist: List<Song> = emptyList()
     private var currentSongIdx: Int = -1
     private var repeatMode = mutableStateOf(RepeatMode.NONE)
 
+    private val songChangeListeners = mutableListOf<SongChangeListener>()
     var onCompletion: (() -> Unit)? = null
+
+    fun addSongChangeListener(listener: SongChangeListener) {
+        songChangeListeners.add(listener)
+    }
+
+    fun removeSongChangeListener(listener: SongChangeListener) {
+        songChangeListeners.remove(listener)
+    }
+
+    private fun notifySongChanged(song: Song) {
+        songChangeListeners.forEach { it.onSongChanged(song) }
+    }
 
     fun setPlaylist(songs: List<Song>) {
         playlist = songs
@@ -34,13 +48,18 @@ class MediaPlayerManager(private val context: Context) {
         }
     }
 
-    fun releasePlayer() {
+    fun releasePlayer(notifyListeners: Boolean = true) {
         mediaPlayer?.release()
         mediaPlayer = null
+        
+        if (notifyListeners && currentSongIdx != -1 && playlist.isNotEmpty()) {
+            currentSongIdx = -1
+            songChangeListeners.forEach { it.onPlayerReleased() }
+        }
     }
 
     fun play(song: Song) {
-        releasePlayer()
+        releasePlayer(notifyListeners = false)
 
         mediaPlayer = MediaPlayer().apply {
             try {
@@ -63,8 +82,9 @@ class MediaPlayerManager(private val context: Context) {
             } catch (e: Exception) {
                 e.printStackTrace()
             }
-
         }
+
+        notifySongChanged(song)
     }
 
     fun pause() {
@@ -77,7 +97,7 @@ class MediaPlayerManager(private val context: Context) {
 
     fun playNext() {
         if (playlist.isEmpty()){
-            releasePlayer()
+            releasePlayer(notifyListeners = true)
             return
         }
 
@@ -89,14 +109,14 @@ class MediaPlayerManager(private val context: Context) {
                 currentSongIdx++
                 play(playlist[currentSongIdx])
             } else {
-                releasePlayer()
+                releasePlayer(notifyListeners = true)
             }
         }
     }
 
     fun playPrevious() {
         if (playlist.isEmpty()){
-            releasePlayer()
+            releasePlayer(notifyListeners = true)
             return
         }
 
@@ -108,7 +128,7 @@ class MediaPlayerManager(private val context: Context) {
                 currentSongIdx--
                 play(playlist[currentSongIdx])
             } else {
-                releasePlayer()
+                releasePlayer(notifyListeners = true)
             }
         }
     }

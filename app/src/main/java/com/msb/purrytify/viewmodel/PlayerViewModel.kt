@@ -22,6 +22,7 @@ class PlayerViewModel @Inject constructor(
 
     // Player state
     private val _currentSong = mutableStateOf<Song?>(null)
+    val currentSong: State<Song?> = _currentSong
 
     private val _isPlaying = mutableStateOf(false)
     val isPlaying: State<Boolean> = _isPlaying
@@ -151,13 +152,12 @@ class PlayerViewModel @Inject constructor(
     }
     
     // Update the current song data from MediaPlayerManager
-    private fun updateCurrentSong() {
+    fun updateCurrentSong() {
         mediaPlayerManager.getCurrentSong()?.let { song ->
             _currentSong.value = song
             _duration.floatValue = mediaPlayerManager.getDuration().toFloat()
             _currentPosition.floatValue = mediaPlayerManager.getCurrentPosition().toFloat()
             _isPlaying.value = mediaPlayerManager.isPlaying()
-            
             checkLikedStatus(song.id)
         }
     }
@@ -177,6 +177,15 @@ class PlayerViewModel @Inject constructor(
             RepeatMode.ALL -> skipToNext()
             RepeatMode.ONE -> _currentSong.value?.let { playSong(it) }
         }
+    }
+    
+    // Reset player state when no songs are left or player is released
+    fun resetCurrentSong() {
+        _currentSong.value = null
+        _isPlaying.value = false
+        _duration.floatValue = 0f
+        _currentPosition.floatValue = 0f
+        _isLiked.value = false
     }
     
     enum class RepeatMode {
