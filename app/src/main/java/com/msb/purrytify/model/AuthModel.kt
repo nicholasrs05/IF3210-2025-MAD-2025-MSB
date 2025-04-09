@@ -12,12 +12,14 @@ import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 import java.io.IOException
 import javax.inject.Inject
+import javax.inject.Singleton
 
 sealed class AuthResult<out T : Any> {
     data class Success<out T : Any>(val data: T) : AuthResult<T>()
     data class Error(val message: String) : AuthResult<Nothing>()
 }
 
+@Singleton
 class AuthModel @Inject constructor(
     private val apiService: ApiService,
     private val moshi: Moshi,

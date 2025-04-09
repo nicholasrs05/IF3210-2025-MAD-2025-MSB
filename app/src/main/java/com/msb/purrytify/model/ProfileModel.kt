@@ -3,13 +3,17 @@ package com.msb.purrytify.model
 import com.msb.purrytify.data.api.ApiService
 import com.msb.purrytify.data.model.Profile
 import com.msb.purrytify.data.storage.DataStoreManager
+import com.msb.purrytify.viewmodel.UiState
 import com.squareup.moshi.Moshi
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 import java.io.IOException
 import javax.inject.Inject
+import javax.inject.Singleton
 
 sealed class ProfileResult<out T : Any> {
     data class Success<out T : Any>(val data: T) : ProfileResult<T>()
@@ -22,8 +26,11 @@ class ProfileModel @Inject constructor(
     private val dataStoreManager: DataStoreManager,
     private val moshi: Moshi // You might need this for error parsing if the API has specific error responses
 ) {
-    suspend fun fetchProfile(): ProfileResult<Profile> = withContext(Dispatchers.IO) {
 
+    private val _currentProfile = MutableStateFlow(Profile())
+    val currentProfile: StateFlow<Profile> = _currentProfile
+
+    suspend fun fetchProfile(): ProfileResult<Profile> = withContext(Dispatchers.IO) {
         ProfileResult.Loading
         try {
             val authToken = dataStoreManager.authTokenFlow.first()
@@ -33,6 +40,12 @@ class ProfileModel @Inject constructor(
             val response = apiService.getProfile()
 
             if (response.isSuccessful) {
+                if (response.body() != null) {
+                    _currentProfile.value = response.body()!!
+                } else {
+                    return@withContext ProfileResult.Error("Response body is null")
+                }
+
                 return@withContext ProfileResult.Success(response.body()!!)
             } else {
                 val errorBody = response.errorBody()?.string()
