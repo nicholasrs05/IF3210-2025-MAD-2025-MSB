@@ -14,8 +14,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.msb.purrytify.viewmodel.AuthViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import androidx.compose.foundation.layout.Box
-import androidx.compose.ui.platform.LocalContext
-import dagger.hilt.android.AndroidEntryPoint
 import com.msb.purrytify.ui.navigation.NavigationComponent
 import com.msb.purrytify.ui.theme.AppTheme
 import androidx.compose.ui.Modifier
