@@ -1,6 +1,7 @@
 package com.msb.purrytify.viewmodel
 
 import android.util.Log
+import android.util.Patterns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -20,6 +21,8 @@ data class UiState(
     val email: String = "",
     val password: String = "",
     val isLoading: Boolean = false,
+    val emailError: String? = null,
+    val passwordError: String? = null,
 )
 
 @HiltViewModel
@@ -33,9 +36,6 @@ class AuthViewModel @Inject constructor(private val dataStoreManager: DataStoreM
     init {
         viewModelScope.launch {
             dataStoreManager.authTokenFlow.collect { token ->
-                // Debug Purpose
-                // _uiState.value = _uiState.value.copy(isLoggedIn = true)
-
                 _uiState.value = _uiState.value.copy(isLoggedIn = !token.isNullOrEmpty())
                 if (_uiState.value.isLoggedIn) {
                     _navigateToHome.emit(true)
@@ -45,16 +45,50 @@ class AuthViewModel @Inject constructor(private val dataStoreManager: DataStoreM
     }
 
     fun setEmail(email: String) {
-        _uiState.value = _uiState.value.copy(email = email)
+        _uiState.value = _uiState.value.copy(email = email, emailError = null)
     }
 
     fun setPassword(password: String) {
-        _uiState.value = _uiState.value.copy(password = password)
+        _uiState.value = _uiState.value.copy(password = password, passwordError = null)
     }
 
-    fun login() {
+    fun clearLoginError() {
+        _uiState.value = _uiState.value.copy(loginError = null)
+    }
+
+    private fun validateEmail(): Boolean {
+        return if (_uiState.value.email.isBlank()) {
+            _uiState.value = _uiState.value.copy(emailError = "Email cannot be blank")
+            false
+        } else if (!Patterns.EMAIL_ADDRESS.matcher(_uiState.value.email).matches()) {
+            _uiState.value = _uiState.value.copy(emailError = "Invalid email format")
+            false
+        } else {
+            true
+        }
+    }
+
+    private fun validatePassword(): Boolean {
+        return if (_uiState.value.password.isBlank()) {
+            _uiState.value = _uiState.value.copy(passwordError = "Password cannot be blank")
+            false
+        } else {
+            true
+        }
+    }
+
+    fun loginWithValidation() {
+        val isEmailValid = validateEmail()
+        val isPasswordValid = validatePassword()
+
+        if (isEmailValid && isPasswordValid) {
+            login()
+        }
+    }
+
+    private fun login() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
+            _uiState.value = _uiState.value.copy(isLoading = true, loginError = null)
             val email = _uiState.value.email
             val password = _uiState.value.password
 
@@ -71,17 +105,17 @@ class AuthViewModel @Inject constructor(private val dataStoreManager: DataStoreM
                     _navigateToHome.emit(true)
                 }
                 is AuthResult.Error -> {
-                    _uiState.value = _uiState.value.copy(loginError = result.message)
+                    _uiState.value = _uiState.value.copy(isLoading = false, loginError = result.message)
                 }
             }
 
             _uiState.value = _uiState.value.copy(isLoading = false)
         }
-
     }
 
     fun logout() {
         viewModelScope.launch {
             dataStoreManager.clearCredentials()
         }
-    }}
+    }
+}
