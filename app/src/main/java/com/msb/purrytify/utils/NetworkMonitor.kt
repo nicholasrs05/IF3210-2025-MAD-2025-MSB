@@ -7,6 +7,10 @@ import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.*
 
 object NetworkMonitor {
     fun observeNetworkStatus(context: Context): Flow<Boolean> = callbackFlow<Boolean> {
@@ -42,4 +46,18 @@ object NetworkMonitor {
         val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
         return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
     }
+}
+
+@Composable
+fun NetworkStatusListener(): Boolean {
+    val context = LocalContext.current
+    var isConnected by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        NetworkMonitor.observeNetworkStatus(context).collectLatest {
+            isConnected = it
+        }
+    }
+
+    return isConnected
 }

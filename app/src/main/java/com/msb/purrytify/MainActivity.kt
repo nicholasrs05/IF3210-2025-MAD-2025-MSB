@@ -3,9 +3,15 @@ package com.msb.purrytify
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.platform.LocalContext
 import dagger.hilt.android.AndroidEntryPoint
 import com.msb.purrytify.ui.navigation.NavigationComponent
 import com.msb.purrytify.ui.theme.AppTheme
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.fillMaxSize
+import com.msb.purrytify.ui.component.NetworkPopUp
+import com.msb.purrytify.utils.NetworkStatusListener
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -13,7 +19,13 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             AppTheme {
-                NavigationComponent()
+                val isConnected = NetworkStatusListener()
+
+                Box(modifier = Modifier.fillMaxSize()) {
+                    NavigationComponent()
+
+                    NetworkPopUp(isConnected = isConnected)
+                }
             }
         }
     }
