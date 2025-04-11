@@ -18,21 +18,13 @@ class SongViewModel @Inject constructor(
     private val repository: SongRepository
 ) : AndroidViewModel(application) {
 
-    val allSongs: LiveData<List<Song>>
-    val likedSongs: LiveData<List<Song>>
-    val recentlyPlayedSongs: LiveData<List<Song>>
-    val songCount: LiveData<Int>
-    val likedSongCount: LiveData<Int>
-    val listenedSongCount: LiveData<Int>
-
-    init {
-        allSongs = repository.allSongs.asLiveData()
-        likedSongs = repository.likedSongs.asLiveData()
-        recentlyPlayedSongs = repository.recentlyPlayedSongs.asLiveData()
-        songCount = repository.songCount.asLiveData()
-        likedSongCount = repository.likedSongCount.asLiveData()
-        listenedSongCount = repository.listenedSongCount.asLiveData()
-    }
+    val allSongs: LiveData<List<Song>> = repository.allSongs.asLiveData()
+    val likedSongs: LiveData<List<Song>> = repository.likedSongs.asLiveData()
+    val recentlyPlayedSongs: LiveData<List<Song>> = repository.recentlyPlayedSongs.asLiveData()
+    val newSongs: LiveData<List<Song>> = repository.newSongs.asLiveData()
+    val songCount: LiveData<Int> = repository.songCount.asLiveData()
+    val likedSongCount: LiveData<Int> = repository.likedSongCount.asLiveData()
+    val listenedSongCount: LiveData<Int> = repository.listenedSongCount.asLiveData()
 
     // Rest of your methods remain the same
     fun addSong(title: String, artist: String, filePath: String, artworkPath: String, duration: Long) {

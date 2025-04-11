@@ -18,6 +18,7 @@ class SongRepository @Inject constructor(private val songDao: SongDao) {
     val songCount: Flow<Int> = songDao.getSongCount()
     val likedSongCount: Flow<Int> = songDao.getLikedSongCount()
     val listenedSongCount: Flow<Int> = songDao.getListenedSongCount()
+    val newSongs: Flow<List<Song>> = songDao.getNewSongs()
 
     suspend fun insert(song: Song): Long {
         return songDao.insert(song)
@@ -45,6 +46,18 @@ class SongRepository @Inject constructor(private val songDao: SongDao) {
 
     fun fetchAllSongs(): Flow<List<Song>> {
         return songDao.getAllSongs()
+    }
+
+    fun fetchLikedSongs(): Flow<List<Song>> {
+        return songDao.getLikedSongs()
+    }
+
+    fun fetchRecentlyPlayedSongs(): Flow<List<Song>> {
+        return songDao.getRecentlyPlayedSongs()
+    }
+
+    fun fetchNewSongs(): Flow<List<Song>> {
+        return songDao.getNewSongs()
     }
 
     companion object {
