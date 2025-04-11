@@ -60,7 +60,7 @@ fun PlayerContainer(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(bottom = 56.dp)
+                    .padding(bottom = 80.dp)
             ) {
                 Box(
                     modifier = Modifier.align(Alignment.BottomCenter)

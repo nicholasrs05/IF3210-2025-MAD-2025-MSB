@@ -10,8 +10,10 @@ import com.msb.purrytify.ui.navigation.NavigationComponent
 import com.msb.purrytify.ui.theme.AppTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.msb.purrytify.ui.component.NetworkPopUp
 import com.msb.purrytify.utils.NetworkStatusListener
+import com.msb.purrytify.viewmodel.PlayerViewModel
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -20,11 +22,16 @@ class MainActivity : ComponentActivity() {
         setContent {
             AppTheme {
                 val isConnected = NetworkStatusListener()
+                val playerViewModel: PlayerViewModel = hiltViewModel()
+                val isMiniPlayerVisible = playerViewModel.currentSong.value != null
 
                 Box(modifier = Modifier.fillMaxSize()) {
                     NavigationComponent()
 
-                    NetworkPopUp(isConnected = isConnected)
+                    NetworkPopUp(
+                        isConnected = isConnected,
+                        isMiniPlayerVisible = isMiniPlayerVisible
+                    )
                 }
             }
         }

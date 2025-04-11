@@ -172,7 +172,7 @@ class PlayerViewModel @Inject constructor(
         when (_repeatMode.value) {
             RepeatMode.NONE -> skipToNext()
             RepeatMode.ALL -> skipToNext()
-            RepeatMode.ONE -> _currentSong.value?.let { playSong(it) }
+            RepeatMode.ONE -> updateCurrentSong()
         }
     }
 

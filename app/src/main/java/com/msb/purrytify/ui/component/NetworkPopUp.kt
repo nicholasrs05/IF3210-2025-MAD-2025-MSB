@@ -16,12 +16,17 @@ import androidx.compose.ui.zIndex
 import androidx.compose.ui.text.font.FontWeight
 
 @Composable
-fun NetworkPopUp(isConnected: Boolean) {
+fun NetworkPopUp(
+    isConnected: Boolean,
+    isMiniPlayerVisible: Boolean = false
+) {
     if (!isConnected) {
+        val bottomPadding = if (isMiniPlayerVisible) 160.dp else 80.dp
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = 80.dp)
+                .padding(bottom = bottomPadding)
                 .zIndex(999f),
             contentAlignment = Alignment.BottomCenter
         ) {
