@@ -1,14 +1,11 @@
 package com.msb.purrytify.model
 
+import android.util.Log
 import com.msb.purrytify.data.api.ApiService
 import com.msb.purrytify.data.model.Profile
-import com.msb.purrytify.data.storage.DataStoreManager
-import com.msb.purrytify.viewmodel.UiState
-import com.squareup.moshi.Moshi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 import java.io.IOException
@@ -21,43 +18,42 @@ sealed class ProfileResult<out T : Any> {
     object Loading : ProfileResult<Nothing>()
 }
 
+@Singleton
 class ProfileModel @Inject constructor(
     private val apiService: ApiService,
-    private val dataStoreManager: DataStoreManager,
-    private val moshi: Moshi // You might need this for error parsing if the API has specific error responses
 ) {
 
     private val _currentProfile = MutableStateFlow(Profile())
     val currentProfile: StateFlow<Profile> = _currentProfile
+    private val _fetchProfileResult = MutableStateFlow<ProfileResult<Unit>>(ProfileResult.Loading)
+    val fetchProfileResult: StateFlow<ProfileResult<Unit>> = _fetchProfileResult
 
-    suspend fun fetchProfile(): ProfileResult<Profile> = withContext(Dispatchers.IO) {
-        ProfileResult.Loading
+    suspend fun fetchProfile() = withContext(Dispatchers.IO) {
+        _fetchProfileResult.value = ProfileResult.Loading
+        _currentProfile.value = Profile()
         try {
-            val authToken = dataStoreManager.authTokenFlow.first()
-            if (authToken.isNullOrBlank()) {
-                return@withContext ProfileResult.Error("Authentication token not found.")
-            }
             val response = apiService.getProfile()
+            Log.d("ProfileModel", "Response: $response")
 
             if (response.isSuccessful) {
-                if (response.body() != null) {
-                    _currentProfile.value = response.body()!!
-                } else {
-                    return@withContext ProfileResult.Error("Response body is null")
+                response.body()?.let { profile ->
+                    _currentProfile.value = profile
+                    _fetchProfileResult.value = ProfileResult.Success(Unit)
+                } ?: run {
+                    _fetchProfileResult.value = ProfileResult.Error("Response body is null")
                 }
 
-                return@withContext ProfileResult.Success(response.body()!!)
+
             } else {
                 val errorBody = response.errorBody()?.string()
                 val errorMessage = "Failed to fetch profile: HTTP ${response.code()}" +
                         (errorBody?.let { " - $it" } ?: "")
-                return@withContext ProfileResult.Error(errorMessage)
+                _fetchProfileResult.value = ProfileResult.Error(errorMessage)
             }
         } catch (e: HttpException) {
-            return@withContext ProfileResult.Error("HTTP error fetching profile: ${e.message()}")
+            _fetchProfileResult.value = ProfileResult.Error("HTTP error fetching profile: ${e.message()}")
         } catch (e: IOException) {
-            return@withContext ProfileResult.Error("Network error fetching profile: ${e.message}")
+            _fetchProfileResult.value = ProfileResult.Error("Network error fetching profile: ${e.message}")
         }
     }
-
 }

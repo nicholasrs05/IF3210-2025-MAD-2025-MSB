@@ -1,5 +1,6 @@
 package com.msb.purrytify.ui.screen
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
@@ -34,13 +35,24 @@ import com.msb.purrytify.ui.profile.ProfileViewModel
 import androidx.compose.runtime.*
 import com.msb.purrytify.utils.NetworkMonitor
 import kotlinx.coroutines.flow.collectLatest
-import android.content.Context
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 
 @Composable
 fun ProfileScreen(viewModel: ProfileViewModel = hiltViewModel()) {
     val context = LocalContext.current
     var isConnected by remember { mutableStateOf(true) }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    LaunchedEffect(lifecycleOwner.lifecycle) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            Log.d("ProfileScreen", "ProfileScreen STARTED, refreshing profile")
+            viewModel.refreshProfile()
+        }
+    }
 
     LaunchedEffect(Unit) {
         NetworkMonitor.observeNetworkStatus(context).collectLatest { connected ->
