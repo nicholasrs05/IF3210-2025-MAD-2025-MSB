@@ -62,7 +62,7 @@ class SongRepository @Inject constructor(private val songDao: SongDao) {
     }
 
     companion object {
-        fun extractMetadata(audioFilePath: String, filePath: String): Pair<String?, String?> {
+        fun extractMetadata(audioFilePath: String): Pair<String?, String?> {
             val retriever = MediaMetadataRetriever()
             try {
                 retriever.setDataSource(audioFilePath)

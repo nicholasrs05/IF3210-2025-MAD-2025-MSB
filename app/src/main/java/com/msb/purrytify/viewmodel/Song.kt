@@ -42,7 +42,7 @@ class SongViewModel @Inject constructor(
 
     fun updateSong(song: Song) {
         viewModelScope.launch(Dispatchers.IO) {
-            repository.update(song)
+            repository.update(song)88888
         }
     }
 
@@ -53,7 +53,7 @@ class SongViewModel @Inject constructor(
     }
 
     fun getSongMetadata(filePath: String): Pair<String?, String?> {
-        return SongRepository.extractMetadata(getApplication(), filePath)
+        return SongRepository.extractMetadata(filePath)
     }
 
     fun getSongDuration(filePath: String): Long {
