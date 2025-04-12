@@ -1,6 +1,5 @@
 package com.msb.purrytify.ui.screen
 
-import android.content.Context
 import android.content.res.Configuration
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -25,14 +24,11 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import coil3.compose.AsyncImage
 import com.msb.purrytify.R
 import com.msb.purrytify.data.local.entity.Song
-import com.msb.purrytify.ui.component.LibraryAdapter
 import com.msb.purrytify.ui.theme.AppTheme
 import com.msb.purrytify.viewmodel.PlaybackViewModel
 import com.msb.purrytify.viewmodel.PlayerViewModel
@@ -70,16 +66,20 @@ fun HomeScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFF121212))
+            .padding(8.dp)
     ) {
+
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(bottom = 80.dp)
         ) {
+
             item {
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "New Songs",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.W800,
                     modifier = Modifier.padding(16.dp)
                 )
             }
@@ -217,14 +217,14 @@ fun RecentlyPlayedItem(song: Song, onSongClick: (Song) -> Unit) {
                 model = File(song.artworkPath),
                 contentDescription = "Album Artwork",
                 contentScale = ContentScale.Fit,
-                modifier = Modifier.fillMaxHeight().clip(MaterialTheme.shapes.extraSmall)
+                modifier = Modifier.size(50.dp).clip(MaterialTheme.shapes.small)
             )
         } else {
             Image(
                 painter = painterResource(id = R.drawable.image),
                 contentDescription = "Default Album Art",
                 contentScale = ContentScale.Fit,
-                modifier = Modifier.fillMaxHeight().clip(MaterialTheme.shapes.extraSmall)
+                modifier = Modifier.size(50.dp).clip(MaterialTheme.shapes.small)
             )
         }
 
