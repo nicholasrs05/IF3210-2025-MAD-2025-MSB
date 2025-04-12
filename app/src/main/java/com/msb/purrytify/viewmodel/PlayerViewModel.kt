@@ -227,6 +227,10 @@ class PlayerViewModel @Inject constructor(
             _currentPosition.floatValue = mediaPlayerManager.getCurrentPosition().toFloat()
             _isPlaying.value = mediaPlayerManager.isPlaying()
             checkLikedStatus(currentSong.id)
+
+            viewModelScope.launch {       
+                songRepository.updateLastPlayedAt(currentSong.id)
+            }
         }
     }
 
