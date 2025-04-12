@@ -40,7 +40,7 @@ class LibraryAdapter(
                     .build()
                 ImageLoader(itemView.context).enqueue(request)
             } else {
-                artwork.setImageResource(R.drawable.library)
+                artwork.setImageResource(R.drawable.image)
             }
 
             itemView.setOnClickListener {
