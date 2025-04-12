@@ -4,8 +4,10 @@ import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.outlined.Edit
@@ -35,6 +37,7 @@ import com.msb.purrytify.ui.profile.ProfileViewModel
 import androidx.compose.runtime.*
 import com.msb.purrytify.utils.NetworkMonitor
 import kotlinx.coroutines.flow.collectLatest
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -43,13 +46,19 @@ import com.msb.purrytify.viewmodel.AuthViewModel
 import com.msb.purrytify.viewmodel.PlayerViewModel
 
 @Composable
-fun ProfileScreen(viewModel: ProfileViewModel = hiltViewModel(), authViewModel: AuthViewModel, playerViewModel: PlayerViewModel) {
+fun ProfileScreen(
+    viewModel: ProfileViewModel = hiltViewModel(),
+    authViewModel: AuthViewModel,
+    playerViewModel: PlayerViewModel
+) {
     val context = LocalContext.current
     var isConnected by remember { mutableStateOf(true) }
-
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.screenWidthDp > configuration.screenHeightDp
+    val scrollState = rememberScrollState()
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    fun logout(){
+    fun logout() {
         authViewModel.logout()
         playerViewModel.stopMediaPlayer()
         playerViewModel.setMiniPlayerVisible(false)
@@ -73,7 +82,8 @@ fun ProfileScreen(viewModel: ProfileViewModel = hiltViewModel(), authViewModel: 
     if (isConnected) {
         Box(
             modifier = Modifier
-                .fillMaxSize().background(Color(0xFF101010))
+                .fillMaxSize()
+                .background(Color(0xFF101010))
         ) {
             when (profileUiState) {
                 is ProfileUiState.Loading -> {
@@ -82,7 +92,11 @@ fun ProfileScreen(viewModel: ProfileViewModel = hiltViewModel(), authViewModel: 
 
                 is ProfileUiState.Success -> {
                     RectangleGradient()
-                    ProfileContent(profile = (profileUiState as ProfileUiState.Success).profile, logout = {logout()})
+                    ProfileContent(
+                        profile = (profileUiState as ProfileUiState.Success).profile,
+                        logout = { logout() },
+                        modifier = if (isLandscape) Modifier.verticalScroll(scrollState) else Modifier
+                    )
                 }
 
                 is ProfileUiState.Error -> {
@@ -100,16 +114,26 @@ fun ProfileScreen(viewModel: ProfileViewModel = hiltViewModel(), authViewModel: 
 }
 
 @Composable
-fun ProfileContent(profile: com.msb.purrytify.data.model.Profile, logout: () -> Unit) {
+fun ProfileContent(
+    profile: com.msb.purrytify.data.model.Profile,
+    logout: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(modifier = Modifier.height(52.dp))
 
-        Box(contentAlignment = Alignment.BottomEnd, modifier = Modifier.wrapContentWidth().width(120.dp).height(120.dp)){
+        Box(
+            contentAlignment = Alignment.BottomEnd,
+            modifier = Modifier
+                .wrapContentWidth()
+                .width(120.dp)
+                .height(120.dp)
+        ) {
             AsyncImage(
                 model = profile.profilePhotoUrl,
                 contentDescription = "Profile Photo",
@@ -149,14 +173,17 @@ fun ProfileContent(profile: com.msb.purrytify.data.model.Profile, logout: () -> 
         Spacer(modifier = Modifier.height(16.dp))
 
         Row {
-            Button (
+            Button(
                 onClick = {},
                 shape = RoundedCornerShape(45.dp),
                 contentPadding = PaddingValues(0.dp),
-                modifier = Modifier.defaultMinSize(
-                    minWidth = ButtonDefaults.MinWidth,
-                    minHeight = 10.dp
-                ).width(105.dp).height(32.dp),
+                modifier = Modifier
+                    .defaultMinSize(
+                        minWidth = ButtonDefaults.MinWidth,
+                        minHeight = 10.dp
+                    )
+                    .width(105.dp)
+                    .height(32.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF3E3f3f),
                     contentColor = Color.White,
@@ -173,14 +200,17 @@ fun ProfileContent(profile: com.msb.purrytify.data.model.Profile, logout: () -> 
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            Button (
-                onClick = {logout()},
+            Button(
+                onClick = { logout() },
                 shape = RoundedCornerShape(45.dp),
                 contentPadding = PaddingValues(0.dp),
-                modifier = Modifier.defaultMinSize(
-                    minWidth = ButtonDefaults.MinWidth,
-                    minHeight = 10.dp
-                ).width(105.dp).height(32.dp),
+                modifier = Modifier
+                    .defaultMinSize(
+                        minWidth = ButtonDefaults.MinWidth,
+                        minHeight = 10.dp
+                    )
+                    .width(105.dp)
+                    .height(32.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF3E3f3f),
                     contentColor = Color.White,
@@ -235,25 +265,29 @@ fun RectangleGradient() {
 
 @Composable
 fun EditButton() {
-        Button (
-            onClick = {},
-            shape = RoundedCornerShape(4.dp),
-            contentPadding = PaddingValues(0.dp),
-            modifier = Modifier.defaultMinSize(
+    Button(
+        onClick = {},
+        shape = RoundedCornerShape(4.dp),
+        contentPadding = PaddingValues(0.dp),
+        modifier = Modifier
+            .defaultMinSize(
                 minWidth = 10.dp,
                 minHeight = 10.dp
-            ).size(28.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.White,
             )
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.Edit,
-                contentDescription = "Edit",
-                tint = Color.Black,
-                modifier = Modifier.size(32.dp).padding(all = 4.dp)
-            )
-        }
+            .size(28.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color.White,
+        )
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.Edit,
+            contentDescription = "Edit",
+            tint = Color.Black,
+            modifier = Modifier
+                .size(32.dp)
+                .padding(all = 4.dp)
+        )
+    }
 }
 
 
