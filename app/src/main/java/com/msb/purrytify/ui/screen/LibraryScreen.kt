@@ -109,7 +109,8 @@ fun LibraryScreen(
                                 } else {
                                     playerViewModel.playSong(clickedSong)
                                 }
-                                
+
+                                playerViewModel.setLargePlayerVisible(false)
                                 songViewModel.markAsPlayed(clickedSong.id)
                             }
                             layoutParams = RecyclerView.LayoutParams(

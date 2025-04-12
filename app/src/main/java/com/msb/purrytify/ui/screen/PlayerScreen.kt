@@ -273,6 +273,7 @@ fun PlayerScreen(
             .pointerInput(Unit) {
                 detectVerticalDragGestures(
                     onDragEnd = {
+                        viewModel.setLargePlayerVisible(false)
                         localIsDismissing = true
                         onDismissWithAnimation()
                     },
@@ -299,7 +300,8 @@ fun PlayerScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = { 
+                IconButton(onClick = {
+                    viewModel.setLargePlayerVisible(false)
                     localIsDismissing = true
                     onDismissWithAnimation() 
                 }) {

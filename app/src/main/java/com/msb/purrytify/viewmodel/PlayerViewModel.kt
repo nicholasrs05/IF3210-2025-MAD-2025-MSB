@@ -42,6 +42,17 @@ class PlayerViewModel @Inject constructor(
     private val _isLiked = mutableStateOf(false)
     val isLiked: State<Boolean> = _isLiked
 
+    private val _isMiniPlayerVisible = mutableStateOf(false)
+    val isMiniPlayerVisible: State<Boolean> = _isMiniPlayerVisible
+
+    private val _isLargePlayerVisible = mutableStateOf(false)
+    val isLargePlayerVisible: State<Boolean> = _isLargePlayerVisible
+
+    fun setLargePlayerVisible(isVisible: Boolean) {
+        _isLargePlayerVisible.value = isVisible
+        _isMiniPlayerVisible.value = !isVisible
+    }
+
     init {
         mediaPlayerManager.getCurrentSong()?.let { song ->
             _currentSong.value = song
@@ -118,6 +129,10 @@ class PlayerViewModel @Inject constructor(
                 _isLiked.value = newLikeStatus
             }
         }
+    }
+
+    fun updateCurrentSongIdx() {
+        mediaPlayerManager.updateCurrentSongIdx()
     }
 
     // Toggle shuffle

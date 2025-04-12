@@ -61,7 +61,10 @@ fun MiniPlayer(
             .fillMaxWidth()
             .height(80.dp)
             .padding(horizontal = 8.dp, vertical = 4.dp)
-            .clickable { onPlayerClick(currentSong) },
+            .clickable {
+                playerViewModel.setLargePlayerVisible(true)
+                onPlayerClick(currentSong)
+            },
         shape = RoundedCornerShape(8.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(

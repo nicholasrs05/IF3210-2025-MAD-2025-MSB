@@ -41,6 +41,10 @@ class MediaPlayerManager(private val context: Context) {
         songChangeListeners.forEach { it.onSongChanged(song) }
     }
 
+    fun updateCurrentSongIdx() {
+        currentSongIdx++;
+    }
+
     fun setPlaylist(songs: List<Song>) {
         playlist = songs
         if (currentSongIdx == -1) {

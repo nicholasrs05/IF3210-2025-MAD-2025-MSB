@@ -25,11 +25,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil3.compose.rememberAsyncImagePainter
 import com.msb.purrytify.R
 import com.msb.purrytify.utils.FileUtils
+import com.msb.purrytify.viewmodel.PlayerViewModel
 import com.msb.purrytify.viewmodel.SongViewModel
 import java.util.concurrent.TimeUnit
 
@@ -42,6 +44,7 @@ fun AddSongScreen(
 ) {
     val context = LocalContext.current
     val songViewModel: SongViewModel = viewModel()
+    val playerViewModel: PlayerViewModel = hiltViewModel()
 
     // UI Colors
     val backgroundColor = Color(0xFF121212)
@@ -450,6 +453,8 @@ fun AddSongScreen(
                                             artworkPath = artworkFilePath,
                                             duration = duration
                                         )
+
+                                        playerViewModel.updateCurrentSongIdx()
 
                                         Toast.makeText(
                                             context,

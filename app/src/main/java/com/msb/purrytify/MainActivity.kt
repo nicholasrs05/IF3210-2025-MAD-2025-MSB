@@ -30,7 +30,7 @@ class MainActivity : ComponentActivity() {
             AppTheme {
                 val isConnected = NetworkStatusListener()
                 val playerViewModel: PlayerViewModel = hiltViewModel()
-                val isMiniPlayerVisible = playerViewModel.currentSong.value != null
+                val isMiniPlayerVisible = playerViewModel.isMiniPlayerVisible.value
 
                 Box(modifier = Modifier.fillMaxSize()) {
                     MainContent()
