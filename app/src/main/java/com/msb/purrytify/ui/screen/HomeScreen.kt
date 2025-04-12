@@ -27,7 +27,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import com.msb.purrytify.R
 import com.msb.purrytify.data.local.entity.Song
-import com.msb.purrytify.viewmodel.PlaybackViewModel
 import com.msb.purrytify.viewmodel.PlayerViewModel
 import com.msb.purrytify.viewmodel.SongViewModel
 import java.io.File
@@ -37,7 +36,6 @@ import java.io.File
 fun HomeScreen(
     viewModel: SongViewModel = hiltViewModel(),
     playerViewModel: PlayerViewModel,
-    playbackViewModel: PlaybackViewModel,
 ) {
     val recentlyPlayedState: androidx.compose.runtime.State<List<Song>> =
         viewModel.recentlyPlayedSongs.observeAsState(initial = emptyList())
@@ -46,7 +44,7 @@ fun HomeScreen(
 
     val recentlyPlayed: List<Song> = recentlyPlayedState.value
     val newSongs: List<Song> = newSongsState.value
-    val mediaManager = playbackViewModel.mediaPlayerManager
+    val mediaManager = playerViewModel.mediaPlayerManager
 
     val onClickedRecent: (Song) -> Unit = { song ->
         playerViewModel.playSong(song)

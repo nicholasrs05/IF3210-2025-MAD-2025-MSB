@@ -22,7 +22,6 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.msb.purrytify.viewmodel.AuthViewModel
 import com.msb.purrytify.viewmodel.PlayerViewModel
-import com.msb.purrytify.viewmodel.PlaybackViewModel
 import com.msb.purrytify.ui.component.NavigationBarComponent
 import com.msb.purrytify.ui.component.PlayerContainer
 import com.msb.purrytify.ui.screen.*
@@ -80,7 +79,6 @@ sealed class Screen(
 fun NavigationComponent(
     authViewModel: AuthViewModel = hiltViewModel(),
     playerViewModel: PlayerViewModel = hiltViewModel(),
-    playbackViewModel: PlaybackViewModel = hiltViewModel(),
     isLandscape: Boolean
 ) {
     AppTheme {
@@ -145,7 +143,6 @@ fun NavigationComponent(
                 PlayerContainer(
                     isLandscape = isLandscape,
                     playerViewModel = playerViewModel,
-                    playbackViewModel = playbackViewModel,
                     content = {
                         if (isLandscape) {
                             Row(
@@ -165,13 +162,11 @@ fun NavigationComponent(
                                         composable(Screen.Home.route) {
                                             HomeScreen(
                                                 playerViewModel = playerViewModel,
-                                                playbackViewModel = playbackViewModel
                                             )
                                         }
                                         composable(Screen.Library.route) {
                                             LibraryScreen(
                                                 playerViewModel = playerViewModel,
-                                                playbackViewModel = playbackViewModel
                                             )
                                         }
                                         composable(Screen.Profile.route) {
@@ -203,11 +198,10 @@ fun NavigationComponent(
                                     startDestination = startDestination,
                                     modifier = Modifier.padding(innerPadding)
                                 ) {
-                                    composable(Screen.Home.route) { HomeScreen(playerViewModel = playerViewModel, playbackViewModel = playbackViewModel) }
+                                    composable(Screen.Home.route) { HomeScreen(playerViewModel = playerViewModel) }
                                     composable(Screen.Library.route) {
                                         LibraryScreen(
                                             playerViewModel = playerViewModel,
-                                            playbackViewModel = playbackViewModel
                                         )
                                     }
                                     composable(Screen.Profile.route) { ProfileScreen(authViewModel=authViewModel, playerViewModel = playerViewModel) }

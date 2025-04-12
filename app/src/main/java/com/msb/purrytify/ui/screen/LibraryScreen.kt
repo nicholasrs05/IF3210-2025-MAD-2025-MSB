@@ -21,17 +21,15 @@ import androidx.compose.foundation.background
 import androidx.compose.ui.graphics.Color
 import com.msb.purrytify.ui.component.LibraryAdapter
 import com.msb.purrytify.ui.theme.AppTheme
-import com.msb.purrytify.viewmodel.PlaybackViewModel
 import com.msb.purrytify.viewmodel.PlayerViewModel
 import com.msb.purrytify.viewmodel.SongViewModel
 
 @Composable
 fun LibraryScreen(
     songViewModel: SongViewModel = hiltViewModel(),
-    playbackViewModel: PlaybackViewModel = hiltViewModel(),
     playerViewModel: PlayerViewModel = hiltViewModel()
 ) {
-    val mediaPlayerManager = playbackViewModel.mediaPlayerManager
+    val mediaPlayerManager = playerViewModel.mediaPlayerManager
 
     var showAddSongSheet by remember { mutableStateOf(false) }
     if (showAddSongSheet) {

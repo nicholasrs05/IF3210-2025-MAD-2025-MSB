@@ -13,14 +13,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.msb.purrytify.data.local.entity.Song
 import com.msb.purrytify.ui.screen.PlayerScreen
 import com.msb.purrytify.viewmodel.PlayerViewModel
-import com.msb.purrytify.viewmodel.PlaybackViewModel
 import androidx.activity.compose.BackHandler
 
 @Composable
 fun PlayerContainer(
     content: @Composable () -> Unit,
     playerViewModel: PlayerViewModel = hiltViewModel(),
-    playbackViewModel: PlaybackViewModel = hiltViewModel(),
     isLandscape: Boolean = false
 ) {
     var showFullPlayer by remember { mutableStateOf(false) }
@@ -31,10 +29,13 @@ fun PlayerContainer(
 
     var selectedSong by remember { mutableStateOf<Song?>(null) }
 
-    DisposableEffect(playbackViewModel) {
+    DisposableEffect(playerViewModel) {
         val songChangeListener = object : MediaPlayerManager.SongChangeListener {
             override fun onSongChanged(newSong: Song) {
                 playerViewModel.updateCurrentSong()
+                if (!showFullPlayer) {
+                    playerViewModel.setMiniPlayerVisible(true)
+                }
             }
 
             override fun onPlayerReleased() {
@@ -42,10 +43,10 @@ fun PlayerContainer(
             }
         }
 
-        playbackViewModel.mediaPlayerManager.addSongChangeListener(songChangeListener)
+        playerViewModel.mediaPlayerManager.addSongChangeListener(songChangeListener)
 
         onDispose {
-            playbackViewModel.mediaPlayerManager.removeSongChangeListener(songChangeListener)
+            playerViewModel.mediaPlayerManager.removeSongChangeListener(songChangeListener)
         }
     }
 
@@ -73,9 +74,10 @@ fun PlayerContainer(
                         onTogglePlayPause = { playerViewModel.togglePlayPause() },
                         onPlayerClick = { song ->
                             val playingSong =
-                                playbackViewModel.mediaPlayerManager.getCurrentSong() ?: song
+                                playerViewModel.mediaPlayerManager.getCurrentSong() ?: song
                             selectedSong = playingSong
                             showFullPlayer = true
+                            playerViewModel.setLargePlayerVisible(true)
                         },
                         isLandscape = isLandscape
                     )
@@ -94,7 +96,10 @@ fun PlayerContainer(
         if (showFullPlayer && selectedSong != null) {
             PlayerScreen(
                 song = selectedSong!!,
-                onDismiss = { showFullPlayer = false },
+                onDismiss = {
+                    showFullPlayer = false
+                    playerViewModel.setMiniPlayerVisible(currentSong != null)
+                },
                 onDismissWithAnimation = {
                     isDismissingPlayer = true
                 },
@@ -102,9 +107,9 @@ fun PlayerContainer(
                 onAnimationComplete = {
                     isDismissingPlayer = false
                     showFullPlayer = false
+                    playerViewModel.setMiniPlayerVisible(currentSong != null)
                 },
                 viewModel = playerViewModel,
-                playbackViewModel = playbackViewModel
             )
         }
     }

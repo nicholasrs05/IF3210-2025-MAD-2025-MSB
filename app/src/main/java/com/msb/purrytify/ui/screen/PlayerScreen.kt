@@ -50,7 +50,6 @@ import com.msb.purrytify.R
 import com.msb.purrytify.data.local.entity.Song
 import com.msb.purrytify.media.MediaPlayerManager
 import com.msb.purrytify.viewmodel.PlayerViewModel
-import com.msb.purrytify.viewmodel.PlaybackViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -66,16 +65,15 @@ fun PlayerScreen(
     isDismissing: Boolean = false,
     onAnimationComplete: () -> Unit = {},
     viewModel: PlayerViewModel = hiltViewModel(),
-    playbackViewModel: PlaybackViewModel = hiltViewModel()
 ) {
-    val mediaPlayerManager = playbackViewModel.mediaPlayerManager
+    val mediaPlayerManager = viewModel.mediaPlayerManager
     val currentPlayingSong = viewModel.currentSong.value ?: song
     
     var localIsDismissing by remember { mutableStateOf(false) }
     val actualIsDismissing = isDismissing || localIsDismissing
     
     val density = LocalDensity.current
-    
+
     BackHandler {
         if (!actualIsDismissing) {
             viewModel.setLargePlayerVisible(false)
@@ -83,14 +81,15 @@ fun PlayerScreen(
             onDismissWithAnimation()
         }
     }
-    
+
     val slideOffset by animateFloatAsState(
         targetValue = if (actualIsDismissing) 1f else 0f,
         animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
-        finishedListener = { 
+        finishedListener = {
             if (actualIsDismissing) {
+                viewModel.setMiniPlayerVisible(viewModel.currentSong.value != null)
                 onAnimationComplete()
-                onDismiss() 
+                onDismiss()
             }
         }
     )
@@ -317,8 +316,9 @@ fun PlayerScreen(
             ) {
                 IconButton(onClick = {
                     viewModel.setLargePlayerVisible(false)
+                    viewModel.setMiniPlayerVisible(true)
                     localIsDismissing = true
-                    onDismissWithAnimation() 
+                    onDismissWithAnimation()
                 }) {
                     Icon(
                         imageVector = Icons.Filled.KeyboardArrowDown,
