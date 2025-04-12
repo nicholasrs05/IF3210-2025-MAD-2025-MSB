@@ -31,7 +31,7 @@ class Purritify : Application(), Configuration.Provider {
 
         val refreshTokenRequest: WorkRequest = OneTimeWorkRequest.Builder(RefreshTokenService::class.java)
             .setConstraints(constraints)
-            .setInitialDelay(1, TimeUnit.MINUTES)
+            .setInitialDelay(5, TimeUnit.MINUTES)
             .build()
 
         WorkManager.getInstance(applicationContext).enqueue(refreshTokenRequest)

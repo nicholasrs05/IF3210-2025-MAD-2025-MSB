@@ -44,7 +44,7 @@ class RefreshTokenService @AssistedInject constructor(
 
                 val newRefreshTokenRequest = OneTimeWorkRequest.Builder(RefreshTokenService::class.java)
                     .setConstraints(constraints)
-                    .setInitialDelay(1, TimeUnit.MINUTES) // Reschedule after 5 minutes
+                    .setInitialDelay(5, TimeUnit.MINUTES) // Reschedule after 5 minutes
                     .build()
 
                 WorkManager.getInstance(applicationContext).enqueue(newRefreshTokenRequest)
