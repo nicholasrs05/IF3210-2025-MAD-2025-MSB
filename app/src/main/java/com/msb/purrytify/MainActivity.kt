@@ -1,5 +1,6 @@
 package com.msb.purrytify
 
+import android.content.res.Configuration
 import android.os.Bundle
 import android.util.Log
 import android.view.ViewTreeObserver
@@ -22,23 +23,28 @@ import com.msb.purrytify.ui.component.NetworkPopUp
 import com.msb.purrytify.utils.NetworkStatusListener
 import com.msb.purrytify.viewmodel.PlayerViewModel
 
+
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             AppTheme {
+                val configuration = resources.configuration
+                val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
                 val isConnected = NetworkStatusListener()
                 val playerViewModel: PlayerViewModel = hiltViewModel()
                 val isMiniPlayerVisible = playerViewModel.isMiniPlayerVisible.value
 
                 Box(modifier = Modifier.fillMaxSize()) {
-                    MainContent()
+                    MainContent(isLandscape = isLandscape)
 
                     NetworkPopUp(
                         isConnected = isConnected,
                         isMiniPlayerVisible = isMiniPlayerVisible
                     )
+
                 }
             }
         }
@@ -46,7 +52,9 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun MainContent() {
+fun MainContent(
+    isLandscape: Boolean = false
+) {
     val authViewModel: AuthViewModel = hiltViewModel()
     val uiState by authViewModel.uiState.collectAsState()
     val isLoggedInCheckDone = uiState.isLoggedInCheckDone
@@ -75,5 +83,5 @@ fun MainContent() {
         }
     }
 
-    NavigationComponent()
+    NavigationComponent(isLandscape = isLandscape)
 }

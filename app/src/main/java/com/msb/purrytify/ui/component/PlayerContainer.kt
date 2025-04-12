@@ -20,7 +20,8 @@ import androidx.activity.compose.BackHandler
 fun PlayerContainer(
     content: @Composable () -> Unit,
     playerViewModel: PlayerViewModel = hiltViewModel(),
-    playbackViewModel: PlaybackViewModel = hiltViewModel()
+    playbackViewModel: PlaybackViewModel = hiltViewModel(),
+    isLandscape: Boolean = false
 ) {
     var showFullPlayer by remember { mutableStateOf(false) }
 
@@ -61,7 +62,7 @@ fun PlayerContainer(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(bottom = 80.dp)
+                    .then(if (!isLandscape) Modifier.padding(bottom = 80.dp) else Modifier.padding(bottom = 0.dp))
             ) {
                 Box(
                     modifier = Modifier.align(Alignment.BottomCenter)
@@ -75,7 +76,8 @@ fun PlayerContainer(
                                 playbackViewModel.mediaPlayerManager.getCurrentSong() ?: song
                             selectedSong = playingSong
                             showFullPlayer = true
-                        }
+                        },
+                        isLandscape = isLandscape
                     )
                 }
             }

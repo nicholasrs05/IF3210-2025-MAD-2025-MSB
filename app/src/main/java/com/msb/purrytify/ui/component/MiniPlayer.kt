@@ -36,7 +36,8 @@ fun MiniPlayer(
     isPlaying: Boolean,
     onTogglePlayPause: () -> Unit,
     onPlayerClick: (Song) -> Unit,
-    playerViewModel: PlayerViewModel = hiltViewModel()
+    playerViewModel: PlayerViewModel = hiltViewModel(),
+    isLandscape: Boolean = false
 ) {
     if (currentSong == null) return
 
@@ -56,116 +57,125 @@ fun MiniPlayer(
 
     val isLiked by playerViewModel.isLiked
 
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(80.dp)
-            .padding(horizontal = 8.dp, vertical = 4.dp)
-            .clickable {
-                playerViewModel.setLargePlayerVisible(true)
-                onPlayerClick(currentSong)
-            },
-        shape = RoundedCornerShape(8.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF212121)
-        )
-    ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .weight(1f), // Let Row take up the rest of the card
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .padding(4.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                ) {
-                    if (currentSong.artworkPath.isNotEmpty() && File(currentSong.artworkPath).exists()) {
-                        AsyncImage(
-                            model = File(currentSong.artworkPath),
-                            contentDescription = "Album Artwork",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
-                        )
+    Box(modifier = Modifier.fillMaxWidth()) {
+        Card(
+            modifier = Modifier
+                .then(
+                    if (isLandscape) {
+                        Modifier.fillMaxWidth(0.33f)
                     } else {
-                        Image(
-                            painter = painterResource(id = R.drawable.image),
-                            contentDescription = "Default Album Art",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
-                        )
+                        Modifier.fillMaxWidth()
                     }
-                }
-
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = 8.dp)
-                ) {
-                    Text(
-                        text = currentSong.title,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
-                    Text(
-                        text = currentSong.artist,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.7f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-
-                IconButton(
-                    onClick = { playerViewModel.toggleLike() },
-                    modifier = Modifier
-                        .size(36.dp)
-                ) {
-                    if (isLiked) {
-                        Icon(
-                            imageVector = Icons.Filled.Favorite,
-                            contentDescription = "Unlike",
-                            tint = Color.Red,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    } else {
-                        Icon(
-                            painter = painterResource(id = R.drawable.miniplayer_add),
-                            contentDescription = "Like",
-                            tint = textColor,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-
-                IconButton(
-                    onClick = onTogglePlayPause,
-                    modifier = Modifier.padding(end = 8.dp)
-                ) {
-                    Icon(
-                        imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                        contentDescription = if (isPlaying) "Pause" else "Play",
-                        tint = Color.White,
-                        modifier = Modifier.size(32.dp)
-                    )
-                }
-            }
-
-            CustomMiniSlider(
-                progress = currentPosition,
-                duration = duration,
-                onSeek = { playerViewModel.seekTo(it) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp)
+                )
+                .height(80.dp)
+                .padding(horizontal = 8.dp, vertical = if (isLandscape) 0.dp else 4.dp)
+                .align(Alignment.CenterStart)
+                .clickable {
+                    playerViewModel.setLargePlayerVisible(true)
+                    onPlayerClick(currentSong)
+                },
+            shape = RoundedCornerShape(8.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color(0xFF212121)
             )
+        ) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .weight(1f), // Let Row take up the rest of the card
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .padding(4.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                    ) {
+                        if (currentSong.artworkPath.isNotEmpty() && File(currentSong.artworkPath).exists()) {
+                            AsyncImage(
+                                model = File(currentSong.artworkPath),
+                                contentDescription = "Album Artwork",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            Image(
+                                painter = painterResource(id = R.drawable.image),
+                                contentDescription = "Default Album Art",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                    }
+
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 8.dp)
+                    ) {
+                        Text(
+                            text = currentSong.title,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.White,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+
+                        Text(
+                            text = currentSong.artist,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.White.copy(alpha = 0.7f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    IconButton(
+                        onClick = { playerViewModel.toggleLike() },
+                        modifier = Modifier
+                            .size(36.dp)
+                    ) {
+                        if (isLiked) {
+                            Icon(
+                                imageVector = Icons.Filled.Favorite,
+                                contentDescription = "Unlike",
+                                tint = Color.Red,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        } else {
+                            Icon(
+                                painter = painterResource(id = R.drawable.miniplayer_add),
+                                contentDescription = "Like",
+                                tint = textColor,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+
+                    IconButton(
+                        onClick = onTogglePlayPause,
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                            contentDescription = if (isPlaying) "Pause" else "Play",
+                            tint = Color.White,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+                }
+
+                CustomMiniSlider(
+                    progress = currentPosition,
+                    duration = duration,
+                    onSeek = { playerViewModel.seekTo(it) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp)
+                )
+            }
         }
     }
 }
