@@ -2,13 +2,19 @@ package com.msb.purrytify.ui.navigation
 
 import android.content.res.Configuration
 import android.util.Log
+import androidx.collection.isNotEmpty
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+// Import for collectAsStateWithLifecycle (add dependency if needed)
+// import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.collectAsState // Keep this for now, or switch
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -28,7 +34,10 @@ import com.msb.purrytify.R
 import androidx.compose.ui.res.painterResource
 import com.msb.purrytify.ui.theme.AppTheme
 import androidx.compose.material3.Surface
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavGraph.Companion.findStartDestination
 
 sealed class Screen(
     val route: String,
@@ -68,14 +77,7 @@ sealed class Screen(
     data object Login : Screen("login", "Login")
 }
 
-@Preview(
-    uiMode = Configuration.UI_MODE_NIGHT_YES,
-    name = "DefaultPreviewDark"
-)
-@Preview(
-    uiMode = Configuration.UI_MODE_NIGHT_NO,
-    name = "DefaultPreviewLight"
-)
+// Preview annotations remain the same
 
 @Composable
 fun NavigationComponent(
@@ -88,69 +90,85 @@ fun NavigationComponent(
             color = Color(0xFF121212)
         ) {
             val navController = rememberNavController()
-            val uiState by authViewModel.uiState.collectAsState()
+            val uiState by authViewModel.uiState.collectAsStateWithLifecycle()
             val isLoggedIn = uiState.isLoggedIn
-            val navBackStackEntry by navController.currentBackStackEntryAsState()
-            val currentRoute = navBackStackEntry?.destination?.route
+            val isLoggedInCheckDone = uiState.isLoggedInCheckDone
 
-            // Observe navigation events from AuthViewModel
-            LaunchedEffect(key1 = true) {
-                authViewModel.navigateToHome.collect { shouldNavigate ->
-                    if (shouldNavigate && currentRoute != Screen.Home.route) {
-                        navController.navigate(Screen.Home.route) {
-                            popUpTo(Screen.Login.route) { inclusive = true }
+
+            val startDestination = if (isLoggedInCheckDone && isLoggedIn) Screen.Home.route else Screen.Login.route
+
+            Log.d("Navigation", "Composition: isLoggedIn=$isLoggedIn, checkDone=$isLoggedInCheckDone, startDestination=$startDestination")
+
+            LaunchedEffect(isLoggedIn, isLoggedInCheckDone) {
+                if (isLoggedInCheckDone) {
+                    val currentBackStackEntry = navController.currentBackStackEntry
+                    val currentActualRoute = currentBackStackEntry?.destination?.route
+                    if (navController.graph.nodes.isNotEmpty()) {
+                        if (isLoggedIn && currentActualRoute == Screen.Login.route) {
+                            navController.navigate(Screen.Home.route) {
+                                popUpTo(Screen.Login.route) { inclusive = true } // Pop only Login
+                                launchSingleTop = true
+                            }
+                        } else if (!isLoggedIn && currentActualRoute != Screen.Login.route) {
+                            if(currentActualRoute != null) {
+                                navController.navigate(Screen.Login.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        inclusive = true // Clear the authenticated stack
+                                    }
+                                    launchSingleTop = true
+                                }
+                            } else {
+                                Log.d("NavigationEffect", "Skipping navigation to Login: currentActualRoute is null.")
+                            }
                         }
+                    } else {
+                        Log.w("NavigationEffect", "Skipping navigation: NavController graph not ready yet.")
                     }
+                } else {
+                    Log.d("NavigationEffect", "Skipping navigation: isLoggedInCheckDone is false")
                 }
             }
 
-            // Determine the start destination
-            val startDestination = if (isLoggedIn) Screen.Home.route else Screen.Login.route
-            Log.d("Navigation", "isLoggedIn: $isLoggedIn, current route: $currentRoute")
+            val navBackStackEntryForUI by navController.currentBackStackEntryAsState()
+            val currentRouteForUI = navBackStackEntryForUI?.destination?.route
 
-            // When login status changes, navigate accordingly
-            LaunchedEffect(isLoggedIn) {
-                if (isLoggedIn && currentRoute == Screen.Login.route) {
-                    navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.Login.route) { inclusive = true }
+            if (!isLoggedInCheckDone) {
+                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                     CircularProgressIndicator()
+                 }
+            } else {
+                PlayerContainer(
+                    playerViewModel = playerViewModel,
+                    playbackViewModel = playbackViewModel,
+                    content = {
+                        Scaffold(
+                            bottomBar = {
+                                val showBottomBar = isLoggedIn && currentRouteForUI != Screen.Login.route
+                                if (showBottomBar) {
+                                    NavigationBarComponent(navController)
+                                }
+                            }
+                        ) { innerPadding ->
+                            NavHost(
+                                navController = navController,
+                                startDestination = startDestination,
+                                modifier = Modifier.padding(innerPadding)
+                            ) {
+                                composable(Screen.Home.route) { HomeScreen() }
+                                composable(Screen.Library.route) {
+                                    LibraryScreen(
+                                        navController = navController,
+                                        playerViewModel = playerViewModel,
+                                        playbackViewModel = playbackViewModel
+                                    )
+                                }
+                                composable(Screen.Profile.route) { ProfileScreen() }
+                                composable(Screen.Login.route) { LoginScreen(navController = navController, authViewModel = authViewModel) }
+                            }
+                        }
                     }
-                } else if (!isLoggedIn && currentRoute != Screen.Login.route) {
-                    navController.navigate(Screen.Login.route) {
-                        popUpTo(0) { inclusive = true }
-                    }
-                }
+                )
             }
-
-            PlayerContainer(
-                playerViewModel = playerViewModel,
-                playbackViewModel = playbackViewModel,
-                content = {
-                    Scaffold(
-                        bottomBar = {
-                            if (isLoggedIn && currentRoute != Screen.Login.route) {
-                                NavigationBarComponent(navController)
-                            }
-                        }
-                    ) { innerPadding ->
-                        NavHost(
-                            navController = navController,
-                            startDestination = startDestination,
-                            modifier = Modifier.padding(innerPadding)
-                        ) {
-                            composable(Screen.Home.route) { HomeScreen() }
-                            composable(Screen.Library.route) {
-                                LibraryScreen(
-                                    navController = navController,
-                                    playerViewModel = playerViewModel,
-                                    playbackViewModel = playbackViewModel
-                                )
-                            }
-                            composable(Screen.Profile.route) { ProfileScreen() }
-                            composable(Screen.Login.route) { LoginScreen(navController) }
-                        }
-                    }
-                }
-            )
         }
     }
 }

@@ -12,9 +12,6 @@ import kotlinx.coroutines.launch
 import com.msb.purrytify.data.storage.DataStoreManager
 import com.msb.purrytify.model.AuthModel
 import com.msb.purrytify.model.AuthResult
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 
 data class UiState(
@@ -37,10 +34,6 @@ class AuthViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState
 
-    private val _navigateToHome = MutableSharedFlow<Boolean>()
-    val navigateToHome: SharedFlow<Boolean> = _navigateToHome
-
-
     init {
         viewModelScope.launch {
             verifyToken()
@@ -55,18 +48,17 @@ class AuthViewModel @Inject constructor(
                 if (response.isSuccessful) {
                     Log.d("AuthViewModel", "Token verification successful")
                     _uiState.value = _uiState.value.copy(isLoggedIn = true, isLoggedInCheckDone = true)
-                    _navigateToHome.emit(true)
                 } else {
                     Log.d("AuthViewModel", "Token verification failed: ${response.code()}")
-                    dataStoreManager.clearCredentials()
+                    dataStoreManager.clearCredentials() // Good practice
                     _uiState.value = _uiState.value.copy(isLoggedIn = false, isLoggedInCheckDone = true)
                 }
             } catch (e: Exception) {
                 Log.e("AuthViewModel", "Error verifying token: ${e.message}")
+                dataStoreManager.clearCredentials()
                 _uiState.value = _uiState.value.copy(isLoggedIn = false, isLoggedInCheckDone = true)
             }
         }
-
     }
 
     fun isLoggedInCheckDone(): Boolean {
@@ -132,22 +124,19 @@ class AuthViewModel @Inject constructor(
                     Log.d("AuthViewModel", "Access Token: ${result.data.accessToken}")
                     Log.d("AuthViewModel", "Refresh Token: ${result.data.refreshToken}")
 
-                    _navigateToHome.emit(true)
-                    _uiState.value = _uiState.value.copy(isLoggedIn = true)
+                    _uiState.value = _uiState.value.copy(isLoggedIn = true, isLoading = false) // Set isLoading false here too
                 }
                 is AuthResult.Error -> {
                     _uiState.value = _uiState.value.copy(isLoading = false, loginError = result.message)
                 }
             }
-
-            _uiState.value = _uiState.value.copy(isLoading = false)
         }
     }
 
     fun logout() {
         viewModelScope.launch {
             dataStoreManager.clearCredentials()
-            _uiState.value = _uiState.value.copy(isLoggedIn = false)
+            _uiState.value = _uiState.value.copy(isLoggedIn = false, email = "", password = "") // Clear fields on logout
         }
     }
 }

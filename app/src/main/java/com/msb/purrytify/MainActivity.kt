@@ -18,7 +18,6 @@ import com.msb.purrytify.ui.navigation.NavigationComponent
 import com.msb.purrytify.ui.theme.AppTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.msb.purrytify.ui.component.NetworkPopUp
 import com.msb.purrytify.utils.NetworkStatusListener
 import com.msb.purrytify.viewmodel.PlayerViewModel
@@ -59,19 +58,15 @@ fun MainContent() {
     DisposableEffect(Unit) {
         val preDrawListener = object : ViewTreeObserver.OnPreDrawListener {
             override fun onPreDraw(): Boolean {
-                // Log.d("MainActivity", "onPreDraw called, isLoggedInCheckDone: $isLoggedInCheckDone")
                 return if (authViewModel.isLoggedInCheckDone()) {
-                    // Log.d("MainActivity", "Removing preDrawListener and allowing draw")
                     localView.viewTreeObserver.removeOnPreDrawListener(this)
                     true
                 } else {
-                    // Log.d("MainActivity", "Preventing draw, waiting for auth check")
                     false
                 }
             }
         }
 
-        // Log.d("MainActivity", "Adding preDrawListener")
         localView.viewTreeObserver.addOnPreDrawListener(preDrawListener)
 
         onDispose {
