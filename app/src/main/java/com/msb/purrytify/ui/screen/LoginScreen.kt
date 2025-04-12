@@ -39,25 +39,25 @@ import com.msb.purrytify.viewmodel.AuthViewModel
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
-fun LoginScreen (
+fun LoginScreen(
     navController: NavController,
-    authViewModel: AuthViewModel = hiltViewModel()
+    authViewModel: AuthViewModel
 ) {
     val state = authViewModel.uiState.collectAsState()
     val context = LocalContext.current
 
-    LaunchedEffect(authViewModel.navigateToHome) {
-        authViewModel.navigateToHome.collectLatest { shouldNavigate ->
-            if (shouldNavigate) {
-                navController.navigate("home") {
-                    popUpTo("login") {
-                        inclusive = true
-                    }
-                    launchSingleTop = true
-                }
-            }
-        }
-    }
+//    LaunchedEffect(authViewModel.navigateToHome) {
+//        authViewModel.navigateToHome.collectLatest { shouldNavigate ->
+//            if (shouldNavigate) {
+//                navController.navigate("home") {
+//                    popUpTo("login") {
+//                        inclusive = true
+//                    }
+//                    launchSingleTop = true
+//                }
+//            }
+//        }
+//    }
 
     LaunchedEffect(state.value.loginError) {
         if (!state.value.loginError.isNullOrEmpty()) {
@@ -68,7 +68,8 @@ fun LoginScreen (
 
     Box(
         modifier = Modifier
-            .fillMaxSize().background(
+            .fillMaxSize()
+            .background(
                 Color(0xFF121212)
             )
     ) {
@@ -85,18 +86,22 @@ fun LoginScreen (
             modifier = Modifier
                 .fillMaxWidth(0.6f)
                 .fillMaxHeight(0.3f)
-                .align(Alignment.Center).zIndex(4f),
+                .align(Alignment.Center)
+                .zIndex(4f),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             Box(
                 modifier = Modifier
-                    .size(92.dp).zIndex(2f)
+                    .size(92.dp)
+                    .zIndex(2f)
             ) {
                 Image(
                     painter = painterResource(id = R.mipmap.ic_launcher_foreground),
                     contentDescription = "Logo",
-                    modifier = Modifier.fillMaxSize().zIndex(2f)
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .zIndex(2f)
                 )
             }
             Spacer(modifier = Modifier.height(16.dp))
@@ -111,17 +116,22 @@ fun LoginScreen (
         }
 
         Column(
-            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().fillMaxHeight(0.5f).padding(top = 50.dp).zIndex(1f),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .fillMaxHeight(0.5f)
+                .padding(top = 50.dp)
+                .zIndex(1f),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceAround
-        ){
+        ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth(0.85f)
                     .fillMaxHeight(0.7f),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
-            ){
+            ) {
                 // Email Input
                 Column(
                     modifier = Modifier
@@ -137,13 +147,22 @@ fun LoginScreen (
 
                     OutlinedTextField(
                         value = state.value.email,
-                        onValueChange = { authViewModel.setEmail(it)},
+                        onValueChange = { authViewModel.setEmail(it) },
                         modifier = Modifier
                             .fillMaxWidth(),
-                        colors = TextFieldDefaults.colors(focusedContainerColor = Color(0xFF535353), unfocusedContainerColor = Color(0xFF535353)),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color(0xFF535353),
+                            unfocusedContainerColor = Color(0xFF535353)
+                        ),
                         shape = RoundedCornerShape(8.dp),
                         singleLine = true,
-                        placeholder = { Text("Enter your email", color = Color.Gray, fontSize = 12.sp) },
+                        placeholder = {
+                            Text(
+                                "Enter your email",
+                                color = Color.Gray,
+                                fontSize = 12.sp
+                            )
+                        },
                         isError = state.value.emailError != null,
                         supportingText = {
                             if (state.value.emailError != null) {
@@ -177,18 +196,28 @@ fun LoginScreen (
 
                     OutlinedTextField(
                         value = state.value.password,
-                        onValueChange = {  authViewModel.setPassword(it) },
+                        onValueChange = { authViewModel.setPassword(it) },
                         modifier = Modifier
                             .fillMaxWidth(),
-                        colors = TextFieldDefaults.colors(focusedContainerColor = Color(0xFF535353), unfocusedContainerColor = Color(0xFF535353)),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color(0xFF535353),
+                            unfocusedContainerColor = Color(0xFF535353)
+                        ),
                         shape = RoundedCornerShape(8.dp),
-                        placeholder = { Text("Enter your password", color = Color.Gray, fontSize = 12.sp) },
+                        placeholder = {
+                            Text(
+                                "Enter your password",
+                                color = Color.Gray,
+                                fontSize = 12.sp
+                            )
+                        },
                         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
                             val image = if (passwordVisible)
                                 Icons.Filled.Visibility
                             else Icons.Filled.VisibilityOff
-                            val description = if (passwordVisible) "Hide password" else "Show password"
+                            val description =
+                                if (passwordVisible) "Hide password" else "Show password"
                             IconButton(onClick = { passwordVisible = !passwordVisible }) {
                                 Icon(imageVector = image, description, tint = Color(0xFF9a9a9a))
                             }
@@ -241,5 +270,5 @@ fun LoginScreen (
 @Composable
 fun LoginScreenPreview() {
     val navController = rememberNavController()
-    LoginScreen(navController)
+    LoginScreen(navController, hiltViewModel())
 }
