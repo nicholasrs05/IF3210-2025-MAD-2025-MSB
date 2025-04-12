@@ -95,47 +95,54 @@ fun NavigationComponent(
             val isLoggedInCheckDone = uiState.isLoggedInCheckDone
 
 
-            val startDestination = if (isLoggedInCheckDone && isLoggedIn) Screen.Home.route else Screen.Login.route
+            val startDestination =
+                if (isLoggedInCheckDone && isLoggedIn) Screen.Home.route else Screen.Login.route
 
-            Log.d("Navigation", "Composition: isLoggedIn=$isLoggedIn, checkDone=$isLoggedInCheckDone, startDestination=$startDestination")
+            Log.d(
+                "Navigation",
+                "Composition: isLoggedIn=$isLoggedIn, checkDone=$isLoggedInCheckDone, startDestination=$startDestination"
+            )
 
             LaunchedEffect(isLoggedIn, isLoggedInCheckDone) {
                 if (isLoggedInCheckDone) {
                     val currentBackStackEntry = navController.currentBackStackEntry
                     val currentActualRoute = currentBackStackEntry?.destination?.route
-                    if (navController.graph.nodes.isNotEmpty()) {
-                        if (isLoggedIn && currentActualRoute == Screen.Login.route) {
-                            navController.navigate(Screen.Home.route) {
-                                popUpTo(Screen.Login.route) { inclusive = true } // Pop only Login
+                    if (isLoggedIn && currentActualRoute == Screen.Login.route) {
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(Screen.Login.route) { inclusive = true } // Pop only Login
+                            launchSingleTop = true
+                        }
+                    } else if (!isLoggedIn && currentActualRoute != Screen.Login.route) {
+                        if (currentActualRoute != null) {
+                            navController.navigate(Screen.Login.route) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    inclusive = true // Clear the authenticated stack
+                                }
                                 launchSingleTop = true
                             }
-                        } else if (!isLoggedIn && currentActualRoute != Screen.Login.route) {
-                            if(currentActualRoute != null) {
-                                navController.navigate(Screen.Login.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        inclusive = true // Clear the authenticated stack
-                                    }
-                                    launchSingleTop = true
-                                }
-                            } else {
-                                Log.d("NavigationEffect", "Skipping navigation to Login: currentActualRoute is null.")
-                            }
+                        } else {
+                            Log.d(
+                                "NavigationEffect",
+                                "Skipping navigation to Login: currentActualRoute is null."
+                            )
                         }
-                    } else {
-                        Log.w("NavigationEffect", "Skipping navigation: NavController graph not ready yet.")
                     }
                 } else {
-                    Log.d("NavigationEffect", "Skipping navigation: isLoggedInCheckDone is false")
+                    Log.w(
+                        "NavigationEffect",
+                        "Skipping navigation: NavController graph not ready yet."
+                    )
                 }
+
             }
 
             val navBackStackEntryForUI by navController.currentBackStackEntryAsState()
             val currentRouteForUI = navBackStackEntryForUI?.destination?.route
 
             if (!isLoggedInCheckDone) {
-                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                     CircularProgressIndicator()
-                 }
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
             } else {
                 PlayerContainer(
                     playerViewModel = playerViewModel,
@@ -143,7 +150,8 @@ fun NavigationComponent(
                     content = {
                         Scaffold(
                             bottomBar = {
-                                val showBottomBar = isLoggedIn && currentRouteForUI != Screen.Login.route
+                                val showBottomBar =
+                                    isLoggedIn && currentRouteForUI != Screen.Login.route
                                 if (showBottomBar) {
                                     NavigationBarComponent(navController)
                                 }
@@ -163,7 +171,12 @@ fun NavigationComponent(
                                     )
                                 }
                                 composable(Screen.Profile.route) { ProfileScreen() }
-                                composable(Screen.Login.route) { LoginScreen(navController = navController, authViewModel = authViewModel) }
+                                composable(Screen.Login.route) {
+                                    LoginScreen(
+                                        navController = navController,
+                                        authViewModel = authViewModel
+                                    )
+                                }
                             }
                         }
                     }

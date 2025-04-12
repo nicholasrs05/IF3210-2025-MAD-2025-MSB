@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import com.msb.purrytify.data.storage.DataStoreManager
 import com.msb.purrytify.model.AuthModel
 import com.msb.purrytify.model.AuthResult
+import com.msb.purrytify.model.ProfileModel
 import javax.inject.Inject
 
 data class UiState(
@@ -29,7 +30,8 @@ data class UiState(
 class AuthViewModel @Inject constructor(
     private val dataStoreManager: DataStoreManager,
     private val authModel: AuthModel,
-    private val apiService: ApiService
+    private val apiService: ApiService,
+    private val profileModel: ProfileModel
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState
@@ -124,6 +126,8 @@ class AuthViewModel @Inject constructor(
                     Log.d("AuthViewModel", "Access Token: ${result.data.accessToken}")
                     Log.d("AuthViewModel", "Refresh Token: ${result.data.refreshToken}")
 
+                    profileModel.fetchProfile()
+
                     _uiState.value = _uiState.value.copy(isLoggedIn = true, isLoading = false) // Set isLoading false here too
                 }
                 is AuthResult.Error -> {
@@ -136,7 +140,7 @@ class AuthViewModel @Inject constructor(
     fun logout() {
         viewModelScope.launch {
             dataStoreManager.clearCredentials()
-            _uiState.value = _uiState.value.copy(isLoggedIn = false, email = "", password = "") // Clear fields on logout
+            _uiState.value = _uiState.value.copy(isLoggedIn = false, email = "", password = "")
         }
     }
 }

@@ -1,8 +1,5 @@
 package com.msb.purrytify.ui.profile
 
-import androidx.compose.runtime.State
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.msb.purrytify.data.local.dao.SongDao
@@ -14,8 +11,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
-import java.time.OffsetDateTime
-import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 sealed class ProfileUiState {
@@ -35,50 +30,69 @@ class ProfileViewModel @Inject constructor(
 
     init {
         fetchProfileData()
-        // loadDummyProfile()
+        observeProfileData()
     }
 
-    fun fetchProfileData() {
+    private fun observeProfileData() {
         viewModelScope.launch {
-            _profileState.value = ProfileUiState.Loading
-
-            val profileResult = profileModel.fetchProfile()
-
-            if (profileResult is ProfileResult.Success) {
+            profileModel.currentProfile.collect { profileData ->
                 combine(
                     songDao.getSongCount(),
                     songDao.getLikedSongCount(),
                     songDao.getListenedSongCount()
                 ) { total, liked, listened ->
-                    Triple(total, liked, listened)
-                }.collect { (total, liked, listened) ->
-                    val updatedProfile = profileResult.data.copy(
+                    profileData.copy(
                         addedSongsCount = total,
                         likedSongsCount = liked,
                         listenedSongsCount = listened
                     )
+                }.collect { updatedProfile ->
                     _profileState.value = ProfileUiState.Success(updatedProfile)
                 }
-            } else if (profileResult is ProfileResult.Error) {
-                _profileState.value = ProfileUiState.Error(profileResult.message)
             }
         }
     }
 
-    private fun loadDummyProfile() {
-        val dummyProfile = Profile(
-            id = 123,
-            username = "dummyUser",
-            email = "dummy@example.com",
-            profilePhoto = "dummy_profile.png",
-            location = "Jakarta, Indonesia",
-            createdAtString = OffsetDateTime.now().minusDays(30).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
-            updatedAtString = OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
-            addedSongsCount = 15,
-            likedSongsCount = 42,
-            listenedSongsCount = 101
-        )
-        _profileState.value = ProfileUiState.Success(dummyProfile)
+    fun fetchProfileData() {
+        viewModelScope.launch {
+            _profileState.value = ProfileUiState.Loading
+            profileModel.fetchProfileResult.collect { result ->
+                when (result) {
+                    is ProfileResult.Success -> {
+                        _profileState.value = ProfileUiState.Success(Profile())
+                    }
+
+                    is ProfileResult.Error -> {
+                        _profileState.value = ProfileUiState.Error(result.message)
+                    }
+                    is ProfileResult.Loading -> {
+                        _profileState.value = ProfileUiState.Loading
+                    }
+                }
+            }
+        }
     }
 
+    fun refreshProfile() {
+        viewModelScope.launch {
+            _profileState.value = ProfileUiState.Loading
+            profileModel.fetchProfile()
+
+            profileModel.currentProfile.collect { profileData ->
+                combine(
+                    songDao.getSongCount(),
+                    songDao.getLikedSongCount(),
+                    songDao.getListenedSongCount()
+                ) { total, liked, listened ->
+                    profileData.copy(
+                        addedSongsCount = total,
+                        likedSongsCount = liked,
+                        listenedSongsCount = listened
+                    )
+                }.collect { updatedProfile ->
+                    _profileState.value = ProfileUiState.Success(updatedProfile)
+                }
+            }
+        }
+    }
 }
