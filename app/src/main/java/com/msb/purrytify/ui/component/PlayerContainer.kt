@@ -26,6 +26,7 @@ fun PlayerContainer(
 
     val currentSong by playerViewModel.currentSong
     val isPlaying by playerViewModel.isPlaying
+    val isMiniPlayerVisible by playerViewModel.isMiniPlayerVisible
 
     var selectedSong by remember { mutableStateOf<Song?>(null) }
 
@@ -56,7 +57,7 @@ fun PlayerContainer(
             }
         }
 
-        if (currentSong != null) {
+        if (currentSong != null && isMiniPlayerVisible) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()

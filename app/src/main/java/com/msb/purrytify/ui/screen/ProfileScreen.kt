@@ -43,7 +43,7 @@ import com.msb.purrytify.viewmodel.AuthViewModel
 import com.msb.purrytify.viewmodel.PlayerViewModel
 
 @Composable
-fun ProfileScreen(viewModel: ProfileViewModel = hiltViewModel(), authViewModel: AuthViewModel, playerViewModel: PlayerViewModel = hiltViewModel()) {
+fun ProfileScreen(viewModel: ProfileViewModel = hiltViewModel(), authViewModel: AuthViewModel, playerViewModel: PlayerViewModel) {
     val context = LocalContext.current
     var isConnected by remember { mutableStateOf(true) }
 
@@ -52,6 +52,7 @@ fun ProfileScreen(viewModel: ProfileViewModel = hiltViewModel(), authViewModel: 
     fun logout(){
         authViewModel.logout()
         playerViewModel.stopMediaPlayer()
+        playerViewModel.setMiniPlayerVisible(false)
     }
 
     LaunchedEffect(lifecycleOwner.lifecycle) {

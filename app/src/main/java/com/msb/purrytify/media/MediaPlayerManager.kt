@@ -175,6 +175,8 @@ class MediaPlayerManager(private val context: Context) {
         mediaPlayer?.stop()
         releasePlayer(notifyListeners = false) // release without notifying song change listeners
         currentSongIdx = -1
+        playlist = emptyList()
+        Log.d("MediaPlayerManager", "Player stopped and released")
     }
 
     fun seekTo(position: Int) {

@@ -80,6 +80,7 @@ class PlayerViewModel @Inject constructor(
             mediaPlayerManager.play(song)
             _duration.floatValue = mediaPlayerManager.getDuration().toFloat()
             _currentPosition.floatValue = 0f
+            _isMiniPlayerVisible.value = true
         }
     }
 
@@ -218,7 +219,12 @@ class PlayerViewModel @Inject constructor(
     }
 
     fun stopMediaPlayer(){
-        mediaPlayerManager.stop()
         _isMiniPlayerVisible.value = false
+        mediaPlayerManager.stop()
+        _currentSong.value = null
+    }
+
+    fun setMiniPlayerVisible(isVisible: Boolean) {
+        _isMiniPlayerVisible.value = isVisible
     }
 }

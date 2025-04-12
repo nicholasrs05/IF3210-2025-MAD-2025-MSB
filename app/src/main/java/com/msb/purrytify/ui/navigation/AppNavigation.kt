@@ -158,7 +158,7 @@ fun NavigationComponent(
                                 startDestination = startDestination,
                                 modifier = Modifier.padding(innerPadding)
                             ) {
-                                composable(Screen.Home.route) { HomeScreen() }
+                                composable(Screen.Home.route) { HomeScreen(playerViewModel = playerViewModel, playbackViewModel = playbackViewModel) }
                                 composable(Screen.Library.route) {
                                     LibraryScreen(
                                         navController = navController,
@@ -166,7 +166,7 @@ fun NavigationComponent(
                                         playbackViewModel = playbackViewModel
                                     )
                                 }
-                                composable(Screen.Profile.route) { ProfileScreen(authViewModel=authViewModel) }
+                                composable(Screen.Profile.route) { ProfileScreen(authViewModel=authViewModel, playerViewModel = playerViewModel) }
                                 composable(Screen.Login.route) {
                                     LoginScreen(
                                         navController = navController,

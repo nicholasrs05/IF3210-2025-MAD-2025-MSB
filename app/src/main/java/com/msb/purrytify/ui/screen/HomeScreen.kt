@@ -39,8 +39,8 @@ import java.io.File
 @Composable
 fun HomeScreen(
     viewModel: SongViewModel = hiltViewModel(),
-    playerViewModel: PlayerViewModel = hiltViewModel(),
-    playbackViewModel: PlaybackViewModel = hiltViewModel(),
+    playerViewModel: PlayerViewModel,
+    playbackViewModel: PlaybackViewModel,
 ) {
     val recentlyPlayedState: androidx.compose.runtime.State<List<Song>> =
         viewModel.recentlyPlayedSongs.observeAsState(initial = emptyList())
@@ -250,17 +250,17 @@ fun RecentlyPlayedItem(song: Song, onSongClick: (Song) -> Unit) {
     }
 }
 
-@Preview(
-    uiMode = Configuration.UI_MODE_NIGHT_YES,
-    name = "DefaultPreviewDark"
-)
-@Preview(
-    uiMode = Configuration.UI_MODE_NIGHT_NO,
-    name = "DefaultPreviewLight"
-)
-@Composable
-fun HomeScreenPreview() {
-    AppTheme {
-        HomeScreen()
-    }
-}
+//@Preview(
+//    uiMode = Configuration.UI_MODE_NIGHT_YES,
+//    name = "DefaultPreviewDark"
+//)
+//@Preview(
+//    uiMode = Configuration.UI_MODE_NIGHT_NO,
+//    name = "DefaultPreviewLight"
+//)
+//@Composable
+//fun HomeScreenPreview() {
+//    AppTheme {
+//        HomeScreen()
+//    }
+//}
