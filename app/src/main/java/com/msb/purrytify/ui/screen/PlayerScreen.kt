@@ -1,6 +1,7 @@
 package com.msb.purrytify.ui.screen
 
 import android.Manifest
+import android.content.Intent
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
@@ -140,27 +141,23 @@ fun PlayerScreen(
     val currentPosition by viewModel.currentPosition
     val duration by viewModel.duration
     
-    DisposableEffect(currentPlayingSong.id) {
-        val extractColors = suspend {
+    LaunchedEffect(currentPlayingSong.id, currentPlayingSong.artworkPath) {
+        try {
             if (currentPlayingSong.artworkPath.isNotEmpty() && File(currentPlayingSong.artworkPath).exists()) {
-                try {
-                    val bitmap = BitmapFactory.decodeFile(currentPlayingSong.artworkPath)
-                    withContext(Dispatchers.Default) {
-                        val palette = Palette.from(bitmap).generate()
-                        val darkColor = palette.getDarkVibrantColor(palette.getDarkMutedColor(Color(0xFF121212).toArgb()))
-                        val vibrantColor = palette.getVibrantColor(palette.getLightVibrantColor(Color(0xFF1DB954).toArgb()))
-                        
-                        backgroundColor = Color(darkColor)
-                        accentColor = Color(vibrantColor)
-                        textColor = if (ColorUtils.calculateLuminance(darkColor) > 0.5) Color.Black else Color.White
-                    }
-                } catch (_: Exception) {
+                val bitmap = BitmapFactory.decodeFile(currentPlayingSong.artworkPath)
+                withContext(Dispatchers.Default) {
+                    val palette = Palette.from(bitmap).generate()
+                    val darkColor = palette.getDarkVibrantColor(palette.getDarkMutedColor(Color(0xFF121212).toArgb()))
+                    val vibrantColor = palette.getVibrantColor(palette.getLightVibrantColor(Color(0xFF1DB954).toArgb()))
+                    
+                    backgroundColor = Color(darkColor)
+                    accentColor = Color(vibrantColor)
+                    textColor = if (ColorUtils.calculateLuminance(darkColor) > 0.5) Color.Black else Color.White
                 }
             }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
-        
-        val job = viewModel.viewModelScope.launch { extractColors() }
-        onDispose { job.cancel() }
     }
     
     LaunchedEffect(Unit) {
@@ -775,6 +772,11 @@ fun EditSongDialog(
                                         )
                                         
                                         songViewModel.updateSong(updatedSong)
+                                        // Broadcast that a song has been updated to refresh all song lists
+                                        val intent = Intent("com.msb.purrytify.SONG_UPDATED")
+                                        intent.putExtra("songId", updatedSong.id)
+                                        context.sendBroadcast(intent)
+                                        
                                         viewModel.updateSongFromRepo()
                                         
                                         // Force UI update by recreating the composable state
