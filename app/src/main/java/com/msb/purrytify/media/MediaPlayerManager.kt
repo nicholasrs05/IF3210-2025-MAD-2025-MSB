@@ -4,6 +4,9 @@ import android.content.Context
 import android.media.MediaPlayer
 import androidx.compose.runtime.mutableStateOf
 import com.msb.purrytify.data.local.entity.Song
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
 
 enum class RepeatMode {
     NONE,
@@ -21,6 +24,7 @@ class MediaPlayerManager(private val context: Context) {
     private var playlist: List<Song> = emptyList()
     private var currentSongIdx: Int = -1
     private var repeatMode = mutableStateOf(RepeatMode.NONE)
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     private val songChangeListeners = mutableListOf<SongChangeListener>()
     var onCompletion: (() -> Unit)? = null
@@ -61,15 +65,12 @@ class MediaPlayerManager(private val context: Context) {
         }
     }
 
-    fun play(song: Song) {
-        val songIndex = playlist.indexOfFirst { it.id == song.id }
-        if (songIndex >= 0) {
-            currentSongIdx = songIndex
-        } else {
-            playlist = playlist + song
-            currentSongIdx = playlist.size - 1
-        }
-        
+    fun playByIndex(index: Int) {
+        if (index !in playlist.indices) return
+
+        currentSongIdx = index
+        val song = playlist[currentSongIdx]
+
         releasePlayer(notifyListeners = false)
 
         mediaPlayer = MediaPlayer().apply {
@@ -79,11 +80,11 @@ class MediaPlayerManager(private val context: Context) {
                 start()
 
                 setOnCompletionListener {
-                    onCompletion?.invoke()
-
                     when (repeatMode.value) {
                         RepeatMode.ONE -> {
-                            play(song)
+                            mainHandler.postDelayed({
+                                playByIndex(currentSongIdx)
+                            }, 200)
                         }
                         else -> {
                             playNext()
@@ -98,6 +99,17 @@ class MediaPlayerManager(private val context: Context) {
         notifySongChanged(song)
     }
 
+
+    fun play(song: Song) {
+        val index = playlist.indexOfFirst { it.id == song.id }
+        if (index >= 0) {
+            playByIndex(index)
+        } else {
+            playlist = playlist + song
+            playByIndex(playlist.size - 1)
+        }
+    }
+
     fun pause() {
         mediaPlayer?.pause()
     }
@@ -107,18 +119,17 @@ class MediaPlayerManager(private val context: Context) {
     }
 
     fun playNext() {
-        if (playlist.isEmpty()){
+        if (playlist.isEmpty()) {
             releasePlayer(notifyListeners = true)
             return
         }
 
         if (repeatMode.value == RepeatMode.ALL) {
-            currentSongIdx = (currentSongIdx + 1) % playlist.size
-            play(playlist[currentSongIdx])
+            val nextIndex = (currentSongIdx + 1) % playlist.size
+            playByIndex(nextIndex)
         } else {
             if (currentSongIdx < playlist.size - 1) {
-                currentSongIdx++
-                play(playlist[currentSongIdx])
+                playByIndex(currentSongIdx + 1)
             } else {
                 releasePlayer(notifyListeners = true)
             }
@@ -126,18 +137,17 @@ class MediaPlayerManager(private val context: Context) {
     }
 
     fun playPrevious() {
-        if (playlist.isEmpty()){
+        if (playlist.isEmpty()) {
             releasePlayer(notifyListeners = true)
             return
         }
 
         if (repeatMode.value == RepeatMode.ALL) {
-            currentSongIdx = (currentSongIdx - 1 + playlist.size) % playlist.size
-            play(playlist[currentSongIdx])
+            val prevIndex = (currentSongIdx - 1 + playlist.size) % playlist.size
+            playByIndex(prevIndex)
         } else {
             if (currentSongIdx > 0) {
-                currentSongIdx--
-                play(playlist[currentSongIdx])
+                playByIndex(currentSongIdx - 1)
             } else {
                 releasePlayer(notifyListeners = true)
             }
@@ -162,6 +172,10 @@ class MediaPlayerManager(private val context: Context) {
 
     fun getCurrentPosition(): Int {
         return mediaPlayer?.currentPosition ?: 0
+    }
+
+    fun getPlaylist(): List<Song> {
+        return playlist
     }
 
     fun seekTo(position: Int) {

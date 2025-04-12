@@ -78,11 +78,12 @@ fun PlayerScreen(
     
     LaunchedEffect(Unit) {
         val isAlreadyPlaying = mediaPlayerManager.getCurrentSong()?.id == song.id
-        
+        val wasPlaying = viewModel.isPlaying.value
+
         if (!isAlreadyPlaying) {
             mediaPlayerManager.setPlaylist(listOf(song))
             viewModel.playSong(song)
-        } else {
+        } else if (wasPlaying) {
             viewModel.resumeCurrentSong()
         }
     }
