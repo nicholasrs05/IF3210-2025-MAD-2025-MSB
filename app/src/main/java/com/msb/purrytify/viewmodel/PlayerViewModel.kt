@@ -210,6 +210,17 @@ class PlayerViewModel @Inject constructor(
         _currentPosition.floatValue = 0f
         _isLiked.value = false
     }
+    
+    // Force UI update by temporarily setting currentSong to null
+    fun setCurrentSongNull() {
+        _currentSong.value = null
+    }
+    
+    // Set the current song directly (for UI refreshing)
+    fun setCurrentSong(song: Song) {
+        _currentSong.value = song
+        checkLikedStatus(song.id)
+    }
 
     // Resume current song without restarting it
     fun resumeCurrentSong() {

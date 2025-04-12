@@ -53,8 +53,10 @@ import com.msb.purrytify.media.MediaPlayerManager
 import com.msb.purrytify.viewmodel.PlayerViewModel
 import com.msb.purrytify.viewmodel.PlaybackViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.compose.runtime.rememberCoroutineScope
 import java.io.File
 
 @Composable
@@ -743,7 +745,8 @@ fun EditSongDialog(
                             fontWeight = FontWeight.Medium
                         )
                     }
-                    
+
+                    val coroutineScope = rememberCoroutineScope()
                     // Save Button
                     Button(
                         onClick = {
@@ -754,39 +757,46 @@ fun EditSongDialog(
                                     Toast.LENGTH_SHORT
                                 ).show()
                             } else {
-                                try {
-                                    val artworkFilePath = selectedArtworkUri?.let {
-                                        try {
-                                            FileUtils.saveFileToAppStorage(context, it, "artwork")
-                                        } catch (e: Exception) {
-                                            e.printStackTrace()
-                                            song.artworkPath // Keep original artwork if new one fails
-                                        }
-                                    } ?: song.artworkPath
-                                    
-                                    val updatedSong = song.copy(
-                                        title = title,
-                                        artist = artist,
-                                        artworkPath = artworkFilePath
-                                    )
-                                    
-                                    songViewModel.updateSong(updatedSong)
-                                    viewModel.updateSongFromRepo()
-                                    
-                                    Toast.makeText(
-                                        context,
-                                        "Song updated successfully",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                    
-                                    onDismiss()
-                                } catch (e: Exception) {
-                                    e.printStackTrace()
-                                    Toast.makeText(
-                                        context,
-                                        "Error updating song: ${e.message}",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
+                                coroutineScope.launch {
+                                    try {
+                                        val artworkFilePath = selectedArtworkUri?.let {
+                                            try {
+                                                FileUtils.saveFileToAppStorage(context, it, "artwork")
+                                            } catch (e: Exception) {
+                                                e.printStackTrace()
+                                                song.artworkPath // Keep original artwork if new one fails
+                                            }
+                                        } ?: song.artworkPath
+                                        
+                                        val updatedSong = song.copy(
+                                            title = title,
+                                            artist = artist,
+                                            artworkPath = artworkFilePath
+                                        )
+                                        
+                                        songViewModel.updateSong(updatedSong)
+                                        viewModel.updateSongFromRepo()
+                                        
+                                        // Force UI update by recreating the composable state
+                                        viewModel.setCurrentSongNull()
+                                        delay(50) // Small delay to ensure state change
+                                        viewModel.setCurrentSong(updatedSong)
+                                        
+                                        Toast.makeText(
+                                            context,
+                                            "Song updated successfully",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                        
+                                        onDismiss()
+                                    } catch (e: Exception) {
+                                        e.printStackTrace()
+                                        Toast.makeText(
+                                            context,
+                                            "Error updating song: ${e.message}",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
                                 }
                             }
                         },
