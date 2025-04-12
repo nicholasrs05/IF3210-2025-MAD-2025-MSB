@@ -17,11 +17,17 @@ import androidx.compose.ui.text.font.FontWeight
 
 @Composable
 fun NetworkPopUp(
+    isLandscape: Boolean = false,
     isConnected: Boolean,
     isMiniPlayerVisible: Boolean = false
 ) {
     if (!isConnected) {
-        val bottomPadding = if (isMiniPlayerVisible) 160.dp else 80.dp
+        val bottomPadding = when {
+            isLandscape -> 0.dp
+            isMiniPlayerVisible -> 160.dp
+            else -> 80.dp
+        }
+
 
         Box(
             modifier = Modifier

@@ -41,6 +41,7 @@ class MainActivity : ComponentActivity() {
                     MainContent(isLandscape = isLandscape)
 
                     NetworkPopUp(
+                        isLandscape = isLandscape,
                         isConnected = isConnected,
                         isMiniPlayerVisible = isMiniPlayerVisible
                     )
