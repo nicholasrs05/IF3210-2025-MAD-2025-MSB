@@ -27,7 +27,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
 import coil3.compose.rememberAsyncImagePainter
 import com.msb.purrytify.R
 import com.msb.purrytify.utils.FileUtils
@@ -38,7 +37,6 @@ import java.util.concurrent.TimeUnit
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddSongScreen(
-    navController: NavController,
     showBottomSheet: Boolean = true,
     onDismiss: () -> Unit = {}
 ) {
@@ -46,14 +44,12 @@ fun AddSongScreen(
     val songViewModel: SongViewModel = viewModel()
     val playerViewModel: PlayerViewModel = hiltViewModel()
 
-    // UI Colors
     val backgroundColor = Color(0xFF121212)
     val buttonGreen = Color(0xFF1DB954)
     val buttonGray = Color(0xFF555555)
     val borderColor = Color(0xFF444444)
     val textFieldBgColor = Color(0xFF1E1E1E)
 
-    // State variables
     var title by remember { mutableStateOf("") }
     var artist by remember { mutableStateOf("") }
     var duration by remember { mutableLongStateOf(0L) }
@@ -98,7 +94,6 @@ fun AddSongScreen(
         }
     }
 
-    // Permission launcher for audio files
     val audioPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -115,7 +110,6 @@ fun AddSongScreen(
         }
     }
 
-    // Permission launcher for image files
     val imagePermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -132,7 +126,6 @@ fun AddSongScreen(
         }
     }
 
-    // Function to request audio permissions
     fun requestAudioPermission() {
         if (Build.VERSION.SDK_INT >= 33) {
             audioPermissionLauncher.launch(arrayOf(
@@ -145,7 +138,6 @@ fun AddSongScreen(
         }
     }
 
-    // Function to request image permissions
     fun requestImagePermission() {
         if (Build.VERSION.SDK_INT >= 33) {
             imagePermissionLauncher.launch(arrayOf(
@@ -174,7 +166,6 @@ fun AddSongScreen(
                         .padding(horizontal = 24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Header
                     Text(
                         text = "Upload Song",
                         color = Color.White,
@@ -184,14 +175,12 @@ fun AddSongScreen(
                         modifier = Modifier.padding(vertical = 16.dp)
                     )
 
-                    // Upload containers
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 16.dp, bottom = 24.dp),
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        // Upload Photo Box
                         Box(
                             modifier = Modifier
                                 .weight(1f)
@@ -319,7 +308,6 @@ fun AddSongScreen(
                         )
                     }
 
-                    // Title TextField
                     Text(
                         text = "Title",
                         color = Color.White,
@@ -352,7 +340,6 @@ fun AddSongScreen(
                         singleLine = true
                     )
 
-                    // Artist TextField
                     Text(
                         text = "Artist",
                         color = Color.White,
@@ -385,17 +372,14 @@ fun AddSongScreen(
                         singleLine = true
                     )
 
-                    // Spacer to push buttons to bottom
                     Spacer(modifier = Modifier.height(40.dp))
 
-                    // Buttons
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 24.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        // Cancel Button
                         Button(
                             onClick = { onDismiss() },
                             modifier = Modifier
@@ -415,7 +399,6 @@ fun AddSongScreen(
                             )
                         }
 
-                        // Save Button
                         Button(
                             onClick = {
                                 if (title.isBlank() || artist.isBlank() || selectedAudioUri == null) {
@@ -442,7 +425,7 @@ fun AddSongScreen(
                                                 FileUtils.saveFileToAppStorage(context, it, "artwork")
                                             } catch (e: Exception) {
                                                 e.printStackTrace()
-                                                "" // Return empty string if artwork saving fails
+                                                ""
                                             }
                                         } ?: ""
 
@@ -495,7 +478,6 @@ fun AddSongScreen(
         )
     }
 
-    // Permission denial dialog
     if (showPermissionDialog) {
         AlertDialog(
             onDismissRequest = { showPermissionDialog = false },

@@ -51,10 +51,7 @@ fun MiniPlayer(
         }
     }
 
-    var backgroundColor by remember { mutableStateOf(Color(0xFF121212)) }
     var textColor by remember { mutableStateOf(Color.White) }
-    var accentColor by remember { mutableStateOf(Color(0xFF1DB954)) }
-
     val isLiked by playerViewModel.isLiked
 
     Box(modifier = Modifier.fillMaxWidth()) {
@@ -84,7 +81,7 @@ fun MiniPlayer(
                 Row(
                     modifier = Modifier
                         .fillMaxSize()
-                        .weight(1f), // Let Row take up the rest of the card
+                        .weight(1f),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(

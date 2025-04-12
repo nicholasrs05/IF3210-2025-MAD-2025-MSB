@@ -2,7 +2,6 @@ package com.msb.purrytify.viewmodel
 
 import android.util.Log
 import android.util.Patterns
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.msb.purrytify.data.api.ApiService
@@ -53,7 +52,7 @@ class AuthViewModel @Inject constructor(
                     _uiState.value = _uiState.value.copy(isLoggedIn = true, isLoggedInCheckDone = true)
                 } else {
                     Log.d("AuthViewModel", "Token verification failed: ${response.code()}")
-                    dataStoreManager.clearCredentials() // Good practice
+                    dataStoreManager.clearCredentials()
                     _uiState.value = _uiState.value.copy(isLoggedIn = false, isLoggedInCheckDone = true)
                 }
             } catch (e: Exception) {
@@ -129,7 +128,7 @@ class AuthViewModel @Inject constructor(
 
                     profileModel.fetchProfile()
 
-                    _uiState.value = _uiState.value.copy(isLoggedIn = true, isLoading = false) // Set isLoading false here too
+                    _uiState.value = _uiState.value.copy(isLoggedIn = true, isLoading = false)
                 }
                 is AuthResult.Error -> {
                     _uiState.value = _uiState.value.copy(isLoading = false, loginError = result.message)

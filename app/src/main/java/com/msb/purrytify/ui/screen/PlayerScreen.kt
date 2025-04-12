@@ -19,8 +19,6 @@ import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -118,7 +116,7 @@ fun PlayerScreen(
             override fun onPlayerReleased() {
                 viewModel.resetCurrentSong()
                 viewModel.viewModelScope.launch {
-                    kotlinx.coroutines.delay(300)
+                    delay(300)
                     if (mediaPlayerManager.getCurrentSong() == null) {
                         localIsDismissing = true
                         onDismissWithAnimation()
@@ -163,7 +161,7 @@ fun PlayerScreen(
     
     LaunchedEffect(Unit) {
         while (true) {
-            kotlinx.coroutines.delay(100)
+            delay(100)
             viewModel.updatePosition()
         }
     }
@@ -475,19 +473,16 @@ fun EditSongDialog(
     val context = LocalContext.current
     val songViewModel: SongViewModel = hiltViewModel()
     
-    // State variables
     var title by remember { mutableStateOf(song.title) }
     var artist by remember { mutableStateOf(song.artist) }
     var selectedArtworkUri by remember { mutableStateOf<Uri?>(null) }
     var showPermissionDialog by remember { mutableStateOf(false) }
     
-    // Color variables
     val buttonGreen = accentColor
     val buttonGray = Color(0xFF555555)
     val borderColor = Color(0xFF444444)
     val textFieldBgColor = backgroundColor.copy(alpha = 0.7f)
     
-    // Content launcher for image files
     val pickArtworkLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
@@ -714,7 +709,6 @@ fun EditSongDialog(
                     singleLine = true
                 )
                 
-                // Spacer to push buttons to bottom
                 Spacer(modifier = Modifier.height(40.dp))
                 
                 // Buttons
@@ -762,7 +756,7 @@ fun EditSongDialog(
                                                 FileUtils.saveFileToAppStorage(context, it, "artwork")
                                             } catch (e: Exception) {
                                                 e.printStackTrace()
-                                                song.artworkPath // Keep original artwork if new one fails
+                                                song.artworkPath
                                             }
                                         } ?: song.artworkPath
                                         
@@ -773,16 +767,14 @@ fun EditSongDialog(
                                         )
                                         
                                         songViewModel.updateSong(updatedSong)
-                                        // Broadcast that a song has been updated to refresh all song lists
                                         val intent = Intent("com.msb.purrytify.SONG_UPDATED")
                                         intent.putExtra("songId", updatedSong.id)
                                         context.sendBroadcast(intent)
                                         
                                         viewModel.updateSongFromRepo()
                                         
-                                        // Force UI update by recreating the composable state
                                         viewModel.setCurrentSongNull()
-                                        delay(50) // Small delay to ensure state change
+                                        delay(50)
                                         viewModel.setCurrentSong(updatedSong)
                                         
                                         Toast.makeText(
@@ -824,7 +816,6 @@ fun EditSongDialog(
         }
     )
     
-    // Permission denial dialog
     if (showPermissionDialog) {
         AlertDialog(
             onDismissRequest = { showPermissionDialog = false },

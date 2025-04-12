@@ -102,10 +102,6 @@ fun ProfileScreen(
                 is ProfileUiState.Error -> {
                     ErrorScreen(errorMessage = (profileUiState as ProfileUiState.Error).errorMessage)
                 }
-
-                else -> {
-                    // SKIP
-                }
             }
         }
     } else {
@@ -153,7 +149,6 @@ fun ProfileContent(
             Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            // Username
             Text(
                 text = profile.username,
                 fontSize = 18.sp,
@@ -161,7 +156,6 @@ fun ProfileContent(
                 color = Color.White
             )
             Spacer(modifier = Modifier.height(4.dp))
-            // Location
             Text(
                 text = profile.location,
                 style = MaterialTheme.typography.labelMedium,
@@ -229,7 +223,6 @@ fun ProfileContent(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Song Counts
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
@@ -316,7 +309,6 @@ fun ErrorScreen(errorMessage: String) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Error Icon using Material Icons
         Icon(
             imageVector = Icons.Filled.ErrorOutline,
             contentDescription = "Error Icon",
@@ -325,7 +317,6 @@ fun ErrorScreen(errorMessage: String) {
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Error Message
         Text(
             text = "An error occurred:",
             color = Color.Red,

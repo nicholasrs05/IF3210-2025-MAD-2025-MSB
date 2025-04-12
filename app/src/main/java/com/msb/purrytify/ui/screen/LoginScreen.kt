@@ -27,37 +27,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.msb.purrytify.R
 import com.msb.purrytify.viewmodel.AuthViewModel
-import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun LoginScreen(
-    navController: NavController,
     authViewModel: AuthViewModel
 ) {
     val state = authViewModel.uiState.collectAsState()
     val context = LocalContext.current
-
-//    LaunchedEffect(authViewModel.navigateToHome) {
-//        authViewModel.navigateToHome.collectLatest { shouldNavigate ->
-//            if (shouldNavigate) {
-//                navController.navigate("home") {
-//                    popUpTo("login") {
-//                        inclusive = true
-//                    }
-//                    launchSingleTop = true
-//                }
-//            }
-//        }
-//    }
 
     LaunchedEffect(state.value.loginError) {
         if (!state.value.loginError.isNullOrEmpty()) {
@@ -186,7 +167,7 @@ fun LoginScreen(
                     Text(
                         text = "Password",
                         fontSize = 14.sp,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                        fontWeight = FontWeight.SemiBold,
                         color = Color.White,
                     )
 
@@ -256,7 +237,7 @@ fun LoginScreen(
                     Text(
                         text = "Login",
                         fontSize = 16.sp,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                        fontWeight = FontWeight.SemiBold,
                         color = Color.White,
                         modifier = Modifier.background(Color(0xFF1DB955), RoundedCornerShape(48.dp))
                     )
@@ -264,11 +245,4 @@ fun LoginScreen(
             }
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun LoginScreenPreview() {
-    val navController = rememberNavController()
-    LoginScreen(navController, hiltViewModel())
 }

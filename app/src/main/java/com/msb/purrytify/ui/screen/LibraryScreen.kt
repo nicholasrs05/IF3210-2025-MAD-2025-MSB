@@ -12,8 +12,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.msb.purrytify.R
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -29,7 +27,6 @@ import com.msb.purrytify.viewmodel.SongViewModel
 
 @Composable
 fun LibraryScreen(
-    navController: NavController = rememberNavController(),
     songViewModel: SongViewModel = hiltViewModel(),
     playbackViewModel: PlaybackViewModel = hiltViewModel(),
     playerViewModel: PlayerViewModel = hiltViewModel()
@@ -39,7 +36,6 @@ fun LibraryScreen(
     var showAddSongSheet by remember { mutableStateOf(false) }
     if (showAddSongSheet) {
         AddSongScreen(
-            navController = navController,
             showBottomSheet = true,
             onDismiss = { showAddSongSheet = false }
         )
@@ -58,7 +54,7 @@ fun LibraryScreen(
         ) {
             Header(showAddSongSheet = { showAddSongSheet = true })
 
-            var selectedTab by remember { mutableStateOf(0) }
+            var selectedTab by remember { mutableIntStateOf(0) }
 
             Row(
                 modifier = Modifier

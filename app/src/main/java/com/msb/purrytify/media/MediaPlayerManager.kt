@@ -1,6 +1,5 @@
 package com.msb.purrytify.media
 
-import android.content.Context
 import android.media.MediaPlayer
 import androidx.compose.runtime.mutableStateOf
 import com.msb.purrytify.data.local.entity.Song
@@ -14,7 +13,7 @@ enum class RepeatMode {
     ONE
 }
 
-class MediaPlayerManager(private val context: Context) {
+class MediaPlayerManager() {
     interface SongChangeListener {
         fun onSongChanged(newSong: Song)
         fun onPlayerReleased()
@@ -42,7 +41,7 @@ class MediaPlayerManager(private val context: Context) {
     }
 
     fun updateCurrentSongIdx() {
-        currentSongIdx++;
+        currentSongIdx++
     }
 
     fun setPlaylist(songs: List<Song>) {
@@ -59,21 +58,6 @@ class MediaPlayerManager(private val context: Context) {
         if (notifyListeners && currentSongIdx != -1 && playlist.isNotEmpty()) {
             currentSongIdx = -1
             songChangeListeners.forEach { it.onPlayerReleased() }
-        }
-    }
-    
-    /**
-     * Updates the metadata of the current song in the playlist without restarting playback
-     */
-    fun updateCurrentSongData(updatedSong: Song) {
-        if (currentSongIdx in playlist.indices) {
-            // Create a new playlist with the updated song
-            val newPlaylist = playlist.toMutableList()
-            newPlaylist[currentSongIdx] = updatedSong
-            playlist = newPlaylist
-            
-            // Notify listeners that the song data has changed
-            notifySongChanged(updatedSong)
         }
     }
 
@@ -188,7 +172,7 @@ class MediaPlayerManager(private val context: Context) {
 
     fun stop() {
         mediaPlayer?.stop()
-        releasePlayer(notifyListeners = false) // release without notifying song change listeners
+        releasePlayer(notifyListeners = false)
         currentSongIdx = -1
         playlist = emptyList()
         Log.d("MediaPlayerManager", "Player stopped and released")

@@ -109,7 +109,3 @@ fun PlayerContainer(
         }
     }
 }
-
-fun showPlayer(song: Song, viewModel: PlayerViewModel) {
-    viewModel.playSong(song)
-}

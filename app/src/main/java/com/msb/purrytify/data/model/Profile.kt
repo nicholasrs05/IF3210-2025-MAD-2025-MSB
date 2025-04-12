@@ -14,8 +14,8 @@ class OffsetDateTimeAdapter : JsonAdapter<OffsetDateTime>() {
     override fun fromJson(reader: JsonReader): OffsetDateTime? {
         return try {
             OffsetDateTime.parse(reader.nextString(), formatter)
-        } catch (e: Exception) {
-            null // Or handle the error as needed
+        } catch (_: Exception) {
+            null
         }
     }
 
@@ -52,12 +52,4 @@ data class Profile(
 
     val updatedAt: OffsetDateTime
         get() = OffsetDateTime.parse(updatedAtString)
-
-    val formattedCreatedAt: String
-        get() = createdAt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
-
-    val formattedUpdatedAt: String
-        get() = updatedAt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
 }
-
-data class ProfileError(val error: String)

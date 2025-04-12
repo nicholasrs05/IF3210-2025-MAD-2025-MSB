@@ -1,6 +1,5 @@
 package com.msb.purrytify.ui.screen
 
-import android.content.res.Configuration
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -15,7 +14,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.lazy.items
@@ -29,7 +27,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import com.msb.purrytify.R
 import com.msb.purrytify.data.local.entity.Song
-import com.msb.purrytify.ui.theme.AppTheme
 import com.msb.purrytify.viewmodel.PlaybackViewModel
 import com.msb.purrytify.viewmodel.PlayerViewModel
 import com.msb.purrytify.viewmodel.SongViewModel
@@ -127,7 +124,7 @@ fun NewSongsSection(songs: List<Song>?, onSongClick: (Song) -> Unit) {
             items(songs) { song ->
                 NewSongItem(
                     song = song,
-                    onSongClick = onSongClick // The lambda will receive the 'song' here
+                    onSongClick = onSongClick
                 )
             }
         }
@@ -140,7 +137,7 @@ fun NewSongItem(song: Song, onSongClick: (Song) -> Unit) {
     Column(
         modifier = Modifier
             .width(96.dp)
-            .clickable { onSongClick(song) }, // 'song' is passed to the lambda when clicked
+            .clickable { onSongClick(song) },
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         if (song.artworkPath.isNotEmpty() && File(song.artworkPath).exists()) {
@@ -196,7 +193,7 @@ fun RecentlyPlayedSection(songs: List<Song>?, onSongClick: (Song) -> Unit) {
     } else {
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
             songs.forEach { song ->
-                RecentlyPlayedItem(song, onSongClick = onSongClick) // The lambda will receive the 'song' here
+                RecentlyPlayedItem(song, onSongClick = onSongClick)
             }
         }
     }
@@ -208,7 +205,7 @@ fun RecentlyPlayedItem(song: Song, onSongClick: (Song) -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .height(62.dp)
-            .clickable { onSongClick(song) } // 'song' is passed to the lambda when clicked
+            .clickable { onSongClick(song) }
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -249,18 +246,3 @@ fun RecentlyPlayedItem(song: Song, onSongClick: (Song) -> Unit) {
         }
     }
 }
-
-//@Preview(
-//    uiMode = Configuration.UI_MODE_NIGHT_YES,
-//    name = "DefaultPreviewDark"
-//)
-//@Preview(
-//    uiMode = Configuration.UI_MODE_NIGHT_NO,
-//    name = "DefaultPreviewLight"
-//)
-//@Composable
-//fun HomeScreenPreview() {
-//    AppTheme {
-//        HomeScreen()
-//    }
-//}

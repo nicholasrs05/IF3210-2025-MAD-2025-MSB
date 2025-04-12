@@ -36,7 +36,6 @@ class RefreshTokenService @AssistedInject constructor(
         try {
             val verificationResponse = apiService.verifyToken()
             if (verificationResponse.isSuccessful) {
-                // Create and enqueue a new work request after successful verification
                 val constraints = Constraints.Builder()
                     .setRequiredNetworkType(NetworkType.CONNECTED)
                     .setRequiresBatteryNotLow(true)
@@ -44,7 +43,7 @@ class RefreshTokenService @AssistedInject constructor(
 
                 val newRefreshTokenRequest = OneTimeWorkRequest.Builder(RefreshTokenService::class.java)
                     .setConstraints(constraints)
-                    .setInitialDelay(5, TimeUnit.MINUTES) // Reschedule after 5 minutes
+                    .setInitialDelay(5, TimeUnit.MINUTES)
                     .build()
 
                 WorkManager.getInstance(applicationContext).enqueue(newRefreshTokenRequest)
@@ -52,9 +51,9 @@ class RefreshTokenService @AssistedInject constructor(
             } else {
                 return@withContext Result.failure()
             }
-        } catch (e: HttpException) {
+        } catch (_: HttpException) {
             return@withContext Result.failure()
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             return@withContext Result.failure()
         }
     }

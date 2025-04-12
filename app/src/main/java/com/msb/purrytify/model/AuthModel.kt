@@ -1,11 +1,10 @@
 package com.msb.purrytify.model
 
 import com.msb.purrytify.data.api.ApiService
-import com.msb.purrytify.data.storage.DataStoreManager // Import DataStoreManager
+import com.msb.purrytify.data.storage.DataStoreManager
 import com.msb.purrytify.data.model.LoginError
 import com.msb.purrytify.data.model.LoginRequest
 import com.msb.purrytify.data.model.LoginResponse
-import com.msb.purrytify.data.model.Profile
 import com.squareup.moshi.Moshi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -23,7 +22,7 @@ sealed class AuthResult<out T : Any> {
 class AuthModel @Inject constructor(
     private val apiService: ApiService,
     private val moshi: Moshi,
-    private val dataStoreManager: DataStoreManager // Inject DataStoreManager
+    private val dataStoreManager: DataStoreManager
 ) {
     suspend fun login(username: String, password: String): AuthResult<LoginResponse> =
         withContext(Dispatchers.IO) {
@@ -32,7 +31,7 @@ class AuthModel @Inject constructor(
                 if (response.isSuccessful) {
                     val loginResponse = response.body()
                     if (loginResponse != null) {
-                        dataStoreManager.saveAuthToken(loginResponse.accessToken) // Store tokens
+                        dataStoreManager.saveAuthToken(loginResponse.accessToken)
                         dataStoreManager.saveRefreshToken(loginResponse.refreshToken)
                         AuthResult.Success(loginResponse)
                     } else {
@@ -58,10 +57,4 @@ class AuthModel @Inject constructor(
                 AuthResult.Error("Network error during login: ${e.message}")
             }
         }
-
-
-
-    suspend fun clearAuthData() {
-        dataStoreManager.clearCredentials()
-    }
 }

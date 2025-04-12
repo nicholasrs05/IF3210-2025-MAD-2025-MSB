@@ -36,7 +36,6 @@ class TokenAuthenticator @Inject constructor(
             return null
         }
 
-        // Synchronously call the refresh token API
         val newAuthTokenAndRefreshToken = runBlocking {
             try {
                 val apiService = Retrofit.Builder()
@@ -52,11 +51,9 @@ class TokenAuthenticator @Inject constructor(
                         Pair(it.accessToken, it.refreshToken)
                     }
                 } else {
-                    // Handle refresh token failure (e.g., clear tokens, force login)
                     null
                 }
-            } catch (e: IOException) {
-                // Handle network errors during refresh
+            } catch (_: IOException) {
                 null
             }
         }

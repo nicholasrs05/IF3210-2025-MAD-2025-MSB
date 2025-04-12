@@ -1,12 +1,9 @@
 package com.msb.purrytify.data.repository
 
-import android.content.Context
 import android.media.MediaMetadataRetriever
 import com.msb.purrytify.data.local.dao.SongDao
 import com.msb.purrytify.data.local.entity.Song
-import com.msb.purrytify.model.ProfileModel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -65,7 +62,7 @@ class SongRepository @Inject constructor(private val songDao: SongDao) {
     }
 
     companion object {
-        fun extractMetadata(context: Context, audioFilePath: String): Pair<String?, String?> {
+        fun extractMetadata(audioFilePath: String, filePath: String): Pair<String?, String?> {
             val retriever = MediaMetadataRetriever()
             try {
                 retriever.setDataSource(audioFilePath)

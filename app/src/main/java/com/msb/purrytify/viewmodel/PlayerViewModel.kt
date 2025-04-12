@@ -20,7 +20,6 @@ class PlayerViewModel @Inject constructor(
     private val mediaPlayerManager: MediaPlayerManager
 ) : AndroidViewModel(application) {
 
-    // Player state
     private val _currentSong = mutableStateOf<Song?>(null)
     val currentSong: State<Song?> = _currentSong
 
@@ -67,7 +66,6 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
-    // Play a song
     fun playSong(song: Song) {
         viewModelScope.launch {
             _currentSong.value = song
@@ -102,25 +100,21 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
-    // Skip to next song
     fun skipToNext() {
         mediaPlayerManager.playNext()
         updateCurrentSong()
     }
 
-    // Skip to previous song
     fun skipToPrevious() {
         mediaPlayerManager.playPrevious()
         updateCurrentSong()
     }
 
-    // Seek to position
     fun seekTo(position: Float) {
         mediaPlayerManager.seekTo(position.toInt())
         _currentPosition.floatValue = position
     }
 
-    // Toggle like status
     fun toggleLike() {
         viewModelScope.launch {
             _currentSong.value?.let { song ->
@@ -135,13 +129,11 @@ class PlayerViewModel @Inject constructor(
         mediaPlayerManager.updateCurrentSongIdx()
     }
 
-    // Toggle shuffle
     fun toggleShuffle() {
         _isShuffle.value = !_isShuffle.value
         mediaPlayerManager.shuffle()
     }
 
-    // Toggle repeat mode
     fun toggleRepeat() {
         _repeatMode.value = when (_repeatMode.value) {
             RepeatMode.NONE -> RepeatMode.ALL
@@ -193,7 +185,6 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
-    // Handle song completion based on repeat mode
     private fun handleSongCompletion() {
         when (_repeatMode.value) {
             RepeatMode.NONE -> skipToNext()
@@ -202,7 +193,6 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
-    // Reset player state when no songs are left or player is released
     fun resetCurrentSong() {
         _currentSong.value = null
         _isPlaying.value = false
@@ -211,18 +201,15 @@ class PlayerViewModel @Inject constructor(
         _isLiked.value = false
     }
     
-    // Force UI update by temporarily setting currentSong to null
     fun setCurrentSongNull() {
         _currentSong.value = null
     }
     
-    // Set the current song directly (for UI refreshing)
     fun setCurrentSong(song: Song) {
         _currentSong.value = song
         checkLikedStatus(song.id)
     }
 
-    // Resume current song without restarting it
     fun resumeCurrentSong() {
         if (!_isPlaying.value) {
             mediaPlayerManager.resume()

@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import com.msb.purrytify.data.local.entity.Song
 import com.msb.purrytify.media.MediaPlayerManager
 import com.msb.purrytify.data.repository.SongRepository
 import com.msb.purrytify.model.ProfileModel
