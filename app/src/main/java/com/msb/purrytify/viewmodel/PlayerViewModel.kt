@@ -216,4 +216,9 @@ class PlayerViewModel @Inject constructor(
     override fun onCleared() {
         super.onCleared()
     }
+
+    fun stopMediaPlayer(){
+        mediaPlayerManager.stop()
+        _isMiniPlayerVisible.value = false
+    }
 }

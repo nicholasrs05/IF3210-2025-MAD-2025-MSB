@@ -4,6 +4,7 @@ import android.content.Context
 import android.media.MediaMetadataRetriever
 import com.msb.purrytify.data.local.dao.SongDao
 import com.msb.purrytify.data.local.entity.Song
+import com.msb.purrytify.model.ProfileModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
@@ -11,15 +12,6 @@ import javax.inject.Singleton
 
 @Singleton
 class SongRepository @Inject constructor(private val songDao: SongDao) {
-
-    val allSongs: Flow<List<Song>> = songDao.getAllSongs()
-    val likedSongs: Flow<List<Song>> = songDao.getLikedSongs()
-    val recentlyPlayedSongs: Flow<List<Song>> = songDao.getRecentlyPlayedSongs()
-    val songCount: Flow<Int> = songDao.getSongCount()
-    val likedSongCount: Flow<Int> = songDao.getLikedSongCount()
-    val listenedSongCount: Flow<Int> = songDao.getListenedSongCount()
-    val newSongs: Flow<List<Song>> = songDao.getNewSongs()
-
     suspend fun insert(song: Song): Long {
         return songDao.insert(song)
     }
@@ -44,20 +36,32 @@ class SongRepository @Inject constructor(private val songDao: SongDao) {
         songDao.updateLastPlayedAt(songId, System.currentTimeMillis())
     }
 
-    fun fetchAllSongs(): Flow<List<Song>> {
-        return songDao.getAllSongs()
+    fun fetchAllSongs(userId: Int): Flow<List<Song>> {
+        return songDao.getAllSongs(userId)
     }
 
-    fun fetchLikedSongs(): Flow<List<Song>> {
-        return songDao.getLikedSongs()
+    fun fetchLikedSongs(userId: Int): Flow<List<Song>> {
+        return songDao.getLikedSongs(userId)
     }
 
-    fun fetchRecentlyPlayedSongs(): Flow<List<Song>> {
-        return songDao.getRecentlyPlayedSongs()
+    fun fetchRecentlyPlayedSongs(userId: Int): Flow<List<Song>> {
+        return songDao.getRecentlyPlayedSongs(userId)
     }
 
-    fun fetchNewSongs(): Flow<List<Song>> {
-        return songDao.getNewSongs()
+    fun fetchNewSongs(userId: Int): Flow<List<Song>> {
+        return songDao.getNewSongs(userId)
+    }
+
+    fun getSongCount(userId: Int): Flow<Int> {
+        return songDao.getSongCount(userId)
+    }
+
+    fun getLikedSongCount(userId: Int): Flow<Int> {
+        return songDao.getLikedSongCount(userId)
+    }
+
+    fun getListenedSongCount(userId: Int): Flow<Int> {
+        return songDao.getListenedSongCount(userId)
     }
 
     companion object {

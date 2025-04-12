@@ -15,14 +15,14 @@ interface SongDao {
     @Delete
     suspend fun delete(song: Song)
 
-    @Query("SELECT * FROM songs ORDER BY addedAt DESC")
-    fun getAllSongs(): Flow<List<Song>>
+    @Query("SELECT * FROM songs WHERE ownerId = :ownerId ORDER BY addedAt DESC")
+    fun getAllSongs(ownerId: Int): Flow<List<Song>>
 
-    @Query("SELECT * FROM songs WHERE isLiked = 1 ORDER BY addedAt DESC")
-    fun getLikedSongs(): Flow<List<Song>>
+    @Query("SELECT * FROM songs WHERE isLiked = 1 AND ownerId = :ownerId ORDER BY addedAt DESC")
+    fun getLikedSongs(ownerId: Int): Flow<List<Song>>
 
-    @Query("SELECT * FROM songs WHERE lastPlayedAt IS NOT NULL ORDER BY lastPlayedAt DESC LIMIT 10")
-    fun getRecentlyPlayedSongs(): Flow<List<Song>>
+    @Query("SELECT * FROM songs WHERE lastPlayedAt IS NOT NULL AND ownerId = :ownerId ORDER BY lastPlayedAt DESC LIMIT 10")
+    fun getRecentlyPlayedSongs(ownerId: Int): Flow<List<Song>>
 
     @Query("SELECT * FROM songs WHERE id = :songId")
     suspend fun getSongById(songId: Long): Song?
@@ -33,15 +33,15 @@ interface SongDao {
     @Query("UPDATE songs SET lastPlayedAt = :timestamp WHERE id = :songId")
     suspend fun updateLastPlayedAt(songId: Long, timestamp: Long)
 
-    @Query("SELECT COUNT(*) FROM songs")
-    fun getSongCount(): Flow<Int>
+    @Query("SELECT COUNT(*) FROM songs WHERE ownerId = :ownerId")
+    fun getSongCount(ownerId: Int): Flow<Int>
 
-    @Query("SELECT COUNT(*) FROM songs WHERE isLiked = 1")
-    fun getLikedSongCount(): Flow<Int>
+    @Query("SELECT COUNT(*) FROM songs WHERE isLiked = 1 AND ownerId = :ownerId")
+    fun getLikedSongCount(ownerId: Int): Flow<Int>
 
-    @Query("SELECT COUNT(*) FROM songs WHERE lastPlayedAt IS NOT NULL")
-    fun getListenedSongCount(): Flow<Int>
+    @Query("SELECT COUNT(*) FROM songs WHERE lastPlayedAt IS NOT NULL AND ownerId = :ownerId")
+    fun getListenedSongCount(ownerId: Int): Flow<Int>
 
-    @Query("SELECT * FROM songs ORDER BY addedAt DESC LIMIT 10")
-    fun getNewSongs(): Flow<List<Song>>
+    @Query("SELECT * FROM songs WHERE ownerId = :ownerId ORDER BY addedAt DESC LIMIT 10")
+    fun getNewSongs(ownerId: Int): Flow<List<Song>>
 }

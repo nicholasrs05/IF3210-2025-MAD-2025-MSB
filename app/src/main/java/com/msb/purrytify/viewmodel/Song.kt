@@ -1,12 +1,14 @@
 package com.msb.purrytify.viewmodel
 
 import android.app.Application
+import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.msb.purrytify.data.local.entity.Song
 import com.msb.purrytify.data.repository.SongRepository
+import com.msb.purrytify.model.ProfileModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -15,16 +17,18 @@ import javax.inject.Inject
 @HiltViewModel
 class SongViewModel @Inject constructor(
     application: Application,
-    private val repository: SongRepository
+    private val repository: SongRepository,
+    private val profileModel: ProfileModel
 ) : AndroidViewModel(application) {
 
-    val allSongs: LiveData<List<Song>> = repository.allSongs.asLiveData()
-    val likedSongs: LiveData<List<Song>> = repository.likedSongs.asLiveData()
-    val recentlyPlayedSongs: LiveData<List<Song>> = repository.recentlyPlayedSongs.asLiveData()
-    val newSongs: LiveData<List<Song>> = repository.newSongs.asLiveData()
-    val songCount: LiveData<Int> = repository.songCount.asLiveData()
-    val likedSongCount: LiveData<Int> = repository.likedSongCount.asLiveData()
-    val listenedSongCount: LiveData<Int> = repository.listenedSongCount.asLiveData()
+    val userId = profileModel.currentProfile.value.id
+    val allSongs: LiveData<List<Song>> = repository.fetchAllSongs(userId).asLiveData()
+    val likedSongs: LiveData<List<Song>> = repository.fetchLikedSongs(userId).asLiveData()
+    val recentlyPlayedSongs: LiveData<List<Song>> = repository.fetchRecentlyPlayedSongs(userId).asLiveData()
+    val newSongs: LiveData<List<Song>> = repository.fetchNewSongs(userId).asLiveData()
+    val songCount: LiveData<Int> = repository.getSongCount(userId).asLiveData()
+    val likedSongCount: LiveData<Int> = repository.getLikedSongCount(userId).asLiveData()
+    val listenedSongCount: LiveData<Int> = repository.getListenedSongCount(userId).asLiveData()
 
     // Rest of your methods remain the same
     fun addSong(title: String, artist: String, filePath: String, artworkPath: String, duration: Long) {
@@ -34,7 +38,8 @@ class SongViewModel @Inject constructor(
                 artist = artist,
                 filePath = filePath,
                 artworkPath = artworkPath,
-                duration = duration
+                duration = duration,
+                ownerId = userId
             )
             repository.insert(song)
         }
