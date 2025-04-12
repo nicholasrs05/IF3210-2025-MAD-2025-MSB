@@ -41,4 +41,7 @@ interface SongDao {
 
     @Query("SELECT COUNT(*) FROM songs WHERE lastPlayedAt IS NOT NULL")
     fun getListenedSongCount(): Flow<Int>
+
+    @Query("SELECT * FROM songs ORDER BY addedAt DESC LIMIT 10")
+    fun getNewSongs(): Flow<List<Song>>
 }

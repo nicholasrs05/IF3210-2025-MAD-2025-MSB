@@ -1,5 +1,6 @@
 package com.msb.purrytify.ui.screen
 
+import android.content.Context
 import android.content.res.Configuration
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -7,37 +8,64 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.foundation.layout.Column
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.msb.purrytify.data.model.Song
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import coil3.compose.AsyncImage
+import com.msb.purrytify.R
+import com.msb.purrytify.data.local.entity.Song
+import com.msb.purrytify.ui.component.LibraryAdapter
 import com.msb.purrytify.ui.theme.AppTheme
-import com.msb.purrytify.viewmodel.HomeViewModel
+import com.msb.purrytify.viewmodel.PlaybackViewModel
+import com.msb.purrytify.viewmodel.PlayerViewModel
+import com.msb.purrytify.viewmodel.SongViewModel
+import java.io.File
 
 
 @Composable
 fun HomeScreen(
-    onSongClick: (Song) -> Unit = {},
-    viewModel: HomeViewModel = hiltViewModel()
+    viewModel: SongViewModel = hiltViewModel(),
+    playerViewModel: PlayerViewModel = hiltViewModel(),
+    playbackViewModel: PlaybackViewModel = hiltViewModel(),
 ) {
-    val recentlyPlayed = viewModel.recentlyPlayedSongs
-    val newSongs = viewModel.newSongs
+    val recentlyPlayedState: androidx.compose.runtime.State<List<Song>> =
+        viewModel.recentlyPlayedSongs.observeAsState(initial = emptyList())
+    val newSongsState: androidx.compose.runtime.State<List<Song>> =
+        viewModel.newSongs.observeAsState(initial = emptyList())
 
+    val recentlyPlayed: List<Song> = recentlyPlayedState.value
+    val newSongs: List<Song> = newSongsState.value
+    val mediaManager = playbackViewModel.mediaPlayerManager
+
+    val onClickedRecent: (Song) -> Unit = { song ->
+        playerViewModel.playSong(song)
+        mediaManager.setPlaylist(recentlyPlayed)
+    }
+
+    val onClickedNew: (Song) -> Unit = { song ->
+        playerViewModel.playSong(song)
+        mediaManager.setPlaylist(newSongs)
+    }
+
+    mediaManager.setPlaylist(newSongs)
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -57,7 +85,7 @@ fun HomeScreen(
             }
 
             item {
-                RecentlyPlayedSection(recentlyPlayed, onSongClick)
+                NewSongsSection(newSongs, onSongClick = onClickedNew)
             }
 
             item {
@@ -70,44 +98,66 @@ fun HomeScreen(
             }
 
             item {
-                NewSongsSection(newSongs, onSongClick)
+                RecentlyPlayedSection(recentlyPlayed, onSongClick = onClickedRecent)
             }
         }
     }
 }
 
+
 @Composable
-fun RecentlyPlayedSection(songs: List<Song>, onSongClick: (Song) -> Unit) {
-    LazyRow(
-        contentPadding = PaddingValues(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        items(songs.size) { index ->
-            RecentlyPlayedItem(
-                song = songs[index],
-                onSongClick = onSongClick
+fun NewSongsSection(songs: List<Song>?, onSongClick: (Song) -> Unit) {
+    if (songs == null || songs.isEmpty()) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "No new songs available.",
+                textAlign = TextAlign.Center
             )
+        }
+    } else {
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            items(songs) { song ->
+                NewSongItem(
+                    song = song,
+                    onSongClick = onSongClick // The lambda will receive the 'song' here
+                )
+            }
         }
     }
 }
 
 
 @Composable
-fun RecentlyPlayedItem(song: Song, onSongClick: (Song) -> Unit) {
+fun NewSongItem(song: Song, onSongClick: (Song) -> Unit) {
     Column(
         modifier = Modifier
             .width(96.dp)
-            .clickable { onSongClick(song) },
+            .clickable { onSongClick(song) }, // 'song' is passed to the lambda when clicked
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Image(
-            painter = painterResource(id = song.coverArt),
-            contentDescription = "Album art for ${song.title}",
-            modifier = Modifier
-                .size(86.dp)
-                .clip(RoundedCornerShape(8.dp)),
-            contentScale = ContentScale.Crop
-        )
+        if (song.artworkPath.isNotEmpty() && File(song.artworkPath).exists()) {
+            AsyncImage(
+                model = File(song.artworkPath),
+                contentDescription = "Album Artwork",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.size(90.dp).clip(MaterialTheme.shapes.small)
+            )
+        } else {
+            Image(
+                painter = painterResource(id = R.drawable.image),
+                contentDescription = "Default Album Art",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.size(90.dp).clip(MaterialTheme.shapes.small)
+            )
+        }
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -130,36 +180,53 @@ fun RecentlyPlayedItem(song: Song, onSongClick: (Song) -> Unit) {
 }
 
 @Composable
-fun NewSongsSection(songs: List<Song>, onSongClick: (Song) -> Unit) {
-    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-        songs.forEach { song ->
-            NewSongItem(song, onSongClick)
-            HorizontalDivider(
-                modifier = Modifier.padding(vertical = 8.dp),
-                thickness = 1.dp,
-                color = MaterialTheme.colorScheme.surfaceVariant
+fun RecentlyPlayedSection(songs: List<Song>?, onSongClick: (Song) -> Unit) {
+    if (songs == null || songs.isEmpty()) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "No recently played songs.",
+                textAlign = TextAlign.Center
             )
+        }
+    } else {
+        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+            songs.forEach { song ->
+                RecentlyPlayedItem(song, onSongClick = onSongClick) // The lambda will receive the 'song' here
+            }
         }
     }
 }
 
 @Composable
-fun NewSongItem(song: Song, onSongClick: (Song) -> Unit) {
+fun RecentlyPlayedItem(song: Song, onSongClick: (Song) -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onSongClick(song) }
+            .height(62.dp)
+            .clickable { onSongClick(song) } // 'song' is passed to the lambda when clicked
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Image(
-            painter = painterResource(id = song.coverArt),
-            contentDescription = "Album art for ${song.title}",
-            modifier = Modifier
-                .size(38.dp)
-                .clip(RoundedCornerShape(4.dp)),
-            contentScale = ContentScale.Crop
-        )
+        if (song.artworkPath.isNotEmpty() && File(song.artworkPath).exists()) {
+            AsyncImage(
+                model = File(song.artworkPath),
+                contentDescription = "Album Artwork",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.fillMaxHeight().clip(MaterialTheme.shapes.extraSmall)
+            )
+        } else {
+            Image(
+                painter = painterResource(id = R.drawable.image),
+                contentDescription = "Default Album Art",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.fillMaxHeight().clip(MaterialTheme.shapes.extraSmall)
+            )
+        }
 
         Spacer(modifier = Modifier.width(16.dp))
 
