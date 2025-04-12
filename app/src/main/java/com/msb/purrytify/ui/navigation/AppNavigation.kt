@@ -12,12 +12,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-// Import for collectAsStateWithLifecycle (add dependency if needed)
-// import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.runtime.collectAsState // Keep this for now, or switch
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -170,7 +166,7 @@ fun NavigationComponent(
                                         playbackViewModel = playbackViewModel
                                     )
                                 }
-                                composable(Screen.Profile.route) { ProfileScreen() }
+                                composable(Screen.Profile.route) { ProfileScreen(authViewModel=authViewModel) }
                                 composable(Screen.Login.route) {
                                     LoginScreen(
                                         navController = navController,

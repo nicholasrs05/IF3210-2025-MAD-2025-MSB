@@ -37,9 +37,9 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             profileModel.currentProfile.collect { profileData ->
                 combine(
-                    songDao.getSongCount(),
-                    songDao.getLikedSongCount(),
-                    songDao.getListenedSongCount()
+                    songDao.getSongCount(profileData.id),
+                    songDao.getLikedSongCount(profileData.id),
+                    songDao.getListenedSongCount(profileData.id)
                 ) { total, liked, listened ->
                     profileData.copy(
                         addedSongsCount = total,
@@ -80,9 +80,9 @@ class ProfileViewModel @Inject constructor(
 
             profileModel.currentProfile.collect { profileData ->
                 combine(
-                    songDao.getSongCount(),
-                    songDao.getLikedSongCount(),
-                    songDao.getListenedSongCount()
+                    songDao.getSongCount(profileData.id),
+                    songDao.getLikedSongCount(profileData.id),
+                    songDao.getListenedSongCount(profileData.id)
                 ) { total, liked, listened ->
                     profileData.copy(
                         addedSongsCount = total,

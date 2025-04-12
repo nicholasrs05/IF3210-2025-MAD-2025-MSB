@@ -14,5 +14,6 @@ data class Song(
     val artworkPath: String,
     val isLiked: Boolean = false,
     val addedAt: Long = System.currentTimeMillis(),
-    val lastPlayedAt: Long? = null
+    val lastPlayedAt: Long? = null,
+    val ownerId: Int
 )

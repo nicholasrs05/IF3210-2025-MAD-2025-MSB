@@ -52,13 +52,6 @@ class MediaPlayerManager(private val context: Context) {
         }
     }
 
-    fun addSongToPlaylist(song: Song) {
-        playlist = playlist + song
-        if (currentSongIdx == -1) {
-            currentSongIdx = 0
-        }
-    }
-
     fun releasePlayer(notifyListeners: Boolean = true) {
         mediaPlayer?.release()
         mediaPlayer = null
@@ -178,8 +171,10 @@ class MediaPlayerManager(private val context: Context) {
         return mediaPlayer?.currentPosition ?: 0
     }
 
-    fun getPlaylist(): List<Song> {
-        return playlist
+    fun stop() {
+        mediaPlayer?.stop()
+        releasePlayer(notifyListeners = false) // release without notifying song change listeners
+        currentSongIdx = -1
     }
 
     fun seekTo(position: Int) {

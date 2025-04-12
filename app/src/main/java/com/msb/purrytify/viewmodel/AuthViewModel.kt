@@ -2,6 +2,7 @@ package com.msb.purrytify.viewmodel
 
 import android.util.Log
 import android.util.Patterns
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.msb.purrytify.data.api.ApiService
@@ -31,7 +32,7 @@ class AuthViewModel @Inject constructor(
     private val dataStoreManager: DataStoreManager,
     private val authModel: AuthModel,
     private val apiService: ApiService,
-    private val profileModel: ProfileModel
+    private val profileModel: ProfileModel,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState

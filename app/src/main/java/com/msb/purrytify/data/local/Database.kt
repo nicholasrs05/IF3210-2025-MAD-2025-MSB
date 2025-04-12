@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 import com.msb.purrytify.data.local.dao.SongDao
 import com.msb.purrytify.data.local.entity.Song
 
-@Database(entities = [Song::class], version = 1, exportSchema = false)
+@Database(entities = [Song::class], version = 2, exportSchema = false)
 abstract class PurrytifyDatabase : RoomDatabase() {
     abstract fun songDao(): SongDao
 

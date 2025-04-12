@@ -39,13 +39,20 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
+import com.msb.purrytify.viewmodel.AuthViewModel
+import com.msb.purrytify.viewmodel.PlayerViewModel
 
 @Composable
-fun ProfileScreen(viewModel: ProfileViewModel = hiltViewModel()) {
+fun ProfileScreen(viewModel: ProfileViewModel = hiltViewModel(), authViewModel: AuthViewModel, playerViewModel: PlayerViewModel = hiltViewModel()) {
     val context = LocalContext.current
     var isConnected by remember { mutableStateOf(true) }
 
     val lifecycleOwner = LocalLifecycleOwner.current
+
+    fun logout(){
+        authViewModel.logout()
+        playerViewModel.stopMediaPlayer()
+    }
 
     LaunchedEffect(lifecycleOwner.lifecycle) {
         lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -74,7 +81,7 @@ fun ProfileScreen(viewModel: ProfileViewModel = hiltViewModel()) {
 
                 is ProfileUiState.Success -> {
                     RectangleGradient()
-                    ProfileContent(profile = (profileUiState as ProfileUiState.Success).profile)
+                    ProfileContent(profile = (profileUiState as ProfileUiState.Success).profile, logout = {logout()})
                 }
 
                 is ProfileUiState.Error -> {
@@ -92,7 +99,7 @@ fun ProfileScreen(viewModel: ProfileViewModel = hiltViewModel()) {
 }
 
 @Composable
-fun ProfileContent(profile: com.msb.purrytify.data.model.Profile) {
+fun ProfileContent(profile: com.msb.purrytify.data.model.Profile, logout: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -140,27 +147,54 @@ fun ProfileContent(profile: com.msb.purrytify.data.model.Profile) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button (
-            onClick = {},
-            shape = RoundedCornerShape(45.dp),
-            contentPadding = PaddingValues(0.dp),
-            modifier = Modifier.defaultMinSize(
-                minWidth = ButtonDefaults.MinWidth,
-                minHeight = 10.dp
-            ).width(105.dp).height(32.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF3E3f3f),
-                contentColor = Color.White,
-            )
-        ) {
-            Text(
-                "Edit Profile",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color.White,
-                style = MaterialTheme.typography.bodyMedium
-            )
+        Row {
+            Button (
+                onClick = {},
+                shape = RoundedCornerShape(45.dp),
+                contentPadding = PaddingValues(0.dp),
+                modifier = Modifier.defaultMinSize(
+                    minWidth = ButtonDefaults.MinWidth,
+                    minHeight = 10.dp
+                ).width(105.dp).height(32.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF3E3f3f),
+                    contentColor = Color.White,
+                )
+            ) {
+                Text(
+                    "Edit Profile",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.White,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Button (
+                onClick = {logout()},
+                shape = RoundedCornerShape(45.dp),
+                contentPadding = PaddingValues(0.dp),
+                modifier = Modifier.defaultMinSize(
+                    minWidth = ButtonDefaults.MinWidth,
+                    minHeight = 10.dp
+                ).width(105.dp).height(32.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF3E3f3f),
+                    contentColor = Color.White,
+                )
+            ) {
+                Text(
+                    "Logout",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.White,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
         }
+
 
         Spacer(modifier = Modifier.height(24.dp))
 
