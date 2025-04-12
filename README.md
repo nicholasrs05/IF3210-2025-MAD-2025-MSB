@@ -5,12 +5,15 @@
 ## Deskripsi Aplikasi
 
 Purrytify merupakan sebuah aplikasi android native yang dikembangkan dengan bahasa pemrograman Kotlin. Aplikasi ini menyediakan berbagai fungsionalitas terkait music player dengan tampilan berbasis Jetpack Compose.
+
 ### Spesifikasi SDK
+
 - Minimum SDK: Android 10 (API Level 29)
 - Target SDK: Android 13 (API Level 34)
 - Compile SDK: Android 13 (API Level 34)
 
 ### Fitur Utama
+
 1. Log in ke sebuah akun yang sudah terdaftar
 2. Melihat profil pengguna yang berisi identitas, banyak lagu yang dimiliki, banyak lagu yang disukai, dan banyak lagu yang sudah didengarkan
 3. Memasukkan lagu ke library berdasarkan akun yang terautentikasi
@@ -21,6 +24,7 @@ Purrytify merupakan sebuah aplikasi android native yang dikembangkan dengan baha
 8. Network sensing untuk mendeteksi kehilangan sinyal pada saat menggunakan aplikasi
 
 ## Daftar Library
+
 1. Hilt untuk dependency injection
 2. Jetpack Compose untuk UI
 3. MediaPlayer dari Android SDK untuk pemutar lagu
@@ -35,19 +39,35 @@ Purrytify merupakan sebuah aplikasi android native yang dikembangkan dengan baha
 
 ### Layar Log-In
 
+![login](images/login.png)
+
 ### Layer Home
+
+![home](images/home.png)
 
 ### Layar Library
 
+![library](/images/library.png)
+
 ### Layar Profile
+
+![profile](/images/profile.png)
 
 ### Layar Media Player
 
+![media_player](/images/player.png)
+
 ### Mini Player
+
+![library-mini-player](/images/library-mini-player.png)
 
 ### Layer Add Song
 
+![add](/images/add.png)
+
 ### Tampilan No Internet
+
+![internet](/images/internet.png)
 
 ## Pembagian Kerja
 
@@ -70,3 +90,4 @@ Purrytify merupakan sebuah aplikasi android native yang dikembangkan dengan baha
 |           | Network Sensing   | 1 jam            | 2 jam             |
 | 13522153  | Pemutar Lagu     | X jam            | Y jam            |
 |           | Mini Player      | X jam            | Y jam             |
+
