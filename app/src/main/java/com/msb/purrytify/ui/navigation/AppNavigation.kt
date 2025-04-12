@@ -4,6 +4,7 @@ import android.content.res.Configuration
 import android.util.Log
 import androidx.collection.isNotEmpty
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -79,7 +80,8 @@ sealed class Screen(
 fun NavigationComponent(
     authViewModel: AuthViewModel = hiltViewModel(),
     playerViewModel: PlayerViewModel = hiltViewModel(),
-    playbackViewModel: PlaybackViewModel = hiltViewModel()
+    playbackViewModel: PlaybackViewModel = hiltViewModel(),
+    isLandscape: Boolean
 ) {
     AppTheme {
         Surface(
@@ -141,37 +143,83 @@ fun NavigationComponent(
                 }
             } else {
                 PlayerContainer(
+                    isLandscape = isLandscape,
                     playerViewModel = playerViewModel,
                     playbackViewModel = playbackViewModel,
                     content = {
-                        Scaffold(
-                            bottomBar = {
-                                val showBottomBar =
-                                    isLoggedIn && currentRouteForUI != Screen.Login.route
-                                if (showBottomBar) {
-                                    NavigationBarComponent(navController)
+                        if (isLandscape) {
+                            Row(
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                val showNavBar = isLoggedIn && currentRouteForUI != Screen.Login.route
+                                if (showNavBar) {
+                                    NavigationBarComponent(navController = navController, isLandscape = true)
+                                }
+
+                                Box(modifier = Modifier.weight(1f)) {
+                                    NavHost(
+                                        navController = navController,
+                                        startDestination = startDestination,
+                                        modifier = Modifier.fillMaxSize()
+                                    ) {
+                                        composable(Screen.Home.route) {
+                                            HomeScreen(
+                                                playerViewModel = playerViewModel,
+                                                playbackViewModel = playbackViewModel
+                                            )
+                                        }
+                                        composable(Screen.Library.route) {
+                                            LibraryScreen(
+                                                navController = navController,
+                                                playerViewModel = playerViewModel,
+                                                playbackViewModel = playbackViewModel
+                                            )
+                                        }
+                                        composable(Screen.Profile.route) {
+                                            ProfileScreen(
+                                                authViewModel = authViewModel,
+                                                playerViewModel = playerViewModel
+                                            )
+                                        }
+                                        composable(Screen.Login.route) {
+                                            LoginScreen(
+                                                navController = navController,
+                                                authViewModel = authViewModel
+                                            )
+                                        }
+                                    }
                                 }
                             }
-                        ) { innerPadding ->
-                            NavHost(
-                                navController = navController,
-                                startDestination = startDestination,
-                                modifier = Modifier.padding(innerPadding)
-                            ) {
-                                composable(Screen.Home.route) { HomeScreen(playerViewModel = playerViewModel, playbackViewModel = playbackViewModel) }
-                                composable(Screen.Library.route) {
-                                    LibraryScreen(
-                                        navController = navController,
-                                        playerViewModel = playerViewModel,
-                                        playbackViewModel = playbackViewModel
-                                    )
+                        } else {
+                            Scaffold(
+                                bottomBar = {
+                                    val showBottomBar =
+                                        isLoggedIn && currentRouteForUI != Screen.Login.route
+                                    if (showBottomBar) {
+                                        NavigationBarComponent(navController)
+                                    }
                                 }
-                                composable(Screen.Profile.route) { ProfileScreen(authViewModel=authViewModel, playerViewModel = playerViewModel) }
-                                composable(Screen.Login.route) {
-                                    LoginScreen(
-                                        navController = navController,
-                                        authViewModel = authViewModel
-                                    )
+                            ) { innerPadding ->
+                                NavHost(
+                                    navController = navController,
+                                    startDestination = startDestination,
+                                    modifier = Modifier.padding(innerPadding)
+                                ) {
+                                    composable(Screen.Home.route) { HomeScreen(playerViewModel = playerViewModel, playbackViewModel = playbackViewModel) }
+                                    composable(Screen.Library.route) {
+                                        LibraryScreen(
+                                            navController = navController,
+                                            playerViewModel = playerViewModel,
+                                            playbackViewModel = playbackViewModel
+                                        )
+                                    }
+                                    composable(Screen.Profile.route) { ProfileScreen(authViewModel=authViewModel, playerViewModel = playerViewModel) }
+                                    composable(Screen.Login.route) {
+                                        LoginScreen(
+                                            navController = navController,
+                                            authViewModel = authViewModel
+                                        )
+                                    }
                                 }
                             }
                         }

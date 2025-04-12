@@ -80,6 +80,7 @@ fun PlayerScreen(
     
     BackHandler {
         if (!actualIsDismissing) {
+            viewModel.setLargePlayerVisible(false)
             localIsDismissing = true
             onDismissWithAnimation()
         }
