@@ -1,6 +1,10 @@
 package com.msb.purrytify.ui.screen
 
+import android.Manifest
 import android.graphics.BitmapFactory
+import android.net.Uri
+import android.os.Build
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
@@ -10,8 +14,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,9 +32,18 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.style.TextAlign
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import coil3.compose.rememberAsyncImagePainter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.zIndex
 import androidx.core.graphics.ColorUtils
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.msb.purrytify.utils.FileUtils
+import com.msb.purrytify.viewmodel.SongViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.palette.graphics.Palette
 import coil3.compose.AsyncImage
@@ -318,11 +335,52 @@ fun PlayerScreen(
                     style = MaterialTheme.typography.titleMedium
                 )
                 
-                IconButton(onClick = { /* Menu */ }) {
-                    Icon(
-                        imageVector = Icons.Filled.MoreVert,
-                        contentDescription = "Menu",
-                        tint = textColor
+                var showMenu by remember { mutableStateOf(false) }
+                var showEditDialog by remember { mutableStateOf(false) }
+                
+                Box {
+                    IconButton(onClick = { showMenu = !showMenu }) {
+                        Icon(
+                            imageVector = Icons.Filled.MoreVert,
+                            contentDescription = "Menu",
+                            tint = textColor
+                        )
+                    }
+                    
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false },
+                        modifier = Modifier.background(backgroundColor)
+                    ) {
+                        DropdownMenuItem(
+                            text = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Edit,
+                                        contentDescription = "Edit Song",
+                                        tint = textColor,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Edit Song", color = textColor)
+                                }
+                            },
+                            onClick = {
+                                showMenu = false
+                                showEditDialog = true
+                            }
+                        )
+                    }
+                }
+                
+                if (showEditDialog) {
+                    EditSongDialog(
+                        song = currentPlayingSong,
+                        onDismiss = { showEditDialog = false },
+                        backgroundColor = backgroundColor,
+                        textColor = textColor,
+                        accentColor = accentColor,
+                        viewModel = viewModel
                     )
                 }
             }
@@ -402,4 +460,370 @@ private fun formatDuration(miliseconds: Int): String {
     val minutes = seconds / 60
     val remainingSeconds = seconds % 60
     return "$minutes:${remainingSeconds.toString().padStart(2, '0')}"
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditSongDialog(
+    song: Song,
+    onDismiss: () -> Unit,
+    backgroundColor: Color,
+    textColor: Color,
+    accentColor: Color,
+    viewModel: PlayerViewModel
+) {
+    val context = LocalContext.current
+    val songViewModel: SongViewModel = hiltViewModel()
+    
+    // State variables
+    var title by remember { mutableStateOf(song.title) }
+    var artist by remember { mutableStateOf(song.artist) }
+    var selectedArtworkUri by remember { mutableStateOf<Uri?>(null) }
+    var showPermissionDialog by remember { mutableStateOf(false) }
+    
+    // Color variables
+    val buttonGreen = accentColor
+    val buttonGray = Color(0xFF555555)
+    val borderColor = Color(0xFF444444)
+    val textFieldBgColor = backgroundColor.copy(alpha = 0.7f)
+    
+    // Content launcher for image files
+    val pickArtworkLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let {
+            try {
+                selectedArtworkUri = it
+            } catch (e: Exception) {
+                Toast.makeText(context, "Error selecting artwork: ${e.message}", Toast.LENGTH_SHORT).show()
+                e.printStackTrace()
+            }
+        }
+    }
+    
+    // Permission launcher for image files
+    val imagePermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val isGranted = if (Build.VERSION.SDK_INT >= 33) {
+            permissions[Manifest.permission.READ_MEDIA_IMAGES] == true
+        } else {
+            permissions[Manifest.permission.READ_EXTERNAL_STORAGE] == true
+        }
+        
+        if (isGranted) {
+            pickArtworkLauncher.launch("image/*")
+        } else {
+            showPermissionDialog = true
+        }
+    }
+    
+    // Function to request image permissions
+    fun requestImagePermission() {
+        if (Build.VERSION.SDK_INT >= 33) {
+            imagePermissionLauncher.launch(arrayOf(
+                Manifest.permission.READ_MEDIA_IMAGES
+            ))
+        } else {
+            imagePermissionLauncher.launch(arrayOf(
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            ))
+        }
+    }
+    
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    
+    ModalBottomSheet(
+        onDismissRequest = { onDismiss() },
+        sheetState = sheetState,
+        containerColor = backgroundColor,
+        dragHandle = null,
+        content = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(backgroundColor)
+                    .padding(horizontal = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Header
+                Text(
+                    text = "Edit Song",
+                    color = textColor,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
+                
+                // Upload containers
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp, bottom = 24.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // Upload Photo Box
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .aspectRatio(1f)
+                            .border(
+                                width = 1.dp,
+                                color = borderColor,
+                                shape = RoundedCornerShape(6.dp)
+                            )
+                            .clip(RoundedCornerShape(6.dp))
+                            .clickable { requestImagePermission() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (selectedArtworkUri != null) {
+                            Image(
+                                painter = rememberAsyncImagePainter(selectedArtworkUri),
+                                contentDescription = "Selected Artwork",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else if (song.artworkPath.isNotEmpty() && File(song.artworkPath).exists()) {
+                            AsyncImage(
+                                model = File(song.artworkPath),
+                                contentDescription = "Current Artwork",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.add),
+                                    contentDescription = "Upload Image",
+                                    tint = Color.Gray,
+                                    modifier = Modifier.size(40.dp)
+                                )
+                                Text(
+                                    text = "Upload Photo",
+                                    color = Color.Gray,
+                                    fontSize = 11.sp,
+                                    modifier = Modifier.padding(top = 8.dp)
+                                )
+                            }
+                        }
+                    }
+                    
+                    // Song Info Box with Duration
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .aspectRatio(1f)
+                            .border(
+                                width = 1.dp,
+                                color = borderColor,
+                                shape = RoundedCornerShape(6.dp)
+                            )
+                            .clip(RoundedCornerShape(6.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.MusicNote,
+                                contentDescription = "Song Info",
+                                tint = Color.Gray,
+                                modifier = Modifier.size(40.dp)
+                            )
+                            
+                            val minutes = song.duration / 60000
+                            val seconds = (song.duration % 60000) / 1000
+                            Text(
+                                text = "Duration: ${minutes}:${String.format("%02d", seconds)}",
+                                color = Color.Gray,
+                                fontSize = 11.sp,
+                                modifier = Modifier.padding(top = 8.dp)
+                            )
+                        }
+                    }
+                }
+                
+                // Title TextField
+                Text(
+                    text = "Title",
+                    color = textColor,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier
+                        .align(Alignment.Start)
+                        .padding(top = 8.dp, bottom = 8.dp)
+                )
+                
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    placeholder = { Text("Title", color = Color.Gray) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = textColor,
+                        unfocusedTextColor = textColor,
+                        disabledTextColor = textColor,
+                        focusedContainerColor = textFieldBgColor,
+                        unfocusedContainerColor = textFieldBgColor,
+                        disabledContainerColor = textFieldBgColor,
+                        cursorColor = textColor,
+                        focusedBorderColor = Color.Transparent,
+                        unfocusedBorderColor = Color.Transparent
+                    ),
+                    shape = RoundedCornerShape(4.dp),
+                    singleLine = true
+                )
+                
+                // Artist TextField
+                Text(
+                    text = "Artist",
+                    color = textColor,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier
+                        .align(Alignment.Start)
+                        .padding(top = 16.dp, bottom = 8.dp)
+                )
+                
+                OutlinedTextField(
+                    value = artist,
+                    onValueChange = { artist = it },
+                    placeholder = { Text("Artist", color = Color.Gray) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = textColor,
+                        unfocusedTextColor = textColor,
+                        disabledTextColor = textColor,
+                        focusedContainerColor = textFieldBgColor,
+                        unfocusedContainerColor = textFieldBgColor,
+                        disabledContainerColor = textFieldBgColor,
+                        cursorColor = textColor,
+                        focusedBorderColor = Color.Transparent,
+                        unfocusedBorderColor = Color.Transparent
+                    ),
+                    shape = RoundedCornerShape(4.dp),
+                    singleLine = true
+                )
+                
+                // Spacer to push buttons to bottom
+                Spacer(modifier = Modifier.height(40.dp))
+                
+                // Buttons
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 24.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Cancel Button
+                    Button(
+                        onClick = { onDismiss() },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = buttonGray
+                        ),
+                        shape = RoundedCornerShape(24.dp),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Text(
+                            text = "Cancel",
+                            color = textColor,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                    
+                    // Save Button
+                    Button(
+                        onClick = {
+                            if (title.isBlank() || artist.isBlank()) {
+                                Toast.makeText(
+                                    context,
+                                    "Please fill all required fields",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            } else {
+                                try {
+                                    val artworkFilePath = selectedArtworkUri?.let {
+                                        try {
+                                            FileUtils.saveFileToAppStorage(context, it, "artwork")
+                                        } catch (e: Exception) {
+                                            e.printStackTrace()
+                                            song.artworkPath // Keep original artwork if new one fails
+                                        }
+                                    } ?: song.artworkPath
+                                    
+                                    val updatedSong = song.copy(
+                                        title = title,
+                                        artist = artist,
+                                        artworkPath = artworkFilePath
+                                    )
+                                    
+                                    songViewModel.updateSong(updatedSong)
+                                    viewModel.updateSongFromRepo()
+                                    
+                                    Toast.makeText(
+                                        context,
+                                        "Song updated successfully",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    
+                                    onDismiss()
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                    Toast.makeText(
+                                        context,
+                                        "Error updating song: ${e.message}",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = buttonGreen
+                        ),
+                        shape = RoundedCornerShape(24.dp),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Text(
+                            text = "Save",
+                            color = Color.White,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            }
+        }
+    )
+    
+    // Permission denial dialog
+    if (showPermissionDialog) {
+        AlertDialog(
+            onDismissRequest = { showPermissionDialog = false },
+            title = { Text("Permission Required") },
+            text = {
+                Text("Storage permission is required to select files. Please grant this permission in app settings.")
+            },
+            confirmButton = {
+                TextButton(onClick = { showPermissionDialog = false }) {
+                    Text("OK")
+                }
+            }
+        )
+    }
 }

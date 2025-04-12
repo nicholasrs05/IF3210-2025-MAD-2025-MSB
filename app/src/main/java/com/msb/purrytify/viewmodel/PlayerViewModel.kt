@@ -46,7 +46,6 @@ class PlayerViewModel @Inject constructor(
     val isMiniPlayerVisible: State<Boolean> = _isMiniPlayerVisible
 
     private val _isLargePlayerVisible = mutableStateOf(false)
-    val isLargePlayerVisible: State<Boolean> = _isLargePlayerVisible
 
     fun setLargePlayerVisible(isVisible: Boolean) {
         _isLargePlayerVisible.value = isVisible
@@ -172,6 +171,17 @@ class PlayerViewModel @Inject constructor(
             _currentPosition.floatValue = mediaPlayerManager.getCurrentPosition().toFloat()
             _isPlaying.value = mediaPlayerManager.isPlaying()
             checkLikedStatus(currentSong.id)
+        }
+    }
+
+    fun updateSongFromRepo() {
+        _currentSong.value?.let { song ->
+            viewModelScope.launch {
+                val updatedSong = songRepository.getSongById(song.id)
+                if (updatedSong != null) {
+                    _currentSong.value = updatedSong
+                }
+            }
         }
     }
 

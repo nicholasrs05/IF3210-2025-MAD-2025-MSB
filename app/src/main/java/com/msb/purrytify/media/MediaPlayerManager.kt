@@ -61,6 +61,21 @@ class MediaPlayerManager(private val context: Context) {
             songChangeListeners.forEach { it.onPlayerReleased() }
         }
     }
+    
+    /**
+     * Updates the metadata of the current song in the playlist without restarting playback
+     */
+    fun updateCurrentSongData(updatedSong: Song) {
+        if (currentSongIdx in playlist.indices) {
+            // Create a new playlist with the updated song
+            val newPlaylist = playlist.toMutableList()
+            newPlaylist[currentSongIdx] = updatedSong
+            playlist = newPlaylist
+            
+            // Notify listeners that the song data has changed
+            notifySongChanged(updatedSong)
+        }
+    }
 
     fun playByIndex(index: Int) {
         if (index !in playlist.indices) return
