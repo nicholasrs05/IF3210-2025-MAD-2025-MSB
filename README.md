@@ -71,26 +71,28 @@ Purrytify merupakan sebuah aplikasi android native yang dikembangkan dengan baha
 
 ## Pembagian Kerja
 
-| NIM | Nama | Pekerjaan                                                                                         |
-| --- | --- |---------------------------------------------------------------------------------------------------|
-| 13522122 | Maulvi Ziadinda Maulana | Idk                                                                                               |
+| NIM      | Nama                    | Pekerjaan                                                                                         |
+|----------|-------------------------|---------------------------------------------------------------------------------------------------|
+| 13522122 | Maulvi Ziadinda Maulana | UI Login, UI Home, UI Profile, Authentication Logic, Worker Service, Song with Owner Feature      |
 | 13522144 | Nicholas Reymond Sihite | UI Library, UI Navigation Bar, Media Player Manager, UI Mini Player, Network Sensing (logic + UI) |
-| 13522153 | Muhammad Fauzan Azhim | UI Player, Add Songs, Player View Model, RoomDatabase, Edit songs                                 |
+| 13522153 | Muhammad Fauzan Azhim   | UI Player, Add Songs, Player View Model, RoomDatabase, Edit songs                                 |
 
 ## Durasi Persiapan dan Pengerjaan
 
-| NIM       | Pekerjaan            | Durasi Persiapan | Durasi Pengerjaan |
-|-----------|----------------------|------------------|-------------------|
-| 13522122  | Pekerjaan 1          | X jam            | Y jam             |
-|           | Pekerjaan 2          | X jam            | Y jam             |
-| 13522144  | UI Library           | 1 jam            | 5 jam             |
-|           | UI Navigation Bar    | 1 jam            | 2 jam             |
-|           | Media Player Manager | 1 jam            | 10 jam            |
-|           | UI Mini Player       | 1 jam            | 5 jam             |
-|           | Network Sensing      | 1 jam            | 2 jam             |
-| 13522153  | UI Player            | 1 jam            | 2 jam             |
-|           | Add Songs            | 1 jam            | 8 jam             |
-|           | Player View Model    | 1 jam            | 3 jam             |
-|           | RoomDatabase         | 1 jam            | 4 jam             |
-|           | Edit songs           | 1 jam            | 4 jam             |
-
+| NIM      | Pekerjaan            | Durasi Persiapan | Durasi Pengerjaan |
+|----------|----------------------|------------------|-------------------|
+| 13522122 | Login Screen         | 1 jam            | 5 jam             |
+|          | Auth Logic           | 1 jam            | 4 jam             |
+|          | Profile Screen       | 1 jam            | 4 jam             |
+|          | Home Screen          | 1 jam            | 6 jam             |
+|          | WorkManager          | 1 jam            | 3 jam             |
+| 13522144 | UI Library           | 1 jam            | 5 jam             |
+|          | UI Navigation Bar    | 1 jam            | 2 jam             |
+|          | Media Player Manager | 1 jam            | 10 jam            |
+|          | UI Mini Player       | 1 jam            | 5 jam             |
+|          | Network Sensing      | 1 jam            | 2 jam             |
+| 13522153 | UI Player            | 1 jam            | 2 jam             |
+|          | Add Songs            | 1 jam            | 8 jam             |
+|          | Player View Model    | 1 jam            | 3 jam             |
+|          | RoomDatabase         | 1 jam            | 4 jam             |
+|          | Edit songs           | 1 jam            | 4 jam             |
