@@ -93,6 +93,10 @@ fun AddSongScreen(
     ) { uri ->
         uri?.let {
             try {
+                context.contentResolver.takePersistableUriPermission(
+                    it,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
                 selectedArtworkUri = it
             } catch (e: Exception) {
                 Toast.makeText(context, "Error selecting artwork: ${e.message}", Toast.LENGTH_SHORT).show()
