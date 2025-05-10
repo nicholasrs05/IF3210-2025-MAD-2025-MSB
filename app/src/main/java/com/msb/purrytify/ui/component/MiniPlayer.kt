@@ -34,6 +34,8 @@ import androidx.core.graphics.ColorUtils
 import android.graphics.BitmapFactory
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.toArgb
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 
 @Composable
 fun MiniPlayer(
@@ -62,17 +64,26 @@ fun MiniPlayer(
     val context = LocalContext.current
 
     LaunchedEffect(currentSong.id, currentSong.artworkPath) {
-        val artworkUri = Uri.parse(currentSong.artworkPath)
-        val inputStream = context.contentResolver.openInputStream(artworkUri)
-        val bitmap = inputStream?.use { BitmapFactory.decodeStream(it) }
+        try {
+            val bitmap = if (currentSong.artworkPath.isNotEmpty()) {
+                val artworkUri = Uri.parse(currentSong.artworkPath)
+                val inputStream = context.contentResolver.openInputStream(artworkUri)
+                inputStream?.use { BitmapFactory.decodeStream(it) }
+            } else {
+                BitmapFactory.decodeResource(context.resources, R.drawable.image)
+            }
 
-        bitmap?.let {
-            val palette = Palette.from(it).generate()
-            val darkColor = palette.getDarkVibrantColor(Color(0xFF212121).toArgb())
-            val vibrantColor = palette.getVibrantColor(Color.White.toArgb())
+            bitmap?.let {
+                val palette = Palette.from(it).generate()
+                val darkColor = palette.getDarkVibrantColor(Color(0xFF212121).toArgb())
+                val vibrantColor = palette.getVibrantColor(Color.White.toArgb())
 
-            backgroundColor = Color(darkColor)
-            textColor = if (ColorUtils.calculateLuminance(darkColor) > 0.5) Color.Black else Color.White
+                backgroundColor = Color(darkColor)
+                textColor = if (ColorUtils.calculateLuminance(darkColor) > 0.5)
+                    Color.Black else Color.White
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
@@ -112,10 +123,17 @@ fun MiniPlayer(
                             .padding(4.dp)
                             .clip(RoundedCornerShape(4.dp))
                     ) {
-                        if (currentSong.artworkPath.isNotEmpty()) {
-                            val artworkUri = Uri.parse(currentSong.artworkPath)
+                        val artworkUriString = currentSong.artworkPath
+
+                        if (artworkUriString.isNotEmpty()) {
+                            val artworkUri = artworkUriString.takeIf { it.isNotEmpty() }?.let {
+                                Uri.parse(it)
+                            }
                             AsyncImage(
-                                model = artworkUri,
+                                model = ImageRequest.Builder(LocalContext.current)
+                                    .data(artworkUri)
+                                    .crossfade(true)
+                                    .build(),
                                 contentDescription = "Album Artwork",
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize()

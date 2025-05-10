@@ -145,27 +145,28 @@ fun PlayerScreen(
 
     LaunchedEffect(currentPlayingSong.id, currentPlayingSong.artworkPath) {
         try {
-            val artworkUri = currentPlayingSong.artworkPath.takeIf { it.isNotEmpty() }?.let { Uri.parse(it) }
-
-            if (artworkUri != null) {
+            val bitmap = if (currentPlayingSong.artworkPath.isNotEmpty()) {
+                val artworkUri = Uri.parse(currentPlayingSong.artworkPath)
                 val inputStream = context.contentResolver.openInputStream(artworkUri)
-                val bitmap = inputStream?.use { BitmapFactory.decodeStream(it) }
+                inputStream?.use { BitmapFactory.decodeStream(it) }
+            } else {
+                BitmapFactory.decodeResource(context.resources, R.drawable.image)
+            }
 
-                bitmap?.let {
-                    withContext(Dispatchers.Default) {
-                        val palette = Palette.from(it).generate()
-                        val darkColor = palette.getDarkVibrantColor(
-                            palette.getDarkMutedColor(Color(0xFF121212).toArgb())
-                        )
-                        val vibrantColor = palette.getVibrantColor(
-                            palette.getLightVibrantColor(Color(0xFF1DB954).toArgb())
-                        )
+            bitmap?.let {
+                withContext(Dispatchers.Default) {
+                    val palette = Palette.from(it).generate()
+                    val darkColor = palette.getDarkVibrantColor(
+                        palette.getDarkMutedColor(Color(0xFF121212).toArgb())
+                    )
+                    val vibrantColor = palette.getVibrantColor(
+                        palette.getLightVibrantColor(Color(0xFF1DB954).toArgb())
+                    )
 
-                        backgroundColor = Color(darkColor)
-                        accentColor = Color(vibrantColor)
-                        textColor = if (ColorUtils.calculateLuminance(darkColor) > 0.5)
-                            Color.Black else Color.White
-                    }
+                    backgroundColor = Color(darkColor)
+                    accentColor = Color(vibrantColor)
+                    textColor = if (ColorUtils.calculateLuminance(darkColor) > 0.5)
+                        Color.Black else Color.White
                 }
             }
         } catch (e: Exception) {
@@ -188,11 +189,12 @@ fun PlayerScreen(
                     .size(280.dp)
                     .clip(RoundedCornerShape(8.dp))
             ) {
-                val artworkUri = currentPlayingSong.artworkPath.takeIf { it.isNotEmpty() }?.let {
-                    Uri.parse(it)
-                }
+                val artworkUriString = currentPlayingSong.artworkPath
 
-                if (artworkUri != null) {
+                if (artworkUriString.isNotEmpty()) {
+                    val artworkUri = artworkUriString.takeIf { it.isNotEmpty() }?.let {
+                        Uri.parse(it)
+                    }
                     AsyncImage(
                         model = ImageRequest.Builder(LocalContext.current)
                             .data(artworkUri)
