@@ -28,7 +28,7 @@ import coil3.compose.AsyncImage
 import com.msb.purrytify.R
 import com.msb.purrytify.data.local.entity.Song
 import com.msb.purrytify.viewmodel.PlayerViewModel
-import java.io.File
+import android.net.Uri
 
 @Composable
 fun MiniPlayer(
@@ -90,9 +90,10 @@ fun MiniPlayer(
                             .padding(4.dp)
                             .clip(RoundedCornerShape(4.dp))
                     ) {
-                        if (currentSong.artworkPath.isNotEmpty() && File(currentSong.artworkPath).exists()) {
+                        if (currentSong.artworkPath.isNotEmpty()) {
+                            val artworkUri = Uri.parse(currentSong.artworkPath)
                             AsyncImage(
-                                model = File(currentSong.artworkPath),
+                                model = artworkUri,
                                 contentDescription = "Album Artwork",
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize()

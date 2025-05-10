@@ -55,6 +55,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.compose.runtime.rememberCoroutineScope
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import java.io.File
 
 @Composable
@@ -173,9 +175,16 @@ fun PlayerScreen(
                     .size(280.dp)
                     .clip(RoundedCornerShape(8.dp))
             ) {
-                if (currentPlayingSong.artworkPath.isNotEmpty() && File(currentPlayingSong.artworkPath).exists()) {
+                val artworkUri = currentPlayingSong.artworkPath.takeIf { it.isNotEmpty() }?.let {
+                    Uri.parse(it)
+                }
+
+                if (artworkUri != null) {
                     AsyncImage(
-                        model = File(currentPlayingSong.artworkPath),
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(artworkUri)
+                            .crossfade(true)
+                            .build(),
                         contentDescription = "Album Artwork",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
@@ -579,9 +588,10 @@ fun EditSongDialog(
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop
                             )
-                        } else if (song.artworkPath.isNotEmpty() && File(song.artworkPath).exists()) {
+                        } else if (song.artworkPath.isNotEmpty()) {
+                            val artworkUri = Uri.parse(song.artworkPath)
                             AsyncImage(
-                                model = File(song.artworkPath),
+                                model = artworkUri,
                                 contentDescription = "Current Artwork",
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize()
@@ -751,14 +761,7 @@ fun EditSongDialog(
                             } else {
                                 coroutineScope.launch {
                                     try {
-                                        val artworkFilePath = selectedArtworkUri?.let {
-                                            try {
-                                                FileUtils.saveFileToAppStorage(context, it, "artwork")
-                                            } catch (e: Exception) {
-                                                e.printStackTrace()
-                                                song.artworkPath
-                                            }
-                                        } ?: song.artworkPath
+                                        val artworkFilePath = selectedArtworkUri?.toString() ?: song.artworkPath
                                         
                                         val updatedSong = song.copy(
                                             title = title,

@@ -1,6 +1,7 @@
 package com.msb.purrytify.ui.screen
 
 import android.Manifest
+import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.widget.Toast
@@ -34,6 +35,7 @@ import com.msb.purrytify.viewmodel.PlayerViewModel
 import com.msb.purrytify.viewmodel.SongViewModel
 import java.util.concurrent.TimeUnit
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddSongScreen(
@@ -59,10 +61,15 @@ fun AddSongScreen(
 
     // Content launcher for audio files
     val pickAudioLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
+        contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
         uri?.let {
             try {
+                context.contentResolver.takePersistableUriPermission(
+                    it,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+
                 selectedAudioUri = it
                 val filePath = FileUtils.getPath(context, it)
                 if (filePath != null) {
@@ -104,7 +111,7 @@ fun AddSongScreen(
         }
 
         if (isGranted) {
-            pickAudioLauncher.launch("audio/*")
+            pickAudioLauncher.launch(arrayOf("audio/*"))
         } else {
             showPermissionDialog = true
         }
@@ -409,31 +416,20 @@ fun AddSongScreen(
                                     ).show()
                                 } else {
                                     try {
-                                        val audioFilePath = FileUtils.saveFileToAppStorage(
-                                            context,
-                                            selectedAudioUri!!,
-                                            "songs"
-                                        )
+                                        val audioUriString = selectedAudioUri.toString()
 
-                                        if (audioFilePath.isEmpty()) {
+                                        if (audioUriString.isEmpty()) {
                                             Toast.makeText(context, "Failed to save audio file", Toast.LENGTH_SHORT).show()
                                             return@Button
                                         }
 
-                                        val artworkFilePath = selectedArtworkUri?.let {
-                                            try {
-                                                FileUtils.saveFileToAppStorage(context, it, "artwork")
-                                            } catch (e: Exception) {
-                                                e.printStackTrace()
-                                                ""
-                                            }
-                                        } ?: ""
+                                        val artworkUriString = selectedArtworkUri?.toString() ?: ""
 
                                         songViewModel.addSong(
                                             title = title,
                                             artist = artist,
-                                            filePath = audioFilePath,
-                                            artworkPath = artworkFilePath,
+                                            filePath = audioUriString,
+                                            artworkPath = artworkUriString,
                                             duration = duration
                                         )
 

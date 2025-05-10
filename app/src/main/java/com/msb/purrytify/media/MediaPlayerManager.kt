@@ -1,11 +1,13 @@
 package com.msb.purrytify.media
 
+import android.content.Context
 import android.media.MediaPlayer
 import androidx.compose.runtime.mutableStateOf
 import com.msb.purrytify.data.local.entity.Song
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import android.net.Uri
 
 enum class RepeatMode {
     NONE,
@@ -13,7 +15,7 @@ enum class RepeatMode {
     ONE
 }
 
-class MediaPlayerManager() {
+class MediaPlayerManager(private val context: Context) {
     interface SongChangeListener {
         fun onSongChanged(newSong: Song)
         fun onPlayerReleased()
@@ -54,7 +56,7 @@ class MediaPlayerManager() {
     fun releasePlayer(notifyListeners: Boolean = true) {
         mediaPlayer?.release()
         mediaPlayer = null
-        
+
         if (notifyListeners && currentSongIdx != -1 && playlist.isNotEmpty()) {
             currentSongIdx = -1
             songChangeListeners.forEach { it.onPlayerReleased() }
@@ -71,7 +73,8 @@ class MediaPlayerManager() {
 
         mediaPlayer = MediaPlayer().apply {
             try {
-                setDataSource(song.filePath)
+                val uri = Uri.parse(song.filePath)
+                setDataSource(context, uri)
                 prepare()
                 start()
 

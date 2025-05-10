@@ -30,6 +30,7 @@ import com.msb.purrytify.data.local.entity.Song
 import com.msb.purrytify.viewmodel.PlayerViewModel
 import com.msb.purrytify.viewmodel.SongViewModel
 import java.io.File
+import android.net.Uri
 
 
 @Composable
@@ -138,9 +139,10 @@ fun NewSongItem(song: Song, onSongClick: (Song) -> Unit) {
             .clickable { onSongClick(song) },
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        if (song.artworkPath.isNotEmpty() && File(song.artworkPath).exists()) {
+        if (song.artworkPath.isNotEmpty()) {
+            val artworkUri = Uri.parse(song.artworkPath)
             AsyncImage(
-                model = File(song.artworkPath),
+                model = artworkUri,
                 contentDescription = "Album Artwork",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.size(90.dp).clip(MaterialTheme.shapes.small)
@@ -207,9 +209,10 @@ fun RecentlyPlayedItem(song: Song, onSongClick: (Song) -> Unit) {
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        if (song.artworkPath.isNotEmpty() && File(song.artworkPath).exists()) {
+        if (song.artworkPath.isNotEmpty()) {
+            val artworkUri = Uri.parse(song.artworkPath)
             AsyncImage(
-                model = File(song.artworkPath),
+                model = artworkUri,
                 contentDescription = "Album Artwork",
                 contentScale = ContentScale.Fit,
                 modifier = Modifier.size(50.dp).clip(MaterialTheme.shapes.small)

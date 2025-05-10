@@ -7,7 +7,9 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import coil3.ImageLoader
+import android.net.Uri
 import coil3.request.ImageRequest
+import coil3.request.crossfade
 import coil3.target.ImageViewTarget
 import com.msb.purrytify.R
 import com.msb.purrytify.data.local.entity.Song
@@ -33,12 +35,16 @@ class LibraryAdapter(
             val seconds = TimeUnit.MILLISECONDS.toSeconds(song.duration) - TimeUnit.MINUTES.toSeconds(minutes)
             duration.text = String.format("%d:%02d", minutes, seconds)
 
-            if (song.artworkPath.isNotEmpty() && File(song.artworkPath).exists()) {
-                val request = ImageRequest.Builder(itemView.context)
-                    .data(File(song.artworkPath))
+            val context = itemView.context
+            val artworkUri = song.artworkPath.takeIf { it.isNotEmpty() }?.let { Uri.parse(it) }
+
+            if (artworkUri != null) {
+                val request = ImageRequest.Builder(context)
+                    .data(artworkUri)
                     .target(ImageViewTarget(artwork))
+                    .crossfade(true)
                     .build()
-                ImageLoader(itemView.context).enqueue(request)
+                ImageLoader(context).enqueue(request)
             } else {
                 artwork.setImageResource(R.drawable.image)
             }
