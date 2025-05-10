@@ -140,19 +140,32 @@ fun PlayerScreen(
     val isLiked by viewModel.isLiked
     val currentPosition by viewModel.currentPosition
     val duration by viewModel.duration
-    
+
+    val context = LocalContext.current
+
     LaunchedEffect(currentPlayingSong.id, currentPlayingSong.artworkPath) {
         try {
-            if (currentPlayingSong.artworkPath.isNotEmpty() && File(currentPlayingSong.artworkPath).exists()) {
-                val bitmap = BitmapFactory.decodeFile(currentPlayingSong.artworkPath)
-                withContext(Dispatchers.Default) {
-                    val palette = Palette.from(bitmap).generate()
-                    val darkColor = palette.getDarkVibrantColor(palette.getDarkMutedColor(Color(0xFF121212).toArgb()))
-                    val vibrantColor = palette.getVibrantColor(palette.getLightVibrantColor(Color(0xFF1DB954).toArgb()))
-                    
-                    backgroundColor = Color(darkColor)
-                    accentColor = Color(vibrantColor)
-                    textColor = if (ColorUtils.calculateLuminance(darkColor) > 0.5) Color.Black else Color.White
+            val artworkUri = currentPlayingSong.artworkPath.takeIf { it.isNotEmpty() }?.let { Uri.parse(it) }
+
+            if (artworkUri != null) {
+                val inputStream = context.contentResolver.openInputStream(artworkUri)
+                val bitmap = inputStream?.use { BitmapFactory.decodeStream(it) }
+
+                bitmap?.let {
+                    withContext(Dispatchers.Default) {
+                        val palette = Palette.from(it).generate()
+                        val darkColor = palette.getDarkVibrantColor(
+                            palette.getDarkMutedColor(Color(0xFF121212).toArgb())
+                        )
+                        val vibrantColor = palette.getVibrantColor(
+                            palette.getLightVibrantColor(Color(0xFF1DB954).toArgb())
+                        )
+
+                        backgroundColor = Color(darkColor)
+                        accentColor = Color(vibrantColor)
+                        textColor = if (ColorUtils.calculateLuminance(darkColor) > 0.5)
+                            Color.Black else Color.White
+                    }
                 }
             }
         } catch (e: Exception) {

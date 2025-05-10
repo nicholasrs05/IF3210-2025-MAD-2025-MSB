@@ -29,6 +29,11 @@ import com.msb.purrytify.R
 import com.msb.purrytify.data.local.entity.Song
 import com.msb.purrytify.viewmodel.PlayerViewModel
 import android.net.Uri
+import androidx.palette.graphics.Palette
+import androidx.core.graphics.ColorUtils
+import android.graphics.BitmapFactory
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.toArgb
 
 @Composable
 fun MiniPlayer(
@@ -52,7 +57,24 @@ fun MiniPlayer(
     }
 
     var textColor by remember { mutableStateOf(Color.White) }
+    var backgroundColor by remember { mutableStateOf(Color(0xFF212121)) }
     val isLiked by playerViewModel.isLiked
+    val context = LocalContext.current
+
+    LaunchedEffect(currentSong.id, currentSong.artworkPath) {
+        val artworkUri = Uri.parse(currentSong.artworkPath)
+        val inputStream = context.contentResolver.openInputStream(artworkUri)
+        val bitmap = inputStream?.use { BitmapFactory.decodeStream(it) }
+
+        bitmap?.let {
+            val palette = Palette.from(it).generate()
+            val darkColor = palette.getDarkVibrantColor(Color(0xFF212121).toArgb())
+            val vibrantColor = palette.getVibrantColor(Color.White.toArgb())
+
+            backgroundColor = Color(darkColor)
+            textColor = if (ColorUtils.calculateLuminance(darkColor) > 0.5) Color.Black else Color.White
+        }
+    }
 
     Box(modifier = Modifier.fillMaxWidth()) {
         Card(
@@ -74,7 +96,7 @@ fun MiniPlayer(
             shape = RoundedCornerShape(8.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
             colors = CardDefaults.cardColors(
-                containerColor = Color(0xFF212121)
+                containerColor = backgroundColor
             )
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
