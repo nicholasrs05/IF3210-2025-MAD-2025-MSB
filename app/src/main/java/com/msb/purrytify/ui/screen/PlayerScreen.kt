@@ -801,21 +801,19 @@ fun EditSongDialog(
                                     try {
                                         val artworkFilePath = selectedArtworkUri?.toString() ?: song.artworkPath
                                         
-                                        val updatedSong = song.copy(
+                                        // Update the song in the database
+                                        viewModel.updateSong(
+                                            songId = song.id,
                                             title = title,
                                             artist = artist,
                                             artworkPath = artworkFilePath
                                         )
 
-                                        val intent = Intent("com.msb.purrytify.SONG_UPDATED")
-                                        intent.putExtra("songId", updatedSong.id)
-                                        context.sendBroadcast(intent)
+                                        // Wait for the database update to complete
+                                        delay(100)
                                         
+                                        // Refresh the UI
                                         viewModel.updateSongFromRepo()
-                                        
-                                        viewModel.setCurrentSongNull()
-                                        delay(50)
-                                        viewModel.setCurrentSong(updatedSong)
                                         
                                         Toast.makeText(
                                             context,

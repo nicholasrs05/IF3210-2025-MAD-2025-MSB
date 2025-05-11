@@ -38,6 +38,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.toArgb
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
 fun MiniPlayer(
@@ -62,6 +64,7 @@ fun MiniPlayer(
 
     var textColor by remember { mutableStateOf(Color.White) }
     var backgroundColor by remember { mutableStateOf(Color(0xFF212121)) }
+    var accentColor by remember { mutableStateOf(Color(0xFF1DB954)) }
     val isLiked by playerViewModel.isLiked
     val context = LocalContext.current
 
@@ -76,13 +79,20 @@ fun MiniPlayer(
             }
 
             bitmap?.let {
-                val palette = Palette.from(it).generate()
-                val darkColor = palette.getDarkVibrantColor(Color(0xFF212121).toArgb())
-                val vibrantColor = palette.getVibrantColor(Color.White.toArgb())
+                withContext(Dispatchers.Default) {
+                    val palette = Palette.from(it).generate()
+                    val darkColor = palette.getDarkVibrantColor(
+                        palette.getDarkMutedColor(Color(0xFF121212).toArgb())
+                    )
+                    val vibrantColor = palette.getVibrantColor(
+                        palette.getLightVibrantColor(Color(0xFF1DB954).toArgb())
+                    )
 
-                backgroundColor = Color(darkColor)
-                textColor = if (ColorUtils.calculateLuminance(darkColor) > 0.5)
-                    Color.Black else Color.White
+                    backgroundColor = Color(darkColor)
+                    accentColor = Color(vibrantColor)
+                    textColor = if (ColorUtils.calculateLuminance(darkColor) > 0.5)
+                        Color.Black else Color.White
+                }
             }
         } catch (e: Exception) {
             e.printStackTrace()

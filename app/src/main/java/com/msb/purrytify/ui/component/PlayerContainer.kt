@@ -79,6 +79,7 @@ fun PlayerContainer(
                             showFullPlayer = true
                             playerViewModel.setLargePlayerVisible(true)
                         },
+                        playerViewModel = playerViewModel,
                         isLandscape = isLandscape
                     )
                 }

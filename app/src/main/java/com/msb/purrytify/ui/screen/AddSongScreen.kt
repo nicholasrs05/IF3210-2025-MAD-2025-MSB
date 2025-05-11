@@ -428,19 +428,13 @@ fun AddSongScreen(
                                             return@Button
                                         }
 
-                                        // Save files to app storage for persistent access
-                                        val savedAudioPath = FileUtils.saveFileToAppStorage(context, selectedAudioUri!!, "audio")
-                                        val savedArtworkPath = if (selectedArtworkUri != null) {
-                                            FileUtils.saveFileToAppStorage(context, selectedArtworkUri!!, "artwork")
-                                        } else {
-                                            ""
-                                        }
+                                        val artworkUriString = selectedArtworkUri?.toString() ?: ""
 
                                         playerViewModel.addSong(
                                             title = title,
                                             artist = artist,
-                                            filePath = savedAudioPath,
-                                            artworkPath = savedArtworkPath,
+                                            filePath = audioUriString,
+                                            artworkPath = artworkUriString,
                                             duration = duration
                                         )
 

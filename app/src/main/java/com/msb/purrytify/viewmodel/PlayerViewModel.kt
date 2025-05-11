@@ -408,6 +408,31 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Updates an existing song in the database
+     */
+    fun updateSong(songId: Long, title: String, artist: String, artworkPath: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                songRepository.getSongById(songId)?.let { existingSong ->
+                    val updatedSong = existingSong.copy(
+                        title = title,
+                        artist = artist,
+                        artworkPath = artworkPath
+                    )
+                    songRepository.update(updatedSong)
+                    
+                    // Update current song if it's the one being edited
+                    if (_currentSong.value?.id == songId) {
+                        _currentSong.value = updatedSong
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
     override fun onCleared() {
         super.onCleared()
     }
