@@ -64,6 +64,8 @@ class MediaPlayerManager(private val context: Context) {
     }
 
     fun playByIndex(index: Int) {
+        Log.d("MediaPlayerManager", "Playing song at index: $index")
+        Log.d("MediaPlayerManager", "Playlist size: ${playlist.size}")
         if (index !in playlist.indices) return
 
         currentSongIdx = index

@@ -29,8 +29,6 @@ fun LibraryScreen(
     libraryViewModel: LibraryViewModel = hiltViewModel(),
     playerViewModel: PlayerViewModel = hiltViewModel()
 ) {
-    val mediaPlayerManager = playerViewModel.mediaPlayerManager
-
     val showAddSongSheet by libraryViewModel.showAddSongSheet.collectAsState()
     if (showAddSongSheet) {
         AddSongScreen(
@@ -99,8 +97,7 @@ fun LibraryScreen(
                         RecyclerView(ctx).apply {
                             layoutManager = LinearLayoutManager(ctx)
                             adapter = LibraryAdapter(songsToDisplay) { clickedSong ->
-                                mediaPlayerManager.setPlaylist(songsToDisplay)
-                                
+                                libraryViewModel.mediaPlayerManager.setPlaylist(songsToDisplay)
                                 val songIndex = songsToDisplay.indexOfFirst { it.id == clickedSong.id }
                                 if (songIndex >= 0) {
                                     libraryViewModel.playLibrarySong(songsToDisplay, clickedSong)
@@ -110,7 +107,6 @@ fun LibraryScreen(
                                     playerViewModel.setCurrentSong(clickedSong)
                                 }
 
-                                playerViewModel.setLargePlayerVisible(false)
                                 playerViewModel.setMiniPlayerVisible(true)
                             }
                             layoutParams = RecyclerView.LayoutParams(

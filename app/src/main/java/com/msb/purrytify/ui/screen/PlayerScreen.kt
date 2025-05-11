@@ -58,6 +58,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import java.io.File
+import android.util.Log
 
 @Composable
 fun PlayerScreen(
@@ -97,13 +98,16 @@ fun PlayerScreen(
     )
     
     LaunchedEffect(Unit) {
-        val isAlreadyPlaying = mediaPlayerManager.getCurrentSong()?.id == song.id
+        val isAlreadyPlaying = currentPlayingSong.id == song.id
+        Log.d("PlayerScreen", "currentPlayingSong id: ${currentPlayingSong.id}, song id: ${song.id}")
         val wasPlaying = viewModel.isPlaying.value
 
         if (!isAlreadyPlaying) {
+            Log.d("PlayerScreen", "Not already playing, setting new song")
             mediaPlayerManager.setPlaylist(listOf(song))
             viewModel.playSong(song)
         } else if (wasPlaying) {
+            Log.d("PlayerScreen", "Already playing, resuming song")
             viewModel.resumeCurrentSong()
         }
     }
