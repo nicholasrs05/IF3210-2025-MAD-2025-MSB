@@ -64,7 +64,7 @@ class PlayerViewModel @Inject constructor(
     val newSongs: LiveData<List<Song>> = songRepository.fetchNewSongs(userId).asLiveData()
 
     init {
-        loadPlaylist()
+//        loadPlaylist()
 
         // Setup current song state (from PlayerViewModel)
         mediaPlayerManager.getCurrentSong()?.let { song ->
@@ -84,14 +84,15 @@ class PlayerViewModel @Inject constructor(
     /**
      * Loads the playlist for the current user
      */
-    private fun loadPlaylist() {
-        viewModelScope.launch {
-            val userId = profileModel.currentProfile.value.id
-            songRepository.fetchAllSongs(userId).collect { songs ->
-                mediaPlayerManager.setPlaylist(songs)
-            }
-        }
-    }
+//    private fun loadPlaylist() {
+//        viewModelScope.launch {
+//            val userId = profileModel.currentProfile.value.id
+//            songRepository.fetchAllSongs(userId).collect { songs ->
+//                Log.d("PlayerViewModel", "Loaded playlist with ${songs.size} songs")
+//                mediaPlayerManager.setPlaylist(songs)
+//            }
+//        }
+//    }
 
     /**
      * Sets visibility for the large player screen

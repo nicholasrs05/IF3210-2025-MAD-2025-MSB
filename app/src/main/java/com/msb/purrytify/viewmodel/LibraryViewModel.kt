@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import android.util.Log
 
 @HiltViewModel
 class LibraryViewModel @Inject constructor(
@@ -67,6 +68,7 @@ class LibraryViewModel @Inject constructor(
     }
     
     fun playLibrarySong(songs: List<Song>, selectedSong: Song) {
+        Log.d("LibraryViewModel", "playLibrarySong called with ${songs.size} songs")
         mediaPlayerManager.setPlaylist(songs)
         playSong(selectedSong)
     }

@@ -97,7 +97,7 @@ fun LibraryScreen(
                         RecyclerView(ctx).apply {
                             layoutManager = LinearLayoutManager(ctx)
                             adapter = LibraryAdapter(songsToDisplay) { clickedSong ->
-                                libraryViewModel.mediaPlayerManager.setPlaylist(songsToDisplay)
+                                libraryViewModel.playLibrarySong(songsToDisplay, clickedSong)
                                 val songIndex = songsToDisplay.indexOfFirst { it.id == clickedSong.id }
                                 if (songIndex >= 0) {
                                     libraryViewModel.playLibrarySong(songsToDisplay, clickedSong)

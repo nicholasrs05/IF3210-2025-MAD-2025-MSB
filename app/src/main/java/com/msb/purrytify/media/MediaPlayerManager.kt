@@ -16,6 +16,9 @@ enum class RepeatMode {
 }
 
 class MediaPlayerManager(private val context: Context) {
+    init {
+        Log.d("MediaPlayerManager", "Instance created: $this")
+    }
     interface SongChangeListener {
         fun onSongChanged(newSong: Song)
         fun onPlayerReleased()
@@ -47,6 +50,7 @@ class MediaPlayerManager(private val context: Context) {
     }
 
     fun setPlaylist(songs: List<Song>) {
+        Log.d("MediaPlayerManager", "setPlaylist called on: $this with ${songs.size} songs")
         playlist = songs
         if (currentSongIdx == -1) {
             currentSongIdx = 0
@@ -124,7 +128,9 @@ class MediaPlayerManager(private val context: Context) {
     }
 
     fun playNext() {
+        Log.d("MediaPlayerManager", "playNext called on: $this, playlist size: ${playlist.size}")
         if (playlist.isEmpty()) {
+            Log.d("MediaPlayerManager", "Playlist is empty, releasing player")
             releasePlayer(notifyListeners = true)
             return
         }
