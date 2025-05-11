@@ -28,6 +28,17 @@ import com.msb.purrytify.viewmodel.PlayerViewModel
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Process deep link if coming from intent
+        // Note: This is actually handled by the Navigation component with navDeepLink
+        // but we'll log it for debugging purposes
+        intent?.data?.let { uri ->
+            if (uri.scheme == "purrytify" && uri.host == "song") {
+                val songId = uri.lastPathSegment
+                Log.d("MainActivity", "Received deep link for song ID: $songId")
+            }
+        }
+        
         setContent {
             AppTheme {
                 val configuration = resources.configuration

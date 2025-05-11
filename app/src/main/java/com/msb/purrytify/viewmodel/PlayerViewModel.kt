@@ -1,28 +1,30 @@
 package com.msb.purrytify.viewmodel
 
 import android.app.Application
+import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.msb.purrytify.data.local.entity.Song
+import com.msb.purrytify.data.repository.ApiSongRepository
 import com.msb.purrytify.data.repository.SongRepository
 import com.msb.purrytify.media.MediaPlayerManager
 import com.msb.purrytify.model.ProfileModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/**
- * Integrated ViewModel that combines the functionality of PlaybackViewModel and PlayerViewModel.
- * This ViewModel handles all audio playback related operations including playlist management,
- * player controls, and UI state.
- */
+
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
     application: Application,
     private val songRepository: SongRepository,
+    private val apiSongRepository: ApiSongRepository,
     val mediaPlayerManager: MediaPlayerManager,
     private val profileModel: ProfileModel
 ) : AndroidViewModel(application) {
@@ -54,6 +56,13 @@ class PlayerViewModel @Inject constructor(
     val isMiniPlayerVisible: State<Boolean> = _isMiniPlayerVisible
 
     private val _isLargePlayerVisible = mutableStateOf(false)
+    
+    // Song data properties (migrated from SongViewModel)
+    val userId = profileModel.currentProfile.value.id
+    val allSongs: LiveData<List<Song>> = songRepository.fetchAllSongs(userId).asLiveData()
+    val likedSongs: LiveData<List<Song>> = songRepository.fetchLikedSongs(userId).asLiveData()
+    val recentlyPlayedSongs: LiveData<List<Song>> = songRepository.fetchRecentlyPlayedSongs(userId).asLiveData()
+    val newSongs: LiveData<List<Song>> = songRepository.fetchNewSongs(userId).asLiveData()
 
     init {
         // Load playlist from repository (from PlaybackViewModel)
@@ -92,10 +101,8 @@ class PlayerViewModel @Inject constructor(
     fun setLargePlayerVisible(isVisible: Boolean) {
         _isLargePlayerVisible.value = isVisible
         if (!isVisible) {
-            // When closing large player, ensure mini player is visible if a song exists
             _isMiniPlayerVisible.value = _currentSong.value != null
         } else {
-            // When opening large player, hide mini player
             _isMiniPlayerVisible.value = false
         }
     }
@@ -327,6 +334,71 @@ class PlayerViewModel @Inject constructor(
      */
     enum class RepeatMode {
         NONE, ALL, ONE
+    }
+    
+    /**
+     * Adds a new song to the repository
+     */
+    fun addSong(title: String, artist: String, filePath: String, artworkPath: String, duration: Long) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val song = Song(
+                title = title,
+                artist = artist,
+                filePath = filePath,
+                artworkPath = artworkPath,
+                duration = duration,
+                ownerId = userId
+            )
+            songRepository.insert(song)
+        }
+    }
+
+    /**
+     * Gets metadata for a song file
+     */
+    fun getSongMetadata(filePath: String): Pair<String?, String?> {
+        return SongRepository.extractMetadata(filePath)
+    }
+
+    /**
+     * Gets the duration of a song file
+     */
+    fun getSongDuration(filePath: String): Long {
+        return SongRepository.getDuration(filePath)
+    }
+
+    /**
+     * Play a song by its ID (for deep links)
+     * @param songIdStr The song ID as a string from the deep link
+     */
+    fun playSongById(songIdStr: String) {
+        viewModelScope.launch {
+            try {
+                // First try to find a local song with this ID
+                val songId = songIdStr.toLongOrNull()
+                if (songId != null) {
+                    val song = songRepository.getSongById(songId)
+                    if (song != null) {
+                        playSong(song)
+                        setLargePlayerVisible(true)
+                        return@launch
+                    }
+                }
+                
+                // If not found locally, try to fetch from API
+                val apiSong = apiSongRepository.fetchSongById(songIdStr)
+                if (apiSong != null) {
+                    // Convert the API song to a local Song entity for playback
+                    val localSong = apiSongRepository.convertApiSongToLocalSong(apiSong, userId)
+                    playSong(localSong)
+                    setLargePlayerVisible(true)
+                } else {
+                    Log.e("PlayerViewModel", "Song not found with ID: $songIdStr")
+                }
+            } catch (e: Exception) {
+                Log.e("PlayerViewModel", "Error playing song by ID: ${e.message}")
+            }
+        }
     }
 
     override fun onCleared() {

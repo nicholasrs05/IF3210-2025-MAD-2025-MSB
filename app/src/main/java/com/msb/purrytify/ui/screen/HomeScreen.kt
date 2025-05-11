@@ -28,20 +28,18 @@ import coil3.compose.AsyncImage
 import com.msb.purrytify.R
 import com.msb.purrytify.data.local.entity.Song
 import com.msb.purrytify.viewmodel.PlayerViewModel
-import com.msb.purrytify.viewmodel.SongViewModel
 import java.io.File
 import android.net.Uri
 
 
 @Composable
 fun HomeScreen(
-    viewModel: SongViewModel = hiltViewModel(),
-    playerViewModel: PlayerViewModel,
+    playerViewModel: PlayerViewModel = hiltViewModel(),
 ) {
     val recentlyPlayedState: androidx.compose.runtime.State<List<Song>> =
-        viewModel.recentlyPlayedSongs.observeAsState(initial = emptyList())
+        playerViewModel.recentlyPlayedSongs.observeAsState(initial = emptyList())
     val newSongsState: androidx.compose.runtime.State<List<Song>> =
-        viewModel.newSongs.observeAsState(initial = emptyList())
+        playerViewModel.newSongs.observeAsState(initial = emptyList())
 
     val recentlyPlayed: List<Song> = recentlyPlayedState.value
     val newSongs: List<Song> = newSongsState.value

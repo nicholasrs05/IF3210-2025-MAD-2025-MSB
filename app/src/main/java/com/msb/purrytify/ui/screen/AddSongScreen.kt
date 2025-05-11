@@ -27,12 +27,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.rememberAsyncImagePainter
 import com.msb.purrytify.R
 import com.msb.purrytify.utils.FileUtils
 import com.msb.purrytify.viewmodel.PlayerViewModel
-import com.msb.purrytify.viewmodel.SongViewModel
 import java.util.concurrent.TimeUnit
 
 
@@ -43,7 +41,6 @@ fun AddSongScreen(
     onDismiss: () -> Unit = {}
 ) {
     val context = LocalContext.current
-    val songViewModel: SongViewModel = viewModel()
     val playerViewModel: PlayerViewModel = hiltViewModel()
 
     val backgroundColor = Color(0xFF121212)
@@ -73,8 +70,8 @@ fun AddSongScreen(
                 selectedAudioUri = it
                 val filePath = FileUtils.getPath(context, it)
                 if (filePath != null) {
-                    duration = songViewModel.getSongDuration(filePath)
-                    val (extractedTitle, extractedArtist) = songViewModel.getSongMetadata(filePath)
+                    duration = playerViewModel.getSongDuration(filePath)
+                    val (extractedTitle, extractedArtist) = playerViewModel.getSongMetadata(filePath)
                     title = extractedTitle ?: ""
                     artist = extractedArtist ?: ""
                 } else {
@@ -429,7 +426,7 @@ fun AddSongScreen(
 
                                         val artworkUriString = selectedArtworkUri?.toString() ?: ""
 
-                                        songViewModel.addSong(
+                                        playerViewModel.addSong(
                                             title = title,
                                             artist = artist,
                                             filePath = audioUriString,

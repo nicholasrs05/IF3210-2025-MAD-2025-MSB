@@ -34,6 +34,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
+import androidx.navigation.navDeepLink
 
 sealed class Screen(
     val route: String,
@@ -71,6 +74,12 @@ sealed class Screen(
     })
 
     data object Login : Screen("login", "Login")
+
+    data object SongDetail : Screen("song/{songId}", "Song Detail") {
+        fun createRoute(songId: String): String {
+            return "song/$songId"
+        }
+    }
 }
 
 // Preview annotations remain the same
@@ -94,25 +103,20 @@ fun NavigationComponent(
             val startDestination =
                 if (isLoggedInCheckDone && isLoggedIn) Screen.Home.route else Screen.Login.route
 
-            Log.d(
-                "Navigation",
-                "Composition: isLoggedIn=$isLoggedIn, checkDone=$isLoggedInCheckDone, startDestination=$startDestination"
-            )
-
             LaunchedEffect(isLoggedIn, isLoggedInCheckDone) {
                 if (isLoggedInCheckDone) {
                     val currentBackStackEntry = navController.currentBackStackEntry
                     val currentActualRoute = currentBackStackEntry?.destination?.route
                     if (isLoggedIn && currentActualRoute == Screen.Login.route) {
                         navController.navigate(Screen.Home.route) {
-                            popUpTo(Screen.Login.route) { inclusive = true } // Pop only Login
+                            popUpTo(Screen.Login.route) { inclusive = true }
                             launchSingleTop = true
                         }
                     } else if (!isLoggedIn && currentActualRoute != Screen.Login.route) {
                         if (currentActualRoute != null) {
                             navController.navigate(Screen.Login.route) {
                                 popUpTo(navController.graph.findStartDestination().id) {
-                                    inclusive = true // Clear the authenticated stack
+                                    inclusive = true
                                 }
                                 launchSingleTop = true
                             }
@@ -180,6 +184,33 @@ fun NavigationComponent(
                                                 authViewModel = authViewModel
                                             )
                                         }
+                                        composable(
+                                            route = Screen.SongDetail.route,
+                                            arguments = listOf(
+                                                navArgument("songId") { type = NavType.StringType }
+                                            ),
+                                            deepLinks = listOf(
+                                                navDeepLink {
+                                                    uriPattern = "purritfy://song/{songId}"
+                                                }
+                                            )
+                                        ) { backStackEntry ->
+                                            val songId = backStackEntry.arguments?.getString("songId")
+                                            LaunchedEffect(songId) {
+                                                if (songId != null) {
+                                                    playerViewModel.playSongById(songId)
+                                                } else {
+                                                    Log.e("Navigation", "Song ID is null")
+                                                }
+                                            }
+
+                                            // Show minimal UI while loading or redirect
+                                            Box(modifier = Modifier.fillMaxSize()) {
+                                                if (isLoggedIn) {
+                                                    HomeScreen(playerViewModel = playerViewModel)
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -209,6 +240,41 @@ fun NavigationComponent(
                                         LoginScreen(
                                             authViewModel = authViewModel
                                         )
+                                    }
+                                    composable(
+                                        route = Screen.SongDetail.route,
+                                        arguments = listOf(
+                                            navArgument("songId") { type = NavType.StringType }
+                                        ),
+                                        deepLinks = listOf(
+                                            navDeepLink {
+                                                uriPattern = "purrytify://song/{songId}"
+                                            }
+                                        )
+                                    ) { backStackEntry ->
+                                        val songId = backStackEntry.arguments?.getString("songId")
+                                        LaunchedEffect(songId) {
+                                            if (songId != null) {
+                                                if (!isLoggedIn) {
+                                                    // If not logged in, store the songId to play after login
+                                                    // This could be stored in a temporary preference or viewmodel state
+                                                    navController.navigate(Screen.Login.route)
+                                                } else {
+                                                    playerViewModel.playSongById(songId)
+                                                    navController.navigate(Screen.Home.route) {
+                                                        popUpTo(Screen.SongDetail.route) { inclusive = true }
+                                                    }
+                                                }
+                                            } else {
+                                                Log.e("Navigation", "Song ID is null")
+                                                navController.navigate(Screen.Home.route)
+                                            }
+                                        }
+
+                                        // Show minimal UI while loading or redirect
+                                        Box(modifier = Modifier.fillMaxSize()) {
+                                            CircularProgressIndicator()
+                                        }
                                     }
                                 }
                             }

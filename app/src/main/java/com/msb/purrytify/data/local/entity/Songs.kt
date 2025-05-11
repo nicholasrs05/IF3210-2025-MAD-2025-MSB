@@ -15,5 +15,6 @@ data class Song(
     val isLiked: Boolean = false,
     val addedAt: Long = System.currentTimeMillis(),
     val lastPlayedAt: Long? = null,
-    val ownerId: Int
+    val ownerId: Long,
+    val isFromApi: Boolean = false  // Flag to identify if this song came from the API
 )

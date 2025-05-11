@@ -22,11 +22,9 @@ import androidx.compose.ui.graphics.Color
 import com.msb.purrytify.ui.component.LibraryAdapter
 import com.msb.purrytify.ui.theme.AppTheme
 import com.msb.purrytify.viewmodel.PlayerViewModel
-import com.msb.purrytify.viewmodel.SongViewModel
 
 @Composable
 fun LibraryScreen(
-    songViewModel: SongViewModel = hiltViewModel(),
     playerViewModel: PlayerViewModel = hiltViewModel()
 ) {
     val mediaPlayerManager = playerViewModel.mediaPlayerManager
@@ -72,8 +70,8 @@ fun LibraryScreen(
                 )
             }
 
-            val allSongs by songViewModel.allSongs.observeAsState(initial = emptyList())
-            val likedSongs by songViewModel.likedSongs.observeAsState(initial = emptyList())
+            val allSongs by playerViewModel.allSongs.observeAsState(initial = emptyList())
+            val likedSongs by playerViewModel.likedSongs.observeAsState(initial = emptyList())
 
             val songsToDisplay = if (selectedTab == 0) allSongs else likedSongs
 
@@ -105,7 +103,7 @@ fun LibraryScreen(
                                 }
 
                                 playerViewModel.setLargePlayerVisible(false)
-                                songViewModel.markAsPlayed(clickedSong.id)
+                                playerViewModel.markAsPlayed(clickedSong.id)
                             }
                             layoutParams = RecyclerView.LayoutParams(
                                 RecyclerView.LayoutParams.MATCH_PARENT,

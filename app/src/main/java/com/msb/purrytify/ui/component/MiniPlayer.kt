@@ -20,6 +20,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -27,6 +28,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import com.msb.purrytify.R
 import com.msb.purrytify.data.local.entity.Song
+import com.msb.purrytify.utils.DeepLinkUtils
 import com.msb.purrytify.viewmodel.PlayerViewModel
 import android.net.Uri
 import androidx.palette.graphics.Palette
@@ -190,6 +192,22 @@ fun MiniPlayer(
                                 modifier = Modifier.size(20.dp)
                             )
                         }
+                    }
+                    
+                    // Add share button
+                    val context = LocalContext.current
+                    IconButton(
+                        onClick = { 
+                            currentSong?.let { DeepLinkUtils.shareSong(context, it) }
+                        },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Share,
+                            contentDescription = "Share",
+                            tint = Color.White,
+                            modifier = Modifier.size(18.dp)
+                        )
                     }
 
                     IconButton(

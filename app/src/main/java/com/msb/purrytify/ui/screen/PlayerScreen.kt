@@ -42,13 +42,13 @@ import androidx.compose.ui.zIndex
 import androidx.core.graphics.ColorUtils
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.msb.purrytify.utils.FileUtils
-import com.msb.purrytify.viewmodel.SongViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.palette.graphics.Palette
 import coil3.compose.AsyncImage
 import com.msb.purrytify.R
 import com.msb.purrytify.data.local.entity.Song
 import com.msb.purrytify.media.MediaPlayerManager
+import com.msb.purrytify.utils.DeepLinkUtils
 import com.msb.purrytify.viewmodel.PlayerViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -68,6 +68,7 @@ fun PlayerScreen(
     onAnimationComplete: () -> Unit = {},
     viewModel: PlayerViewModel = hiltViewModel(),
 ) {
+    val context = LocalContext.current
     val mediaPlayerManager = viewModel.mediaPlayerManager
     val currentPlayingSong = viewModel.currentSong.value ?: song
     
@@ -392,6 +393,25 @@ fun PlayerScreen(
                                 showEditDialog = true
                             }
                         )
+                        
+                        DropdownMenuItem(
+                            text = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Share,
+                                        contentDescription = "Share Song",
+                                        tint = textColor,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Share Song", color = textColor)
+                                }
+                            },
+                            onClick = {
+                                showMenu = false
+                                DeepLinkUtils.shareSong(context, currentPlayingSong)
+                            }
+                        )
                     }
                 }
                 
@@ -495,7 +515,7 @@ fun EditSongDialog(
     viewModel: PlayerViewModel
 ) {
     val context = LocalContext.current
-    val songViewModel: SongViewModel = hiltViewModel()
+    // Using the existing playerViewModel instead of a separate SongViewModel
     
     var title by remember { mutableStateOf(song.title) }
     var artist by remember { mutableStateOf(song.artist) }
@@ -788,7 +808,7 @@ fun EditSongDialog(
                                             artworkPath = artworkFilePath
                                         )
                                         
-                                        songViewModel.updateSong(updatedSong)
+                                        playerViewModel.updateSong(updatedSong)
                                         val intent = Intent("com.msb.purrytify.SONG_UPDATED")
                                         intent.putExtra("songId", updatedSong.id)
                                         context.sendBroadcast(intent)
