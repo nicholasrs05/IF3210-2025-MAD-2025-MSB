@@ -1,16 +1,18 @@
 package com.msb.purrytify.data.remote.model
 
-import com.google.gson.annotations.SerializedName
+import com.squareup.moshi.Json
+import com.squareup.moshi.JsonClass
 
+@JsonClass(generateAdapter = true)
 data class SongResponse(
-    @SerializedName("id") val id: Int,
-    @SerializedName("title") val title: String,
-    @SerializedName("artist") val artist: String,
-    @SerializedName("artwork") val artwork: String,
-    @SerializedName("url") val url: String,
-    @SerializedName("duration") val duration: String,
-    @SerializedName("country") val country: String,
-    @SerializedName("rank") val rank: Int,
-    @SerializedName("createdAt") val createdAt: String,
-    @SerializedName("updatedAt") val updatedAt: String
+    @Json(name = "id") val id: Long,
+    @Json(name = "title") val title: String,
+    @Json(name = "artist") val artist: String,
+    @Json(name = "artwork") val artwork: String,
+    @Json(name = "url") val url: String,
+    @Json(name = "duration") val duration: String,
+    @Json(name = "country") val country: String,
+    @Json(name = "rank") val rank: Int,
+    @Json(name = "createdAt") val createdAt: String,
+    @Json(name = "updatedAt") val updatedAt: String
 )

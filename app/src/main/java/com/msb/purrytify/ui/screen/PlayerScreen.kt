@@ -68,7 +68,6 @@ fun PlayerScreen(
     onAnimationComplete: () -> Unit = {},
     viewModel: PlayerViewModel = hiltViewModel(),
 ) {
-    val context = LocalContext.current
     val mediaPlayerManager = viewModel.mediaPlayerManager
     val currentPlayingSong = viewModel.currentSong.value ?: song
     
@@ -807,8 +806,7 @@ fun EditSongDialog(
                                             artist = artist,
                                             artworkPath = artworkFilePath
                                         )
-                                        
-                                        playerViewModel.updateSong(updatedSong)
+
                                         val intent = Intent("com.msb.purrytify.SONG_UPDATED")
                                         intent.putExtra("songId", updatedSong.id)
                                         context.sendBroadcast(intent)

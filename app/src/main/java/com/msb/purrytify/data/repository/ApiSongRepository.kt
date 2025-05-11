@@ -6,7 +6,6 @@ import com.msb.purrytify.data.remote.RetrofitClient
 import com.msb.purrytify.data.remote.model.SongResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -47,7 +46,7 @@ class ApiSongRepository @Inject constructor() {
         val durationMs = convertDurationStringToMs(songResponse.duration)
         
         return@withContext Song(
-            id = songResponse.id.toLong(),
+            id = songResponse.id,
             title = songResponse.title,
             artist = songResponse.artist,
             filePath = songResponse.url, // In reality, you'd download and use a local path

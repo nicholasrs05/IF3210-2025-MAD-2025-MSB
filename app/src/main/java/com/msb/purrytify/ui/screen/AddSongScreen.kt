@@ -30,6 +30,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.rememberAsyncImagePainter
 import com.msb.purrytify.R
 import com.msb.purrytify.utils.FileUtils
+import com.msb.purrytify.viewmodel.LibraryViewModel
+import com.msb.purrytify.viewmodel.HomeViewModel
 import com.msb.purrytify.viewmodel.PlayerViewModel
 import java.util.concurrent.TimeUnit
 
@@ -38,10 +40,12 @@ import java.util.concurrent.TimeUnit
 @Composable
 fun AddSongScreen(
     showBottomSheet: Boolean = true,
-    onDismiss: () -> Unit = {}
+    onDismiss: () -> Unit = {},
+    libraryViewModel: LibraryViewModel = hiltViewModel(),
+    homeViewModel: HomeViewModel = hiltViewModel(),
+    playerViewModel: PlayerViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
-    val playerViewModel: PlayerViewModel = hiltViewModel()
 
     val backgroundColor = Color(0xFF121212)
     val buttonGreen = Color(0xFF1DB954)
@@ -424,17 +428,25 @@ fun AddSongScreen(
                                             return@Button
                                         }
 
-                                        val artworkUriString = selectedArtworkUri?.toString() ?: ""
+                                        // Save files to app storage for persistent access
+                                        val savedAudioPath = FileUtils.saveFileToAppStorage(context, selectedAudioUri!!, "audio")
+                                        val savedArtworkPath = if (selectedArtworkUri != null) {
+                                            FileUtils.saveFileToAppStorage(context, selectedArtworkUri!!, "artwork")
+                                        } else {
+                                            ""
+                                        }
 
                                         playerViewModel.addSong(
                                             title = title,
                                             artist = artist,
-                                            filePath = audioUriString,
-                                            artworkPath = artworkUriString,
+                                            filePath = savedAudioPath,
+                                            artworkPath = savedArtworkPath,
                                             duration = duration
                                         )
 
-                                        playerViewModel.updateCurrentSongIdx()
+                                        // Refresh the library and home screen data
+                                        libraryViewModel.refreshLibrary()
+                                        homeViewModel.refreshSongs()
 
                                         Toast.makeText(
                                             context,

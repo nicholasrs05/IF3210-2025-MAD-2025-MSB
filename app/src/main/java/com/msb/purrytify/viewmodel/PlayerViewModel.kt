@@ -57,7 +57,6 @@ class PlayerViewModel @Inject constructor(
 
     private val _isLargePlayerVisible = mutableStateOf(false)
     
-    // Song data properties (migrated from SongViewModel)
     val userId = profileModel.currentProfile.value.id
     val allSongs: LiveData<List<Song>> = songRepository.fetchAllSongs(userId).asLiveData()
     val likedSongs: LiveData<List<Song>> = songRepository.fetchLikedSongs(userId).asLiveData()
@@ -65,7 +64,6 @@ class PlayerViewModel @Inject constructor(
     val newSongs: LiveData<List<Song>> = songRepository.fetchNewSongs(userId).asLiveData()
 
     init {
-        // Load playlist from repository (from PlaybackViewModel)
         loadPlaylist()
 
         // Setup current song state (from PlayerViewModel)
@@ -390,8 +388,17 @@ class PlayerViewModel @Inject constructor(
                 if (apiSong != null) {
                     // Convert the API song to a local Song entity for playback
                     val localSong = apiSongRepository.convertApiSongToLocalSong(apiSong, userId)
-                    playSong(localSong)
-                    setLargePlayerVisible(true)
+                    
+                    // Save the song to the database to make it available in the library
+                    val insertedId = songRepository.insert(localSong)
+                    val savedSong = songRepository.getSongById(insertedId)
+                    
+                    if (savedSong != null) {
+                        playSong(savedSong)
+                        setLargePlayerVisible(true)
+                    } else {
+                        Log.e("PlayerViewModel", "Failed to save API song")
+                    }
                 } else {
                     Log.e("PlayerViewModel", "Song not found with ID: $songIdStr")
                 }

@@ -13,7 +13,7 @@ import com.msb.purrytify.data.remote.model.SongResponse
  */
 object DeepLinkUtils {
 
-    private const val SCHEME = "purrytify"  // Changed scheme to match exact requirement
+    private const val SCHEME = "purrytify"
     private const val HOST_SONG = "song"
 
     /**
@@ -24,11 +24,11 @@ object DeepLinkUtils {
     }
 
     /**
-     * Creates a deep link URI for a specific API song
-     */
-    fun createApiSongDeepLink(songId: Int): Uri {
-        return "$SCHEME://$HOST_SONG/$songId".toUri()
-    }
+    * Creates a deep link URI for a specific API song
+    */
+fun createApiSongDeepLink(songId: Long): Uri {
+    return "$SCHEME://$HOST_SONG/$songId".toUri()
+}
 
     /**
      * Creates a deep link URI for a specific local song as a string
@@ -38,11 +38,11 @@ object DeepLinkUtils {
     }
 
     /**
-     * Creates a deep link URI for a specific API song as a string
-     */
-    fun createApiSongDeepLinkString(songId: Int): String {
-        return "$SCHEME://$HOST_SONG/$songId"
-    }
+    * Creates a deep link URI for a specific API song as a string
+    */
+fun createApiSongDeepLinkString(songId: Long): String {
+    return "$SCHEME://$HOST_SONG/$songId"
+}
 
     /**
      * Shares a local song using its deep link

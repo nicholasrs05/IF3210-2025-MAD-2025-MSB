@@ -21,20 +21,27 @@ import androidx.compose.foundation.background
 import androidx.compose.ui.graphics.Color
 import com.msb.purrytify.ui.component.LibraryAdapter
 import com.msb.purrytify.ui.theme.AppTheme
+import com.msb.purrytify.viewmodel.LibraryViewModel
 import com.msb.purrytify.viewmodel.PlayerViewModel
 
 @Composable
 fun LibraryScreen(
+    libraryViewModel: LibraryViewModel = hiltViewModel(),
     playerViewModel: PlayerViewModel = hiltViewModel()
 ) {
     val mediaPlayerManager = playerViewModel.mediaPlayerManager
 
-    var showAddSongSheet by remember { mutableStateOf(false) }
+    val showAddSongSheet by libraryViewModel.showAddSongSheet.collectAsState()
     if (showAddSongSheet) {
         AddSongScreen(
             showBottomSheet = true,
-            onDismiss = { showAddSongSheet = false }
+            onDismiss = { libraryViewModel.toggleAddSongSheet(false) }
         )
+    }
+
+    // Trigger refresh when the screen is displayed
+    LaunchedEffect(Unit) {
+        libraryViewModel.refreshLibrary()
     }
 
     Box(
@@ -48,7 +55,7 @@ fun LibraryScreen(
                 .padding(8.dp)
                 .background(Color(0xFF121212)),
         ) {
-            Header(showAddSongSheet = { showAddSongSheet = true })
+            Header(showAddSongSheet = { libraryViewModel.toggleAddSongSheet(true) })
 
             var selectedTab by remember { mutableIntStateOf(0) }
 
@@ -70,8 +77,8 @@ fun LibraryScreen(
                 )
             }
 
-            val allSongs by playerViewModel.allSongs.observeAsState(initial = emptyList())
-            val likedSongs by playerViewModel.likedSongs.observeAsState(initial = emptyList())
+            val allSongs by libraryViewModel.allSongs.observeAsState(initial = emptyList())
+            val likedSongs by libraryViewModel.likedSongs.observeAsState(initial = emptyList())
 
             val songsToDisplay = if (selectedTab == 0) allSongs else likedSongs
 
@@ -96,14 +103,15 @@ fun LibraryScreen(
                                 
                                 val songIndex = songsToDisplay.indexOfFirst { it.id == clickedSong.id }
                                 if (songIndex >= 0) {
-                                    val playlistSong = songsToDisplay[songIndex]
-                                    playerViewModel.playSong(playlistSong)
+                                    libraryViewModel.playLibrarySong(songsToDisplay, clickedSong)
+                                    playerViewModel.setCurrentSong(clickedSong)
                                 } else {
-                                    playerViewModel.playSong(clickedSong)
+                                    libraryViewModel.playSong(clickedSong)
+                                    playerViewModel.setCurrentSong(clickedSong)
                                 }
 
                                 playerViewModel.setLargePlayerVisible(false)
-                                playerViewModel.markAsPlayed(clickedSong.id)
+                                playerViewModel.setMiniPlayerVisible(true)
                             }
                             layoutParams = RecyclerView.LayoutParams(
                                 RecyclerView.LayoutParams.MATCH_PARENT,

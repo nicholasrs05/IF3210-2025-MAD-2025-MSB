@@ -33,31 +33,31 @@ class SongRepository @Inject constructor(private val songDao: SongDao) {
         songDao.updateLastPlayedAt(songId, System.currentTimeMillis())
     }
 
-    fun fetchAllSongs(userId: Int): Flow<List<Song>> {
+    fun fetchAllSongs(userId: Long): Flow<List<Song>> {
         return songDao.getAllSongs(userId)
     }
 
-    fun fetchLikedSongs(userId: Int): Flow<List<Song>> {
+    fun fetchLikedSongs(userId: Long): Flow<List<Song>> {
         return songDao.getLikedSongs(userId)
     }
 
-    fun fetchRecentlyPlayedSongs(userId: Int): Flow<List<Song>> {
+    fun fetchRecentlyPlayedSongs(userId: Long): Flow<List<Song>> {
         return songDao.getRecentlyPlayedSongs(userId)
     }
 
-    fun fetchNewSongs(userId: Int): Flow<List<Song>> {
+    fun fetchNewSongs(userId: Long): Flow<List<Song>> {
         return songDao.getNewSongs(userId)
     }
 
-    fun getSongCount(userId: Int): Flow<Int> {
+    fun getSongCount(userId: Long): Flow<Int> {
         return songDao.getSongCount(userId)
     }
 
-    fun getLikedSongCount(userId: Int): Flow<Int> {
+    fun getLikedSongCount(userId: Long): Flow<Int> {
         return songDao.getLikedSongCount(userId)
     }
 
-    fun getListenedSongCount(userId: Int): Flow<Int> {
+    fun getListenedSongCount(userId: Long): Flow<Int> {
         return songDao.getListenedSongCount(userId)
     }
 

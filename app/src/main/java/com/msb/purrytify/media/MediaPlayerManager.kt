@@ -73,8 +73,12 @@ class MediaPlayerManager(private val context: Context) {
 
         mediaPlayer = MediaPlayer().apply {
             try {
-                val uri = Uri.parse(song.filePath)
-                setDataSource(context, uri)
+                if (song.filePath.startsWith("content:")) {
+                    val uri = Uri.parse(song.filePath)
+                    setDataSource(context, uri)
+                } else {
+                    setDataSource(song.filePath)
+                }
                 prepare()
                 start()
 

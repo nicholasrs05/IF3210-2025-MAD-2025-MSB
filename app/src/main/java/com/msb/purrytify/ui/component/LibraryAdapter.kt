@@ -36,11 +36,11 @@ class LibraryAdapter(
             duration.text = String.format("%d:%02d", minutes, seconds)
 
             val context = itemView.context
-            val artworkUri = song.artworkPath.takeIf { it.isNotEmpty() }?.let { Uri.parse(it) }
+            val artworkFile = song.artworkPath.takeIf { it.isNotEmpty() }?.let { File(it) }
 
-            if (artworkUri != null) {
+            if (artworkFile != null && artworkFile.exists()) {
                 val request = ImageRequest.Builder(context)
-                    .data(artworkUri)
+                    .data(artworkFile)
                     .target(ImageViewTarget(artwork))
                     .crossfade(true)
                     .build()

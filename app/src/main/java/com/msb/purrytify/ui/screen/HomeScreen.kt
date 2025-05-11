@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -27,35 +27,41 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import com.msb.purrytify.R
 import com.msb.purrytify.data.local.entity.Song
+import com.msb.purrytify.viewmodel.HomeViewModel
 import com.msb.purrytify.viewmodel.PlayerViewModel
 import java.io.File
-import android.net.Uri
 
 
 @Composable
 fun HomeScreen(
-    playerViewModel: PlayerViewModel = hiltViewModel(),
+    homeViewModel: HomeViewModel = hiltViewModel(),
+    playerViewModel: PlayerViewModel = hiltViewModel()
 ) {
     val recentlyPlayedState: androidx.compose.runtime.State<List<Song>> =
-        playerViewModel.recentlyPlayedSongs.observeAsState(initial = emptyList())
+        homeViewModel.recentlyPlayedSongs.observeAsState(initial = emptyList())
     val newSongsState: androidx.compose.runtime.State<List<Song>> =
-        playerViewModel.newSongs.observeAsState(initial = emptyList())
+        homeViewModel.newSongs.observeAsState(initial = emptyList())
 
     val recentlyPlayed: List<Song> = recentlyPlayedState.value
     val newSongs: List<Song> = newSongsState.value
-    val mediaManager = playerViewModel.mediaPlayerManager
 
     val onClickedRecent: (Song) -> Unit = { song ->
-        playerViewModel.playSong(song)
-        mediaManager.setPlaylist(recentlyPlayed)
+        homeViewModel.playRecentSongs(recentlyPlayed, song)
+        playerViewModel.setCurrentSong(song)
+        playerViewModel.setMiniPlayerVisible(true)
     }
 
     val onClickedNew: (Song) -> Unit = { song ->
-        playerViewModel.playSong(song)
-        mediaManager.setPlaylist(newSongs)
+        homeViewModel.playNewSongs(newSongs, song)
+        playerViewModel.setCurrentSong(song)
+        playerViewModel.setMiniPlayerVisible(true)
     }
 
-    mediaManager.setPlaylist(newSongs)
+    // Trigger refresh when the screen is displayed
+    LaunchedEffect(Unit) {
+        homeViewModel.refreshSongs()
+    }
+    
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -138,9 +144,9 @@ fun NewSongItem(song: Song, onSongClick: (Song) -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         if (song.artworkPath.isNotEmpty()) {
-            val artworkUri = Uri.parse(song.artworkPath)
+            val artworkFile = File(song.artworkPath)
             AsyncImage(
-                model = artworkUri,
+                model = artworkFile,
                 contentDescription = "Album Artwork",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.size(90.dp).clip(MaterialTheme.shapes.small)
@@ -208,9 +214,9 @@ fun RecentlyPlayedItem(song: Song, onSongClick: (Song) -> Unit) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (song.artworkPath.isNotEmpty()) {
-            val artworkUri = Uri.parse(song.artworkPath)
+            val artworkFile = File(song.artworkPath)
             AsyncImage(
-                model = artworkUri,
+                model = artworkFile,
                 contentDescription = "Album Artwork",
                 contentScale = ContentScale.Fit,
                 modifier = Modifier.size(50.dp).clip(MaterialTheme.shapes.small)
