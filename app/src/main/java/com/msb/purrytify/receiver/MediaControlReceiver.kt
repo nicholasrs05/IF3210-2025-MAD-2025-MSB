@@ -21,6 +21,7 @@ class MediaControlReceiver : BroadcastReceiver() {
         const val ACTION_PAUSE = "com.msb.purrytify.action.PAUSE"
         const val ACTION_NEXT = "com.msb.purrytify.action.NEXT"
         const val ACTION_PREVIOUS = "com.msb.purrytify.action.PREVIOUS"
+        const val ACTION_DISMISS = "com.msb.purrytify.action.DISMISS"
     }
 
     override fun onReceive(context: Context?, intent: Intent?) {
@@ -46,6 +47,10 @@ class MediaControlReceiver : BroadcastReceiver() {
                 mediaPlayerManager.getCurrentSong()?.let { song ->
                     notificationService.showPlayingNotification(song, mediaPlayerManager.isPlaying())
                 }
+            }
+            ACTION_DISMISS -> {
+                mediaPlayerManager.pause()
+                notificationService.hidePlayingNotification()
             }
         }
     }

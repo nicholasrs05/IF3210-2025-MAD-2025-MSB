@@ -90,28 +90,34 @@ class MusicNotificationService @Inject constructor(
 
         val playPauseAction = if (isPlaying) {
             NotificationCompat.Action.Builder(
-                R.drawable.ic_pause,
+                R.drawable.pause,
                 "Pause",
                 createActionIntent(MediaControlReceiver.ACTION_PAUSE)
             ).build()
         } else {
             NotificationCompat.Action.Builder(
-                R.drawable.ic_play,
+                R.drawable.play,
                 "Play",
                 createActionIntent(MediaControlReceiver.ACTION_PLAY)
             ).build()
         }
 
         val previousAction = NotificationCompat.Action.Builder(
-            R.drawable.ic_previous,
+            R.drawable.previous,
             "Previous",
             createActionIntent(MediaControlReceiver.ACTION_PREVIOUS)
         ).build()
 
         val nextAction = NotificationCompat.Action.Builder(
-            R.drawable.ic_next,
+            R.drawable.next,
             "Next",
             createActionIntent(MediaControlReceiver.ACTION_NEXT)
+        ).build()
+
+        val dismissAction = NotificationCompat.Action.Builder(
+            R.drawable.close,
+            "Dismiss",
+            createActionIntent(MediaControlReceiver.ACTION_DISMISS)
         ).build()
 
         val artwork = loadArtwork(song.artworkPath)
@@ -125,9 +131,12 @@ class MusicNotificationService @Inject constructor(
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setLargeIcon(artwork)
+            .setColor(0xFF121212.toInt())
+            .setColorized(true)
             .addAction(previousAction)
             .addAction(playPauseAction)
             .addAction(nextAction)
+            .addAction(dismissAction)
             .setStyle(MediaStyle()
                 .setShowActionsInCompactView(0, 1, 2))
             .build()
