@@ -54,6 +54,9 @@ dependencies {
     implementation("androidx.hilt:hilt-work:1.2.0")
     implementation("androidx.work:work-runtime-ktx:2.9.0")
 
+    // Core
+    implementation("androidx.core:core-ktx:1.12.0")
+
     // Jetpack Compose
     val composeBom = platform("androidx.compose:compose-bom:2025.02.00")
     implementation(composeBom)
