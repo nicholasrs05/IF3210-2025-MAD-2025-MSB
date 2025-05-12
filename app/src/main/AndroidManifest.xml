@@ -48,5 +48,15 @@
                 android:value="androidx.startup"
                 tools:node="remove" />
         </provider>
+        <receiver
+            android:name=".receiver.MediaControlReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.msb.purrytify.action.PLAY" />
+                <action android:name="com.msb.purrytify.action.PAUSE" />
+                <action android:name="com.msb.purrytify.action.NEXT" />
+                <action android:name="com.msb.purrytify.action.PREVIOUS" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>

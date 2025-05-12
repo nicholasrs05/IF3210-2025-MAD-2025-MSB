@@ -456,9 +456,7 @@ class PlayerViewModel @Inject constructor(
     }
 
     private fun updateNotification(song: Song) {
-        if (_isPlaying.value) {
-            notificationService.showPlayingNotification(song)
-        }
+        notificationService.showPlayingNotification(song, _isPlaying.value)
     }
 
     private fun hideNotification() {
