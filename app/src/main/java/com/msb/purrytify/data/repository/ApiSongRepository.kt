@@ -1,18 +1,18 @@
 package com.msb.purrytify.data.repository
 
 import android.util.Log
+import com.msb.purrytify.data.api.ApiService
 import com.msb.purrytify.data.local.entity.Song
-import com.msb.purrytify.data.remote.RetrofitClient
-import com.msb.purrytify.data.remote.model.SongResponse
+import com.msb.purrytify.data.model.SongResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class ApiSongRepository @Inject constructor() {
-    
-    private val songApiService = RetrofitClient.songApiService
+class ApiSongRepository @Inject constructor(
+    private val apiService: ApiService,
+) {
     
     /**
      * Fetch a song from the API by ID
@@ -20,7 +20,7 @@ class ApiSongRepository @Inject constructor() {
      */
     suspend fun fetchSongById(songId: String): SongResponse? = withContext(Dispatchers.IO) {
         try {
-            val response = songApiService.getSongById(songId)
+            val response = apiService.getSongById(songId)
             if (response.isSuccessful) {
                 return@withContext response.body()
             } else {
@@ -49,18 +49,15 @@ class ApiSongRepository @Inject constructor() {
             id = songResponse.id,
             title = songResponse.title,
             artist = songResponse.artist,
-            filePath = songResponse.url, // In reality, you'd download and use a local path
-            artworkPath = songResponse.artwork, // In reality, you'd download and use a local path
+            filePath = songResponse.url,
+            artworkPath = songResponse.artwork,
             duration = durationMs,
             isLiked = false,
             ownerId = userId,
             isFromApi = true
         )
     }
-    
-    /**
-     * Convert duration string ("4:12") to milliseconds
-     */
+
     private fun convertDurationStringToMs(duration: String): Long {
         val parts = duration.split(":")
         if (parts.size == 2) {

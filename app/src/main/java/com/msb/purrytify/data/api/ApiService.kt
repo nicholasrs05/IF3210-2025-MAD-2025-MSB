@@ -3,10 +3,12 @@ package com.msb.purrytify.data.api
 import com.msb.purrytify.data.model.LoginRequest
 import com.msb.purrytify.data.model.LoginResponse
 import com.msb.purrytify.data.model.Profile
+import com.msb.purrytify.data.model.SongResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.Path
 
 interface ApiService {
     @POST("/api/login")
@@ -22,4 +24,8 @@ interface ApiService {
 
     @GET("/api/profile")
     suspend fun getProfile(): Response<Profile>
+
+    /* Song API */
+    @GET("/api/song/{songId}")
+    suspend fun getSongById(@Path("songId") songId: String): Response<SongResponse>
 }
