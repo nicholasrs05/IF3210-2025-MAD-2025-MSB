@@ -6,14 +6,13 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.msb.purrytify.data.local.entity.Song
 import com.msb.purrytify.data.repository.ApiSongRepository
 import com.msb.purrytify.data.repository.SongRepository
 import com.msb.purrytify.media.MediaPlayerManager
 import com.msb.purrytify.model.ProfileModel
+import com.msb.purrytify.qr.QRSharingService
 import com.msb.purrytify.service.MusicNotificationService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -27,8 +26,9 @@ class PlayerViewModel @Inject constructor(
     private val songRepository: SongRepository,
     private val apiSongRepository: ApiSongRepository,
     val mediaPlayerManager: MediaPlayerManager,
-    private val profileModel: ProfileModel,
-    private val notificationService: MusicNotificationService
+    profileModel: ProfileModel,
+    private val notificationService: MusicNotificationService,
+    private val qrSharingService: QRSharingService
 ) : AndroidViewModel(application) {
 
     // Player UI state
@@ -56,18 +56,10 @@ class PlayerViewModel @Inject constructor(
     // UI visibility states
     private val _isMiniPlayerVisible = mutableStateOf(false)
     val isMiniPlayerVisible: State<Boolean> = _isMiniPlayerVisible
-
     private val _isLargePlayerVisible = mutableStateOf(false)
-    
     val userId = profileModel.currentProfile.value.id
-    val allSongs: LiveData<List<Song>> = songRepository.fetchAllSongs(userId).asLiveData()
-    val likedSongs: LiveData<List<Song>> = songRepository.fetchLikedSongs(userId).asLiveData()
-    val recentlyPlayedSongs: LiveData<List<Song>> = songRepository.fetchRecentlyPlayedSongs(userId).asLiveData()
-    val newSongs: LiveData<List<Song>> = songRepository.fetchNewSongs(userId).asLiveData()
 
     init {
-//        loadPlaylist()
-
         // Setup current song state (from PlayerViewModel)
         mediaPlayerManager.getCurrentSong()?.let { song ->
             _currentSong.value = song
@@ -203,13 +195,6 @@ class PlayerViewModel @Inject constructor(
     }
 
     /**
-     * Updates the current song index in the MediaPlayerManager
-     */
-    fun updateCurrentSongIdx() {
-        mediaPlayerManager.updateCurrentSongIdx()
-    }
-
-    /**
      * Toggles shuffle mode for the playlist
      */
     fun toggleShuffle() {
@@ -306,12 +291,6 @@ class PlayerViewModel @Inject constructor(
         _isLiked.value = false
     }
 
-    /**
-     * Sets the current song to null without resetting other states
-     */
-    fun setCurrentSongNull() {
-        _currentSong.value = null
-    }
 
     /**
      * Sets the current song with a specified song
@@ -340,6 +319,15 @@ class PlayerViewModel @Inject constructor(
         hideNotification()
         mediaPlayerManager.stop()
         _currentSong.value = null
+    }
+
+    /**
+     * Share the current song via QR code
+     */
+    fun shareCurrentSongViaQR() {
+        currentSong.value?.let { song ->
+            qrSharingService.shareSongViaQR(song)
+        }
     }
 
     /**

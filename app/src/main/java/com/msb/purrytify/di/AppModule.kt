@@ -13,6 +13,7 @@ import com.msb.purrytify.data.local.PurrytifyDatabase
 import com.msb.purrytify.data.local.dao.SongDao
 import com.msb.purrytify.data.repository.SongRepository
 import com.msb.purrytify.media.MediaPlayerManager
+import com.msb.purrytify.qr.QRSharingService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -103,5 +104,11 @@ object AppModule {
     @Singleton
     fun provideMediaPlayerManager(@ApplicationContext context: Context): MediaPlayerManager {
         return MediaPlayerManager(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideQRSharingService(@ApplicationContext context: Context): QRSharingService {
+        return QRSharingService(context)
     }
 }

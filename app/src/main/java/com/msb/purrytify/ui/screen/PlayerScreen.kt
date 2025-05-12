@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -48,6 +49,7 @@ import coil3.compose.AsyncImage
 import com.msb.purrytify.R
 import com.msb.purrytify.data.local.entity.Song
 import com.msb.purrytify.media.MediaPlayerManager
+import com.msb.purrytify.ui.component.qrcode.ShareSongQRDialog
 import com.msb.purrytify.utils.DeepLinkUtils
 import com.msb.purrytify.viewmodel.PlayerViewModel
 import kotlinx.coroutines.Dispatchers
@@ -363,6 +365,7 @@ fun PlayerScreen(
                 
                 var showMenu by remember { mutableStateOf(false) }
                 var showEditDialog by remember { mutableStateOf(false) }
+                var showQRDialog by remember { mutableStateOf(false) }
                 
                 Box {
                     IconButton(onClick = { showMenu = !showMenu }) {
@@ -402,17 +405,36 @@ fun PlayerScreen(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(
                                         imageVector = Icons.Filled.Share,
-                                        contentDescription = "Share Song",
+                                        contentDescription = "Share URL",
                                         tint = textColor,
                                         modifier = Modifier.size(20.dp)
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Share Song", color = textColor)
+                                    Text("Share URL", color = textColor)
                                 }
                             },
                             onClick = {
                                 showMenu = false
                                 DeepLinkUtils.shareSong(context, currentPlayingSong)
+                            }
+                        )
+                        
+                        DropdownMenuItem(
+                            text = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Filled.QrCode,
+                                        contentDescription = "Share QR Code",
+                                        tint = textColor,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Share QR Code", color = textColor)
+                                }
+                            },
+                            onClick = {
+                                showMenu = false
+                                viewModel.shareCurrentSongViaQR()
                             }
                         )
                     }
@@ -426,6 +448,13 @@ fun PlayerScreen(
                         textColor = textColor,
                         accentColor = accentColor,
                         viewModel = viewModel
+                    )
+                }
+                
+                if (showQRDialog) {
+                    ShareSongQRDialog(
+                        song = currentPlayingSong,
+                        onDismiss = { showQRDialog = false }
                     )
                 }
             }

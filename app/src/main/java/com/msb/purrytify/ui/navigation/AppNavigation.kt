@@ -1,8 +1,6 @@
 package com.msb.purrytify.ui.navigation
 
-import android.content.res.Configuration
 import android.util.Log
-import androidx.collection.isNotEmpty
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,7 +22,11 @@ import com.msb.purrytify.viewmodel.AuthViewModel
 import com.msb.purrytify.viewmodel.PlayerViewModel
 import com.msb.purrytify.ui.component.NavigationBarComponent
 import com.msb.purrytify.ui.component.PlayerContainer
-import com.msb.purrytify.ui.screen.*
+import com.msb.purrytify.qr.ModernQRScannerScreen
+import com.msb.purrytify.ui.screen.HomeScreen
+import com.msb.purrytify.ui.screen.LibraryScreen
+import com.msb.purrytify.ui.screen.LoginScreen
+import com.msb.purrytify.ui.screen.ProfileScreen
 import androidx.compose.ui.unit.dp
 import com.msb.purrytify.R
 import androidx.compose.ui.res.painterResource
@@ -74,6 +76,8 @@ sealed class Screen(
     })
 
     data object Login : Screen("login", "Login")
+    
+    data object QRScanner : Screen("qr_scanner", "QR Scanner")
 
     data object SongDetail : Screen("song/{songId}", "Song Detail") {
         fun createRoute(songId: String): String {
@@ -81,8 +85,6 @@ sealed class Screen(
         }
     }
 }
-
-// Preview annotations remain the same
 
 @Composable
 fun NavigationComponent(
@@ -176,7 +178,8 @@ fun NavigationComponent(
                                         composable(Screen.Profile.route) {
                                             ProfileScreen(
                                                 authViewModel = authViewModel,
-                                                playerViewModel = playerViewModel
+                                                playerViewModel = playerViewModel,
+                                                navController = navController
                                             )
                                         }
                                         composable(Screen.Login.route) {
@@ -235,10 +238,21 @@ fun NavigationComponent(
                                             playerViewModel = playerViewModel,
                                         )
                                     }
-                                    composable(Screen.Profile.route) { ProfileScreen(authViewModel=authViewModel, playerViewModel = playerViewModel) }
+                                    composable(Screen.Profile.route) { ProfileScreen(authViewModel=authViewModel, playerViewModel = playerViewModel, navController = navController) }
                                     composable(Screen.Login.route) {
                                         LoginScreen(
                                             authViewModel = authViewModel
+                                        )
+                                    }
+                                    composable(Screen.QRScanner.route) {
+                                        ModernQRScannerScreen(
+                                            navigateUp = { navController.navigateUp() },
+                                            onQRCodeScanned = { songId ->
+                                                playerViewModel.playSongById(songId)
+                                                navController.navigate(Screen.Home.route) {
+                                                    popUpTo(Screen.QRScanner.route) { inclusive = true }
+                                                }
+                                            }
                                         )
                                     }
                                     composable(
@@ -256,8 +270,6 @@ fun NavigationComponent(
                                         LaunchedEffect(songId) {
                                             if (songId != null) {
                                                 if (!isLoggedIn) {
-                                                    // If not logged in, store the songId to play after login
-                                                    // This could be stored in a temporary preference or viewmodel state
                                                     navController.navigate(Screen.Login.route)
                                                 } else {
                                                     playerViewModel.playSongById(songId)

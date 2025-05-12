@@ -46,6 +46,16 @@ android {
 }
 
 dependencies {
+    // QR Code Generation
+    implementation("com.google.zxing:core:3.5.2")
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+    
+    // Camera and ML Kit
+    implementation("androidx.camera:camera-camera2:1.3.3")
+    implementation("androidx.camera:camera-lifecycle:1.3.3")
+    implementation("androidx.camera:camera-view:1.3.3")
+    implementation("com.google.mlkit:barcode-scanning:17.2.0")
+    
     // Hilt
     implementation(libs.hilt.android)
     ksp("androidx.hilt:hilt-compiler:1.2.0")

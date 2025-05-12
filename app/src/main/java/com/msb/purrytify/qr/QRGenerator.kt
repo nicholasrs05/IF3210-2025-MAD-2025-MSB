@@ -1,0 +1,115 @@
+package com.msb.purrytify.qr
+
+import android.graphics.Bitmap
+import android.graphics.Color
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.EncodeHintType
+import com.google.zxing.qrcode.QRCodeWriter
+import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
+
+/**
+ * Utility class for generating QR codes for song sharing
+ */
+object QRGenerator {
+    
+    /**
+     * Generate a QR code bitmap for the given song ID
+     * 
+     * @param songId The song ID to encode in the QR code
+     * @param size The size of the QR code bitmap in pixels
+     * @param scheme The URI scheme to use for the deep link
+     * @param host The URI host to use for the deep link
+     * @return A bitmap containing the QR code
+     */
+    fun generateSongQRCode(
+        songId: String,
+        size: Int = 512,
+        scheme: String = "purrytify", 
+        host: String = "song"
+    ): Bitmap {
+        // Create deep link URI
+        val deepLink = "$scheme://$host/$songId"
+        
+        // Configure QR code parameters for optimal scanning
+        val hints = hashMapOf<EncodeHintType, Any>().apply {
+            put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.H) // High error correction
+            put(EncodeHintType.MARGIN, 2) // Quiet zone margin
+            put(EncodeHintType.CHARACTER_SET, "UTF-8")
+        }
+        
+        try {
+            // Generate the QR code bit matrix
+            val qrCodeWriter = QRCodeWriter()
+            val bitMatrix = qrCodeWriter.encode(deepLink, BarcodeFormat.QR_CODE, size, size, hints)
+            
+            // Convert to bitmap
+            val width = bitMatrix.width
+            val height = bitMatrix.height
+            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            
+            // Fill bitmap with QR code data
+            for (x in 0 until width) {
+                for (y in 0 until height) {
+                    bitmap.setPixel(x, y, if (bitMatrix[x, y]) Color.BLACK else Color.WHITE)
+                }
+            }
+            
+            return bitmap
+        } catch (e: Exception) {
+            throw IllegalStateException("Failed to generate QR code: ${e.message}", e)
+        }
+    }
+    
+    /**
+     * Generate a QR code bitmap with song info beneath it
+     * 
+     * @param songId The song ID to encode in the QR code
+     * @param title The song title to display below the QR code
+     * @param artist The artist name to display below the QR code
+     * @param qrSize The size of the QR code part in pixels
+     * @return A bitmap containing the QR code and song info
+     */
+    fun generateQRCodeWithInfo(
+        songId: String,
+        title: String,
+        artist: String,
+        qrSize: Int = 512
+    ): Bitmap {
+        // First generate the QR code
+        val qrBitmap = generateSongQRCode(songId, qrSize)
+        
+        // Create a new bitmap with space for text
+        val textHeight = 150
+        val combinedBitmap = Bitmap.createBitmap(qrSize, qrSize + textHeight, Bitmap.Config.ARGB_8888)
+        
+        // Draw the QR code and text onto the new bitmap
+        val canvas = android.graphics.Canvas(combinedBitmap)
+        canvas.drawColor(Color.WHITE)
+        canvas.drawBitmap(qrBitmap, 0f, 0f, null)
+        
+        // Draw song info
+        val titlePaint = android.graphics.Paint().apply {
+            color = Color.BLACK
+            textSize = 40f
+            textAlign = android.graphics.Paint.Align.CENTER
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+        }
+        
+        val artistPaint = android.graphics.Paint().apply {
+            color = Color.GRAY
+            textSize = 30f
+            textAlign = android.graphics.Paint.Align.CENTER
+        }
+        
+        // Position text
+        val centerX = qrSize / 2f
+        val titleY = qrSize + 60f
+        val artistY = titleY + 50f
+        
+        // Draw text
+        canvas.drawText(title, centerX, titleY, titlePaint)
+        canvas.drawText(artist, centerX, artistY, artistPaint)
+        
+        return combinedBitmap
+    }
+}

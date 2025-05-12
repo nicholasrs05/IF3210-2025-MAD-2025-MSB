@@ -63,6 +63,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -75,6 +76,13 @@ class MainActivity : ComponentActivity() {
                     Log.d("MainActivity", "Notification permission granted")
                 } else {
                     Log.d("MainActivity", "Notification permission denied")
+                }
+            }
+            102 -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Log.d("MainActivity", "Camera permission granted")
+                } else {
+                    Log.d("MainActivity", "Camera permission denied")
                 }
             }
         }
