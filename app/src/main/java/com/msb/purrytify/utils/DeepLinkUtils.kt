@@ -6,7 +6,7 @@ import android.net.Uri
 import androidx.core.app.ShareCompat
 import androidx.core.net.toUri
 import com.msb.purrytify.data.local.entity.Song
-import com.msb.purrytify.data.remote.model.SongResponse
+import com.msb.purrytify.data.model.SongResponse
 
 /**
  * Utility class for handling deep links in the application
