@@ -14,6 +14,7 @@ import com.msb.purrytify.data.repository.ApiSongRepository
 import com.msb.purrytify.data.repository.SongRepository
 import com.msb.purrytify.media.MediaPlayerManager
 import com.msb.purrytify.model.ProfileModel
+import com.msb.purrytify.service.MusicNotificationService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -26,7 +27,8 @@ class PlayerViewModel @Inject constructor(
     private val songRepository: SongRepository,
     private val apiSongRepository: ApiSongRepository,
     val mediaPlayerManager: MediaPlayerManager,
-    private val profileModel: ProfileModel
+    private val profileModel: ProfileModel,
+    private val notificationService: MusicNotificationService
 ) : AndroidViewModel(application) {
 
     // Player UI state
@@ -73,12 +75,25 @@ class PlayerViewModel @Inject constructor(
             _duration.floatValue = mediaPlayerManager.getDuration().toFloat()
             _currentPosition.floatValue = mediaPlayerManager.getCurrentPosition().toFloat()
             checkLikedStatus(song.id)
+            updateNotification(song)
         }
 
         // Set up completion handler
         mediaPlayerManager.onCompletion = {
             handleSongCompletion()
         }
+
+        mediaPlayerManager.addSongChangeListener(object : MediaPlayerManager.SongChangeListener {
+            override fun onSongChanged(newSong: Song) {
+                updateCurrentSong()
+                updateNotification(newSong)
+            }
+
+            override fun onPlayerReleased() {
+                resetCurrentSong()
+                hideNotification()
+            }
+        })
     }
 
     /**
@@ -121,6 +136,8 @@ class PlayerViewModel @Inject constructor(
             _duration.floatValue = mediaPlayerManager.getDuration().toFloat()
             _currentPosition.floatValue = 0f
             _isMiniPlayerVisible.value = true
+            
+            updateNotification(song)
         }
     }
 
@@ -131,15 +148,18 @@ class PlayerViewModel @Inject constructor(
         if (_isPlaying.value) {
             mediaPlayerManager.pause()
             _isPlaying.value = false
+            _currentSong.value?.let { updateNotification(it) }
         } else {
             if (_currentSong.value != null) {
                 mediaPlayerManager.resume()
                 _isPlaying.value = true
+                _currentSong.value?.let { updateNotification(it) }
             } else {
                 mediaPlayerManager.getCurrentSong()?.let { song ->
                     _currentSong.value = song
                     mediaPlayerManager.resume()
                     _isPlaying.value = true
+                    updateNotification(song)
                 }
             }
         }
@@ -317,6 +337,7 @@ class PlayerViewModel @Inject constructor(
      */
     fun stopMediaPlayer() {
         _isMiniPlayerVisible.value = false
+        hideNotification()
         mediaPlayerManager.stop()
         _currentSong.value = null
     }
@@ -434,7 +455,18 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
+    private fun updateNotification(song: Song) {
+        if (_isPlaying.value) {
+            notificationService.showPlayingNotification(song)
+        }
+    }
+
+    private fun hideNotification() {
+        notificationService.hidePlayingNotification()
+    }
+
     override fun onCleared() {
         super.onCleared()
+        hideNotification()
     }
 }
