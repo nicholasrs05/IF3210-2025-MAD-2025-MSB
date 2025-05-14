@@ -15,6 +15,7 @@ import com.msb.purrytify.model.ProfileModel
 import com.msb.purrytify.qr.QRSharingService
 import com.msb.purrytify.service.MusicNotificationService
 import dagger.hilt.android.lifecycle.HiltViewModel
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -28,7 +29,8 @@ class PlayerViewModel @Inject constructor(
     val mediaPlayerManager: MediaPlayerManager,
     profileModel: ProfileModel,
     private val notificationService: MusicNotificationService,
-    private val qrSharingService: QRSharingService
+    private val qrSharingService: QRSharingService,
+    private val audioViewModel: AudioViewModel // Inject our new AudioViewModel
 ) : AndroidViewModel(application) {
 
     // Player UI state
@@ -124,7 +126,10 @@ class PlayerViewModel @Inject constructor(
             songRepository.updateLastPlayedAt(song.id)
             checkLikedStatus(song.id)
 
+            // Use both the legacy MediaPlayerManager and the new AudioViewModel
             mediaPlayerManager.play(song)
+            audioViewModel.playSong(song) // This will start the foreground service with notification
+            
             _duration.floatValue = mediaPlayerManager.getDuration().toFloat()
             _currentPosition.floatValue = 0f
             _isMiniPlayerVisible.value = true
@@ -139,17 +144,20 @@ class PlayerViewModel @Inject constructor(
     fun togglePlayPause() {
         if (_isPlaying.value) {
             mediaPlayerManager.pause()
+            audioViewModel.togglePlayPause() // Sync with AudioService
             _isPlaying.value = false
             _currentSong.value?.let { updateNotification(it) }
         } else {
             if (_currentSong.value != null) {
                 mediaPlayerManager.resume()
+                audioViewModel.togglePlayPause() // Sync with AudioService
                 _isPlaying.value = true
                 _currentSong.value?.let { updateNotification(it) }
             } else {
                 mediaPlayerManager.getCurrentSong()?.let { song ->
                     _currentSong.value = song
                     mediaPlayerManager.resume()
+                    audioViewModel.togglePlayPause() // Sync with AudioService
                     _isPlaying.value = true
                     updateNotification(song)
                 }
@@ -162,6 +170,7 @@ class PlayerViewModel @Inject constructor(
      */
     fun skipToNext() {
         mediaPlayerManager.playNext()
+        audioViewModel.playNext() // Sync with AudioService
         updateCurrentSong()
     }
 
@@ -170,6 +179,7 @@ class PlayerViewModel @Inject constructor(
      */
     fun skipToPrevious() {
         mediaPlayerManager.playPrevious()
+        audioViewModel.playPrevious() // Sync with AudioService
         updateCurrentSong()
     }
 
@@ -178,6 +188,7 @@ class PlayerViewModel @Inject constructor(
      */
     fun seekTo(position: Float) {
         mediaPlayerManager.seekTo(position.toInt())
+        audioViewModel.seekTo(position.toInt()) // Sync with AudioService
         _currentPosition.floatValue = position
     }
 
@@ -318,6 +329,7 @@ class PlayerViewModel @Inject constructor(
         _isMiniPlayerVisible.value = false
         hideNotification()
         mediaPlayerManager.stop()
+        audioViewModel.stopPlayback() // Stop the AudioService
         _currentSong.value = null
     }
 

@@ -9,6 +9,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.media.app.NotificationCompat.MediaStyle
 import com.msb.purrytify.MainActivity
@@ -30,6 +31,7 @@ class MusicNotificationService @Inject constructor(
 
     init {
         createNotificationChannel()
+        Log.d("MusicNotificationService", "Notification channel created")
     }
 
     private fun createNotificationChannel() {
@@ -88,37 +90,6 @@ class MusicNotificationService @Inject constructor(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val playPauseAction = if (isPlaying) {
-            NotificationCompat.Action.Builder(
-                R.drawable.pause,
-                "Pause",
-                createActionIntent(MediaControlReceiver.ACTION_PAUSE)
-            ).build()
-        } else {
-            NotificationCompat.Action.Builder(
-                R.drawable.play,
-                "Play",
-                createActionIntent(MediaControlReceiver.ACTION_PLAY)
-            ).build()
-        }
-
-        val previousAction = NotificationCompat.Action.Builder(
-            R.drawable.previous,
-            "Previous",
-            createActionIntent(MediaControlReceiver.ACTION_PREVIOUS)
-        ).build()
-
-        val nextAction = NotificationCompat.Action.Builder(
-            R.drawable.next,
-            "Next",
-            createActionIntent(MediaControlReceiver.ACTION_NEXT)
-        ).build()
-
-        val dismissAction = NotificationCompat.Action.Builder(
-            R.drawable.close,
-            "Dismiss",
-            createActionIntent(MediaControlReceiver.ACTION_DISMISS)
-        ).build()
 
         val artwork = loadArtwork(song.artworkPath)
 
@@ -133,10 +104,6 @@ class MusicNotificationService @Inject constructor(
             .setLargeIcon(artwork)
             .setColor(0xFF121212.toInt())
             .setColorized(true)
-            .addAction(previousAction)
-            .addAction(playPauseAction)
-            .addAction(nextAction)
-            .addAction(dismissAction)
             .setStyle(MediaStyle()
                 .setShowActionsInCompactView(0, 1, 2))
             .build()
