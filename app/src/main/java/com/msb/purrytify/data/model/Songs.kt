@@ -10,6 +10,7 @@ data class Song(
     val artworkPath: String,
     val isLiked: Boolean,
     val addedAt: Long,
-    val lastPlayedAt: Long?
+    val lastPlayedAt: Long?,
+    val playCount: Int = 0
 )
 

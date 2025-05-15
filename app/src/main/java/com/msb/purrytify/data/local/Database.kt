@@ -4,12 +4,29 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
+import com.msb.purrytify.data.local.converter.DateTimeConverter
 import com.msb.purrytify.data.local.dao.SongDao
+import com.msb.purrytify.data.local.dao.SoundCapsuleDao
 import com.msb.purrytify.data.local.entity.Song
+import com.msb.purrytify.data.local.entity.SoundCapsule
+import com.msb.purrytify.data.local.entity.DayStreak
+import com.msb.purrytify.data.local.entity.DailyListeningTime
 
-@Database(entities = [Song::class], version = 2, exportSchema = false)
+@Database(
+    entities = [
+        Song::class,
+        SoundCapsule::class,
+        DayStreak::class,
+        DailyListeningTime::class
+    ],
+    version = 2,
+    exportSchema = false
+)
+@TypeConverters(DateTimeConverter::class)
 abstract class PurrytifyDatabase : RoomDatabase() {
     abstract fun songDao(): SongDao
+    abstract fun soundCapsuleDao(): SoundCapsuleDao
 
     companion object {
         @Volatile
