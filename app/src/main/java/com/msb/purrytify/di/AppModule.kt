@@ -11,7 +11,9 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.msb.purrytify.data.local.PurrytifyDatabase
 import com.msb.purrytify.data.local.dao.SongDao
+import com.msb.purrytify.data.local.dao.SoundCapsuleDao
 import com.msb.purrytify.data.repository.SongRepository
+import com.msb.purrytify.data.repository.SoundCapsuleRepository
 import com.msb.purrytify.media.MediaPlayerManager
 import dagger.Module
 import dagger.Provides
@@ -91,6 +93,17 @@ object AppModule {
     @Provides
     fun provideSongDao(database: PurrytifyDatabase): SongDao {
         return database.songDao()
+    }
+
+    @Provides
+    fun provideSoundCapsuleDao(database: PurrytifyDatabase): SoundCapsuleDao {
+        return database.soundCapsuleDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideSoundCapsuleRepository(soundCapsuleDao: SoundCapsuleDao): SoundCapsuleRepository {
+        return SoundCapsuleRepository(soundCapsuleDao)
     }
 
     @Provides
