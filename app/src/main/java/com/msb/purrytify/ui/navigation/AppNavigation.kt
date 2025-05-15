@@ -3,6 +3,7 @@ package com.msb.purrytify.ui.navigation
 import android.content.res.Configuration
 import android.util.Log
 import androidx.collection.isNotEmpty
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,6 +23,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.msb.purrytify.viewmodel.AuthViewModel
 import com.msb.purrytify.viewmodel.PlayerViewModel
+import com.msb.purrytify.viewmodel.SoundCapsuleViewModel
 import com.msb.purrytify.ui.component.NavigationBarComponent
 import com.msb.purrytify.ui.component.PlayerContainer
 import com.msb.purrytify.ui.screen.*
@@ -37,6 +39,7 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
+import com.msb.purrytify.data.DummyData
 
 sealed class Screen(
     val route: String,
@@ -80,6 +83,24 @@ sealed class Screen(
             return "song/$songId"
         }
     }
+
+    data object TopArtists : Screen("top_artists/{month}/{year}", "Top Artists") {
+        fun createRoute(month: String, year: Int): String {
+            return "top_artists/$month/$year"
+        }
+    }
+
+    data object TopSongs : Screen("top_songs/{month}/{year}", "Top Songs") {
+        fun createRoute(month: String, year: Int): String {
+            return "top_songs/$month/$year"
+        }
+    }
+
+    data object TimeListened : Screen("time_listened/{month}/{year}", "Time Listened") {
+        fun createRoute(month: String, year: Int): String {
+            return "time_listened/$month/$year"
+        }
+    }
 }
 
 // Preview annotations remain the same
@@ -88,6 +109,7 @@ sealed class Screen(
 fun NavigationComponent(
     authViewModel: AuthViewModel = hiltViewModel(),
     playerViewModel: PlayerViewModel = hiltViewModel(),
+    soundCapsuleViewModel: SoundCapsuleViewModel = hiltViewModel(),
     isLandscape: Boolean
 ) {
     AppTheme {
@@ -150,7 +172,7 @@ fun NavigationComponent(
                     content = {
                         if (isLandscape) {
                             Row(
-                                modifier = Modifier.fillMaxSize()
+                                modifier = Modifier.fillMaxSize().background(Color(0xFF121212))
                             ) {
                                 val showNavBar = isLoggedIn && currentRouteForUI != Screen.Login.route
                                 if (showNavBar) {
@@ -161,7 +183,7 @@ fun NavigationComponent(
                                     NavHost(
                                         navController = navController,
                                         startDestination = startDestination,
-                                        modifier = Modifier.fillMaxSize()
+                                        modifier = Modifier.fillMaxSize().background(Color(0xFF121212))
                                     ) {
                                         composable(Screen.Home.route) {
                                             HomeScreen(
@@ -176,7 +198,8 @@ fun NavigationComponent(
                                         composable(Screen.Profile.route) {
                                             ProfileScreen(
                                                 authViewModel = authViewModel,
-                                                playerViewModel = playerViewModel
+                                                playerViewModel = playerViewModel,
+                                                navController = navController
                                             )
                                         }
                                         composable(Screen.Login.route) {
@@ -211,6 +234,67 @@ fun NavigationComponent(
                                                 }
                                             }
                                         }
+                                        composable(
+                                            route = Screen.TopArtists.route,
+                                            arguments = listOf(
+                                                navArgument("month") { type = NavType.StringType },
+                                                navArgument("year") { type = NavType.IntType }
+                                            )
+                                        ) { backStackEntry ->
+                                            val month = backStackEntry.arguments?.getString("month") ?: ""
+                                            val year = backStackEntry.arguments?.getInt("year") ?: 0
+                                            TopArtistScreen(
+                                                month = month,
+                                                year = year,
+                                                artists = DummyData.dummyArtists,
+                                                onBackClick = { navController.popBackStack() }
+                                            )
+                                        }
+                                        composable(
+                                            route = Screen.TopSongs.route,
+                                            arguments = listOf(
+                                                navArgument("month") { type = NavType.StringType },
+                                                navArgument("year") { type = NavType.IntType }
+                                            )
+                                        ) { backStackEntry ->
+                                            val month = backStackEntry.arguments?.getString("month") ?: ""
+                                            val year = backStackEntry.arguments?.getInt("year") ?: 0
+                                            TopSongScreen(
+                                                month = month,
+                                                year = year,
+                                                songs = DummyData.dummySongs,
+                                                onBackClick = { navController.popBackStack() }
+                                            )
+                                        }
+                                        composable(
+                                            route = Screen.TimeListened.route,
+                                            arguments = listOf(
+                                                navArgument("month") { type = NavType.StringType },
+                                                navArgument("year") { type = NavType.IntType }
+                                            )
+                                        ) { backStackEntry ->
+                                            val month = backStackEntry.arguments?.getString("month") ?: ""
+                                            val year = backStackEntry.arguments?.getInt("year") ?: 0
+                                            val soundCapsule = soundCapsuleViewModel.soundCapsuleState.value
+                                            TimeListenedScreen(
+                                                    month = month,
+                                                    year = year,
+                                                    onBackClick = { navController.popBackStack() }
+                                                )
+
+                                            // if (soundCapsule != null) {
+                                            //     TimeListenedScreen(
+                                            //         month = month,
+                                            //         year = year,
+                                            //         onBackClick = { navController.popBackStack() }
+                                            //     )
+                                            // } else {
+                                            //     // Show loading or error state
+                                            //     Box(modifier = Modifier.fillMaxSize()) {
+                                            //         CircularProgressIndicator()
+                                            //     }
+                                            // }
+                                        }
                                     }
                                 }
                             }
@@ -235,7 +319,13 @@ fun NavigationComponent(
                                             playerViewModel = playerViewModel,
                                         )
                                     }
-                                    composable(Screen.Profile.route) { ProfileScreen(authViewModel=authViewModel, playerViewModel = playerViewModel) }
+                                    composable(Screen.Profile.route) {
+                                        ProfileScreen(
+                                            authViewModel = authViewModel,
+                                            playerViewModel = playerViewModel,
+                                            navController = navController
+                                        )
+                                    }
                                     composable(Screen.Login.route) {
                                         LoginScreen(
                                             authViewModel = authViewModel
@@ -275,6 +365,67 @@ fun NavigationComponent(
                                         Box(modifier = Modifier.fillMaxSize()) {
                                             CircularProgressIndicator()
                                         }
+                                    }
+                                    composable(
+                                        route = Screen.TopArtists.route,
+                                        arguments = listOf(
+                                            navArgument("month") { type = NavType.StringType },
+                                            navArgument("year") { type = NavType.IntType }
+                                        )
+                                    ) { backStackEntry ->
+                                        val month = backStackEntry.arguments?.getString("month") ?: ""
+                                        val year = backStackEntry.arguments?.getInt("year") ?: 0
+                                        TopArtistScreen(
+                                            month = month,
+                                            year = year,
+                                            artists = DummyData.dummyArtists,
+                                            onBackClick = { navController.popBackStack() }
+                                        )
+                                    }
+                                    composable(
+                                        route = Screen.TopSongs.route,
+                                        arguments = listOf(
+                                            navArgument("month") { type = NavType.StringType },
+                                            navArgument("year") { type = NavType.IntType }
+                                        )
+                                    ) { backStackEntry ->
+                                        val month = backStackEntry.arguments?.getString("month") ?: ""
+                                        val year = backStackEntry.arguments?.getInt("year") ?: 0
+                                        TopSongScreen(
+                                            month = month,
+                                            year = year,
+                                            songs = DummyData.dummySongs,
+                                            onBackClick = { navController.popBackStack() }
+                                        )
+                                    }
+                                    composable(
+                                        route = Screen.TimeListened.route,
+                                        arguments = listOf(
+                                            navArgument("month") { type = NavType.StringType },
+                                            navArgument("year") { type = NavType.IntType }
+                                        )
+                                    ) { backStackEntry ->
+                                        val month = backStackEntry.arguments?.getString("month") ?: ""
+                                        val year = backStackEntry.arguments?.getInt("year") ?: 0
+                                        val soundCapsule = soundCapsuleViewModel.soundCapsuleState.value
+                                        TimeListenedScreen(
+                                                    month = month,
+                                                    year = year,
+                                                    onBackClick = { navController.popBackStack() }
+                                                )
+
+                                            // if (soundCapsule != null) {
+                                            //     TimeListenedScreen(
+                                            //         month = month,
+                                            //         year = year,
+                                            //         onBackClick = { navController.popBackStack() }
+                                            //     )
+                                            // } else {
+                                            //     // Show loading or error state
+                                            //     Box(modifier = Modifier.fillMaxSize()) {
+                                            //         CircularProgressIndicator()
+                                            //     }
+                                            // }
                                     }
                                 }
                             }
