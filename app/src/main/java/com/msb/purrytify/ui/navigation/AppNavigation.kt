@@ -23,9 +23,11 @@ import com.msb.purrytify.viewmodel.PlayerViewModel
 import com.msb.purrytify.ui.component.NavigationBarComponent
 import com.msb.purrytify.ui.component.PlayerContainer
 import com.msb.purrytify.qr.ModernQRScannerScreen
+import com.msb.purrytify.ui.screen.EditProfileScreen
 import com.msb.purrytify.ui.screen.HomeScreen
 import com.msb.purrytify.ui.screen.LibraryScreen
 import com.msb.purrytify.ui.screen.LoginScreen
+import com.msb.purrytify.ui.screen.MapLocationPickerScreen
 import com.msb.purrytify.ui.screen.ProfileScreen
 import androidx.compose.ui.unit.dp
 import com.msb.purrytify.R
@@ -37,6 +39,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
+import androidx.navigation.navigation
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
 
@@ -78,6 +81,10 @@ sealed class Screen(
     data object Login : Screen("login", "Login")
     
     data object QRScanner : Screen("qr_scanner", "QR Scanner")
+    
+    data object EditProfile : Screen("edit_profile", "Edit Profile")
+    
+    data object MapLocationPicker : Screen("map_location_picker", "Map Location Picker")
 
     data object SongDetail : Screen("song/{songId}", "Song Detail") {
         fun createRoute(songId: String): String {
@@ -254,6 +261,21 @@ fun NavigationComponent(
                                                 }
                                             }
                                         )
+                                    }
+                                    navigation(
+                                        route = "editProfileGraph",
+                                        startDestination = Screen.EditProfile.route
+                                    ) {
+                                        composable(Screen.EditProfile.route) {
+                                            EditProfileScreen(
+                                                navController = navController
+                                            )
+                                        }
+                                        composable(Screen.MapLocationPicker.route) {
+                                            MapLocationPickerScreen(
+                                                navController = navController
+                                            )
+                                        }
                                     }
                                     composable(
                                         route = Screen.SongDetail.route,

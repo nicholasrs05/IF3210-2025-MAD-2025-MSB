@@ -101,7 +101,8 @@ fun ProfileScreen(
                         profile = (profileUiState as ProfileUiState.Success).profile,
                         logout = { logout() },
                         onScanQRCode = { navController.navigate(Screen.QRScanner.route) },
-                        modifier = if (isLandscape) Modifier.verticalScroll(scrollState) else Modifier
+                        modifier = if (isLandscape) Modifier.verticalScroll(scrollState) else Modifier,
+                        navController = navController
                     )
                 }
 
@@ -120,7 +121,8 @@ fun ProfileContent(
     profile: com.msb.purrytify.data.model.Profile,
     logout: () -> Unit,
     onScanQRCode: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    navController: NavController = rememberNavController()
 ) {
     Column(
         modifier = modifier
@@ -176,7 +178,7 @@ fun ProfileContent(
         // First row of buttons
         Row {
             Button(
-                onClick = {},
+                onClick = { navController.navigate(Screen.EditProfile.route) },
                 shape = RoundedCornerShape(45.dp),
                 contentPadding = PaddingValues(0.dp),
                 modifier = Modifier

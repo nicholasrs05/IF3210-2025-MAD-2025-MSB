@@ -1,44 +1,55 @@
 [versions]
 agp = "8.10.0"
+barcodeScanning = "17.3.0"
+cameraLifecycle = "1.4.2"
 coilCompose = "3.1.0"
 coilNetworkOkhttp = "3.1.0"
 converterMoshi = "2.11.0"
-datastorePreferences = "1.1.4"
-datastorePreferencesCore = "1.1.4"
-hiltAndroid = "2.51.1"
-hiltNavigationCompose = "1.1.0"
+core = "3.5.3"
+datastorePreferences = "1.1.6"
+datastorePreferencesCore = "1.1.6"
+hiltAndroid = "2.56.2"
+hiltCompiler = "1.2.0"
+hiltNavigationCompose = "1.2.0"
+hiltWork = "1.2.0"
 kotlin = "2.0.21"
-coreKtx = "1.10.1"
+coreKtx = "1.16.0"
 junit = "4.13.2"
-junitVersion = "1.1.5"
-espressoCore = "3.5.1"
-appcompat = "1.6.1"
-lifecycleViewmodelCompose = "2.8.7"
-material = "1.10.0"
-activity = "1.8.0"
-constraintlayout = "2.1.4"
-materialIconsExtended = "..."
+junitVersion = "1.2.1"
+espressoCore = "3.6.1"
+appcompat = "1.7.0"
+lifecycleViewmodelCompose = "2.9.0"
+material = "1.12.0"
+activity = "1.10.1"
+constraintlayout = "2.2.1"
+materialIconsExtended = "1.7.8"
 media = "1.7.0"
 media3Exoplayer = "1.6.0"
 media3Session = "1.6.0"
 media3Ui = "1.6.0"
 moshiKotlin = "1.15.2"
 moshiKotlinCodegen = "1.15.2"
-navigationCompose = "..."
+navigationCompose = "2.9.0"
 paletteKtxVersion = "1.0.0"
 retrofit = "2.11.0"
-roomCompiler = "2.6.1"
-roomKtx = "2.6.1"
-roomRuntime = "2.6.1"
-runtimeLivedata = "1.7.8"
-uiTextGoogleFonts = "1.7.8"
+roomCompiler = "2.7.1"
+roomKtx = "2.7.1"
+roomRuntime = "2.7.1"
+runtimeLivedata = "1.8.1"
+uiTextGoogleFonts = "1.8.1"
+workRuntimeKtx = "2.10.1"
+zxingAndroidEmbedded = "4.3.0"
+composeMaterial = "1.4.1"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose" }
+androidx-camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "cameraLifecycle" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
 androidx-datastore-preferences-core = { module = "androidx.datastore:datastore-preferences-core", version.ref = "datastorePreferencesCore" }
+androidx-hilt-compiler = { module = "androidx.hilt:hilt-compiler", version.ref = "hiltCompiler" }
 androidx-hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
+androidx-hilt-work = { module = "androidx.hilt:hilt-work", version.ref = "hiltWork" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleViewmodelCompose" }
 androidx-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }
 androidx-material3 = { module = "androidx.compose.material3:material3" }
@@ -56,9 +67,12 @@ androidx-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4" }
 androidx-ui-text-google-fonts = { module = "androidx.compose.ui:ui-text-google-fonts", version.ref = "uiTextGoogleFonts" }
 androidx-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 androidx-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
+androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx" }
+barcode-scanning = { module = "com.google.mlkit:barcode-scanning", version.ref = "barcodeScanning" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coilCompose" }
 coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version.ref = "coilNetworkOkhttp" }
 converter-moshi = { module = "com.squareup.retrofit2:converter-moshi", version.ref = "converterMoshi" }
+core = { module = "com.google.zxing:core", version.ref = "core" }
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hiltAndroid" }
 hilt-android-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hiltAndroid" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -72,6 +86,8 @@ moshi-kotlin = { module = "com.squareup.moshi:moshi-kotlin", version.ref = "mosh
 moshi-kotlin-codegen = { module = "com.squareup.moshi:moshi-kotlin-codegen", version.ref = "moshiKotlinCodegen" }
 palette-ktx = { module = "androidx.palette:palette-ktx", version.ref = "paletteKtxVersion" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
+zxing-android-embedded = { module = "com.journeyapps:zxing-android-embedded", version.ref = "zxingAndroidEmbedded" }
+androidx-compose-material = { group = "androidx.wear.compose", name = "compose-material", version.ref = "composeMaterial" }
 
 
 [plugins]
