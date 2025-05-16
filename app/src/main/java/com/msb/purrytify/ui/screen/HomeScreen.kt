@@ -48,13 +48,11 @@ fun HomeScreen(
 
     val onClickedRecent: (Song) -> Unit = { song ->
         homeViewModel.playRecentSongs(recentlyPlayed, song)
-        playerViewModel.setCurrentSong(song)
         playerViewModel.setMiniPlayerVisible(true)
     }
 
     val onClickedNew: (Song) -> Unit = { song ->
         homeViewModel.playNewSongs(newSongs, song)
-        playerViewModel.setCurrentSong(song)
         playerViewModel.setMiniPlayerVisible(true)
     }
 

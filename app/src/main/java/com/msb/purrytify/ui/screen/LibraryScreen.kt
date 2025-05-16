@@ -97,16 +97,12 @@ fun LibraryScreen(
                         RecyclerView(ctx).apply {
                             layoutManager = LinearLayoutManager(ctx)
                             adapter = LibraryAdapter(songsToDisplay) { clickedSong ->
-                                libraryViewModel.playLibrarySong(songsToDisplay, clickedSong)
                                 val songIndex = songsToDisplay.indexOfFirst { it.id == clickedSong.id }
                                 if (songIndex >= 0) {
                                     libraryViewModel.playLibrarySong(songsToDisplay, clickedSong)
-                                    playerViewModel.setCurrentSong(clickedSong)
                                 } else {
                                     libraryViewModel.playSong(clickedSong)
-                                    playerViewModel.setCurrentSong(clickedSong)
                                 }
-
                                 playerViewModel.setMiniPlayerVisible(true)
                             }
                             layoutParams = RecyclerView.LayoutParams(

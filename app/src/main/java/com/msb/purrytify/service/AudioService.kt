@@ -125,11 +125,12 @@ class AudioService : Service() {
             addAction(ACTION_STOP)
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(mediaControlReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
-        } else {
-            registerReceiver(mediaControlReceiver, filter)
-        }
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+//            registerReceiver(mediaControlReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+//        } else {
+//            registerReceiver(mediaControlReceiver, filter)
+//        }
+        registerReceiver(mediaControlReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
     }
 
     override fun onBind(intent: Intent?): IBinder {
@@ -238,31 +239,58 @@ class AudioService : Service() {
             releaseMediaPlayer()
 
             // Create a new media player
-            mediaPlayer = MediaPlayer().apply {
+            mediaPlayer = MediaPlayer()
+            
+            // Set up error handling
+            mediaPlayer?.setOnErrorListener { mp, what, extra ->
+                Log.e("AudioService", "MediaPlayer error: $what, $extra")
+                releaseMediaPlayer()
+                _isPlaying.value = false
+                updatePlaybackState()
+                true // Error handled
+            }
+            
+            // Set the data source
+            try {
                 if (song.filePath.startsWith("content:")) {
-                    setDataSource(applicationContext, Uri.parse(song.filePath))
+                    mediaPlayer?.setDataSource(applicationContext, Uri.parse(song.filePath))
                 } else {
-                    setDataSource(song.filePath)
+                    mediaPlayer?.setDataSource(song.filePath)
                 }
-                
-                setOnPreparedListener {
-                    start()
+            } catch (e: Exception) {
+                Log.e("AudioService", "Error setting data source: ${e.message}")
+                releaseMediaPlayer()
+                return
+            }
+            
+            mediaPlayer?.setOnPreparedListener {
+                try {
+                    it.start()
                     _isPlaying.value = true
                     updatePlaybackState()
                     startPlaybackTracking()
                     showNotification()
+                } catch (e: Exception) {
+                    Log.e("AudioService", "Error starting playback: ${e.message}")
                 }
-                
-                setOnCompletionListener {
-                    playNext()
-                }
-                
-                prepareAsync()
+            }
+            
+            mediaPlayer?.setOnCompletionListener {
+                playNext()
+            }
+            
+            // Prepare asynchronously
+            try {
+                mediaPlayer?.prepareAsync()
+            } catch (e: Exception) {
+                Log.e("AudioService", "Error preparing media player: ${e.message}")
+                releaseMediaPlayer()
             }
             
             updateMediaMetadata(song)
         } catch (e: Exception) {
             Log.e("AudioService", "Error playing song: ${e.message}")
+            releaseMediaPlayer()
         }
     }
 
@@ -560,16 +588,45 @@ class AudioService : Service() {
     }
 
     fun getCurrentPosition(): Int {
-        return mediaPlayer?.currentPosition ?: 0
+        return try {
+            if (mediaPlayer?.isPlaying == true) {
+                mediaPlayer?.currentPosition ?: 0
+            } else {
+                0
+            }
+        } catch (e: Exception) {
+            Log.e("AudioService", "Error getting current position: ${e.message}")
+            0
+        }
     }
 
     fun getDuration(): Int {
-        return mediaPlayer?.duration ?: 0
+        return try {
+            if (mediaPlayer != null) {
+                mediaPlayer?.duration ?: 0
+            } else {
+                _currentSong.value?.duration?.toInt() ?: 0
+            }
+        } catch (e: Exception) {
+            Log.e("AudioService", "Error getting duration: ${e.message}")
+            _currentSong.value?.duration?.toInt() ?: 0
+        }
     }
 
     private fun releaseMediaPlayer() {
-        mediaPlayer?.release()
-        mediaPlayer = null
+        try {
+            mediaPlayer?.apply {
+                if (isPlaying) {
+                    stop()
+                }
+                reset()
+                release()
+            }
+        } catch (e: Exception) {
+            Log.e("AudioService", "Error releasing media player: ${e.message}")
+        } finally {
+            mediaPlayer = null
+        }
     }
 
     private fun releaseResources() {

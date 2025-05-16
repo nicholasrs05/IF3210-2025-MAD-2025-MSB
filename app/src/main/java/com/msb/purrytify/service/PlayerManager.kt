@@ -147,18 +147,34 @@ class PlayerManager @Inject constructor(
     }
 
     fun playSong(song: Song) {
-        ensureServiceStarted()
-        audioService?.play(song)
-        _currentSong.value = song
-        _isPlaying.value = true
-        _isMiniPlayerVisible.value = true
+        try {
+            ensureServiceStarted()
+            audioService?.play(song)
+            _currentSong.value = song
+            _isPlaying.value = true
+            _isMiniPlayerVisible.value = true
+        } catch (e: Exception) {
+            Log.e("PlayerManager", "Error playing song: ${e.message}")
+        }
     }
 
     fun setPlaylist(songs: List<Song>, startIndex: Int = 0) {
         if (songs.isEmpty()) return
         
-        ensureServiceStarted()
-        audioService?.setPlaylist(songs, startIndex)
+        try {
+            ensureServiceStarted()
+            audioService?.setPlaylist(songs, startIndex)
+            
+            // Update our internal state to match the service
+            if (startIndex >= 0 && startIndex < songs.size) {
+                _currentSong.value = songs[startIndex]
+                _isPlaying.value = true
+                _isMiniPlayerVisible.value = true
+                // Duration will be updated by the service
+            }
+        } catch (e: Exception) {
+            Log.e("PlayerManager", "Error setting playlist: ${e.message}")
+        }
     }
 
     fun togglePlayPause() {

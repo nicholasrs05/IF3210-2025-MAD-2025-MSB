@@ -69,8 +69,24 @@ class LibraryViewModel @Inject constructor(
     
     fun playLibrarySong(songs: List<Song>, selectedSong: Song) {
         Log.d("LibraryViewModel", "playLibrarySong called with ${songs.size} songs")
-        playerManager.setPlaylist(songs)
-        playSong(selectedSong)
+        try {
+            // Find the index of the selected song in the playlist
+            val songIndex = songs.indexOfFirst { it.id == selectedSong.id }
+            if (songIndex >= 0) {
+                // Set the playlist with the correct starting index
+                playerManager.setPlaylist(songs, songIndex)
+                
+                // Update last played timestamp
+                viewModelScope.launch {
+                    songRepository.updateLastPlayedAt(selectedSong.id)
+                }
+            } else {
+                // If song not found in playlist (shouldn't happen), just play it directly
+                playSong(selectedSong)
+            }
+        } catch (e: Exception) {
+            Log.e("LibraryViewModel", "Error playing library song: ${e.message}")
+        }
     }
     
     fun toggleLike(songId: Long) {
