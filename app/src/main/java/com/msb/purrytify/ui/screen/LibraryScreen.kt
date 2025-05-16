@@ -23,6 +23,7 @@ import com.msb.purrytify.ui.component.LibraryAdapter
 import com.msb.purrytify.ui.theme.AppTheme
 import com.msb.purrytify.viewmodel.LibraryViewModel
 import com.msb.purrytify.viewmodel.PlayerViewModel
+import android.util.Log
 
 @Composable
 fun LibraryScreen(
@@ -99,8 +100,10 @@ fun LibraryScreen(
                             adapter = LibraryAdapter(songsToDisplay) { clickedSong ->
                                 val songIndex = songsToDisplay.indexOfFirst { it.id == clickedSong.id }
                                 if (songIndex >= 0) {
+                                    Log.d("LibraryScreen", "Playing song at index: $songIndex")
                                     libraryViewModel.playLibrarySong(songsToDisplay, clickedSong)
                                 } else {
+                                    Log.d("LibraryScreen", "Playing song directly: ${clickedSong.title}")
                                     libraryViewModel.playSong(clickedSong)
                                 }
                                 playerViewModel.setMiniPlayerVisible(true)

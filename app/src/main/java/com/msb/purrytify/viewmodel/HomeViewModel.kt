@@ -62,6 +62,8 @@ class HomeViewModel @Inject constructor(
     
     fun playRecentSongs(songs: List<Song>, selectedSong: Song) {
         try {
+            Log.d("HomeViewModel", "Playing recent song: ${selectedSong.title}, artwork: ${selectedSong.artworkPath}")
+            
             // Find the index of the selected song in the playlist
             val songIndex = songs.indexOfFirst { it.id == selectedSong.id }
             if (songIndex >= 0) {
@@ -77,12 +79,20 @@ class HomeViewModel @Inject constructor(
                 playSong(selectedSong)
             }
         } catch (e: Exception) {
-            Log.e("HomeViewModel", "Error playing recent songs: ${e.message}")
+            Log.e("HomeViewModel", "Error playing recent songs: ${e.message}", e)
+            // Fallback to direct song play in case of error
+            try {
+                playSong(selectedSong)
+            } catch (e2: Exception) {
+                Log.e("HomeViewModel", "Failed fallback attempt: ${e2.message}", e2)
+            }
         }
     }
     
     fun playNewSongs(songs: List<Song>, selectedSong: Song) {
         try {
+            Log.d("HomeViewModel", "Playing new song: ${selectedSong.title}, artwork: ${selectedSong.artworkPath}")
+            
             // Find the index of the selected song in the playlist
             val songIndex = songs.indexOfFirst { it.id == selectedSong.id }
             if (songIndex >= 0) {
@@ -98,7 +108,13 @@ class HomeViewModel @Inject constructor(
                 playSong(selectedSong)
             }
         } catch (e: Exception) {
-            Log.e("HomeViewModel", "Error playing new songs: ${e.message}")
+            Log.e("HomeViewModel", "Error playing new songs: ${e.message}", e)
+            // Fallback to direct song play in case of error
+            try {
+                playSong(selectedSong)
+            } catch (e2: Exception) {
+                Log.e("HomeViewModel", "Failed fallback attempt: ${e2.message}", e2)
+            }
         }
     }
 }

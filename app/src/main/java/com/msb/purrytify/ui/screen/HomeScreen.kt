@@ -142,8 +142,9 @@ fun NewSongItem(song: Song, onSongClick: (Song) -> Unit) {
             .clickable { onSongClick(song) },
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        if (song.artworkPath.isNotEmpty()) {
-            val artworkUri = Uri.parse(song.artworkPath)
+        val artworkUri = song.artworkPath.takeIf { it.isNotEmpty() }?.let { Uri.parse(it) }
+        
+        if (artworkUri != null) {
             AsyncImage(
                 model = artworkUri,
                 contentDescription = "Album Artwork",
@@ -212,8 +213,9 @@ fun RecentlyPlayedItem(song: Song, onSongClick: (Song) -> Unit) {
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        if (song.artworkPath.isNotEmpty()) {
-            val artworkUri = Uri.parse(song.artworkPath)
+        val artworkUri = song.artworkPath.takeIf { it.isNotEmpty() }?.let { Uri.parse(it) }
+        
+        if (artworkUri != null) {
             AsyncImage(
                 model = artworkUri,
                 contentDescription = "Album Artwork",

@@ -235,8 +235,15 @@ class AudioService : Service() {
 
     private fun prepareAndPlay(song: Song) {
         try {
+            Log.d("AudioService", "Preparing to play song: ${song.title}, file path: ${song.filePath}")
+            
             // Release any existing media player
             releaseMediaPlayer()
+
+            if (song.filePath.isEmpty()) {
+                Log.e("AudioService", "Cannot play song with empty file path")
+                return
+            }
 
             // Create a new media player
             mediaPlayer = MediaPlayer()
@@ -253,16 +260,19 @@ class AudioService : Service() {
             // Set the data source
             try {
                 if (song.filePath.startsWith("content:")) {
+                    Log.d("AudioService", "Setting content URI data source: ${song.filePath}")
                     mediaPlayer?.setDataSource(applicationContext, Uri.parse(song.filePath))
                 } else {
+                    Log.d("AudioService", "Setting file path data source: ${song.filePath}")
                     mediaPlayer?.setDataSource(song.filePath)
                 }
             } catch (e: Exception) {
-                Log.e("AudioService", "Error setting data source: ${e.message}")
+                Log.e("AudioService", "Error setting data source: ${e.message}", e)
                 releaseMediaPlayer()
                 return
             }
             
+            // Set listeners AFTER data source has been set
             mediaPlayer?.setOnPreparedListener {
                 try {
                     it.start()
@@ -270,26 +280,30 @@ class AudioService : Service() {
                     updatePlaybackState()
                     startPlaybackTracking()
                     showNotification()
+                    Log.d("AudioService", "MediaPlayer started successfully")
                 } catch (e: Exception) {
-                    Log.e("AudioService", "Error starting playback: ${e.message}")
+                    Log.e("AudioService", "Error starting playback: ${e.message}", e)
                 }
             }
             
             mediaPlayer?.setOnCompletionListener {
+                Log.d("AudioService", "Song completed, playing next")
                 playNext()
             }
             
             // Prepare asynchronously
             try {
+                Log.d("AudioService", "Preparing media player asynchronously")
                 mediaPlayer?.prepareAsync()
             } catch (e: Exception) {
-                Log.e("AudioService", "Error preparing media player: ${e.message}")
+                Log.e("AudioService", "Error preparing media player: ${e.message}", e)
                 releaseMediaPlayer()
+                return
             }
             
             updateMediaMetadata(song)
         } catch (e: Exception) {
-            Log.e("AudioService", "Error playing song: ${e.message}")
+            Log.e("AudioService", "Error playing song: ${e.message}", e)
             releaseMediaPlayer()
         }
     }
@@ -318,6 +332,11 @@ class AudioService : Service() {
 
     private fun loadArtwork(artworkPath: String): Bitmap? {
         return try {
+            if (artworkPath.isEmpty()) {
+                // Return null for empty paths to use default artwork
+                return null
+            }
+            
             if (artworkPath.startsWith("content:")) {
                 val inputStream = contentResolver.openInputStream(Uri.parse(artworkPath))
                 BitmapFactory.decodeStream(inputStream)
@@ -325,7 +344,7 @@ class AudioService : Service() {
                 BitmapFactory.decodeFile(artworkPath)
             }
         } catch (e: Exception) {
-            Log.e("AudioService", "Error loading artwork: ${e.message}")
+            Log.e("AudioService", "Error loading artwork: ${e.message}", e)
             null
         }
     }
@@ -370,6 +389,7 @@ class AudioService : Service() {
 
     private fun showNotification() {
         val song = _currentSong.value ?: return
+        Log.d("AudioService", "Showing notification for song: ${song.title}, artwork path: ${song.artworkPath}")
         
         // Create content intent that opens the app
         val contentIntent = PendingIntent.getActivity(
@@ -416,11 +436,12 @@ class AudioService : Service() {
                 }
             }
         } catch (e: Exception) {
-            Log.e("AudioService", "Error loading artwork: ${e.message}")
+            Log.e("AudioService", "Error loading artwork: ${e.message}", e)
         }
         
         // If artwork couldn't be loaded, use default
         if (artwork == null) {
+            Log.d("AudioService", "Using default artwork for notification")
             artwork = BitmapFactory.decodeResource(resources, R.drawable.image)
         }
         
@@ -589,26 +610,41 @@ class AudioService : Service() {
 
     fun getCurrentPosition(): Int {
         return try {
-            if (mediaPlayer?.isPlaying == true) {
+            if (mediaPlayer != null && mediaPlayer?.isPlaying == true) {
                 mediaPlayer?.currentPosition ?: 0
             } else {
                 0
             }
         } catch (e: Exception) {
-            Log.e("AudioService", "Error getting current position: ${e.message}")
+            Log.e("AudioService", "Error getting current position: ${e.message}", e)
             0
         }
     }
 
     fun getDuration(): Int {
         return try {
-            if (mediaPlayer != null) {
-                mediaPlayer?.duration ?: 0
+            // Check if mediaPlayer is in a valid state for calling getDuration
+            val isValidState = mediaPlayer != null && 
+                (mediaPlayer?.isPlaying == true || 
+                 mediaPlayer?.currentPosition != null)
+                
+            if (isValidState) {
+                try {
+                    val duration = mediaPlayer?.duration ?: 0
+                    Log.d("AudioService", "Got duration from MediaPlayer: $duration")
+                    duration
+                } catch (e: IllegalStateException) {
+                    Log.e("AudioService", "MediaPlayer in wrong state for getDuration", e)
+                    _currentSong.value?.duration?.toInt() ?: 0
+                }
             } else {
-                _currentSong.value?.duration?.toInt() ?: 0
+                // Fall back to the song's stored duration
+                val fallbackDuration = _currentSong.value?.duration?.toInt() ?: 0
+                Log.d("AudioService", "Using fallback duration: $fallbackDuration")
+                fallbackDuration
             }
         } catch (e: Exception) {
-            Log.e("AudioService", "Error getting duration: ${e.message}")
+            Log.e("AudioService", "Error getting duration: ${e.message}", e)
             _currentSong.value?.duration?.toInt() ?: 0
         }
     }

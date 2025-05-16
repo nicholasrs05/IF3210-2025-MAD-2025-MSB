@@ -118,8 +118,8 @@ fun PlayerScreen(
         // Handle song changes
         if (viewModel.currentSong.value == null) {
             // End of playlist or player released - close the player screen
-            localIsDismissing = true
-            onDismissWithAnimation()
+                        localIsDismissing = true
+                        onDismissWithAnimation()
         }
     }
     
@@ -137,9 +137,11 @@ fun PlayerScreen(
     LaunchedEffect(currentPlayingSong.id, currentPlayingSong.artworkPath) {
         try {
             val bitmap = if (currentPlayingSong.artworkPath.isNotEmpty()) {
-                val artworkUri = Uri.parse(currentPlayingSong.artworkPath)
-                val inputStream = context.contentResolver.openInputStream(artworkUri)
-                inputStream?.use { BitmapFactory.decodeStream(it) }
+                val artworkUri = currentPlayingSong.artworkPath.takeIf { it.isNotEmpty() }?.let { Uri.parse(it) }
+                artworkUri?.let {
+                    val inputStream = context.contentResolver.openInputStream(it)
+                    inputStream?.use { stream -> BitmapFactory.decodeStream(stream) }
+                }
             } else {
                 BitmapFactory.decodeResource(context.resources, R.drawable.image)
             }
@@ -161,7 +163,7 @@ fun PlayerScreen(
                 }
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e("PlayerScreen", "Error processing artwork", e)
         }
     }
     
@@ -181,11 +183,9 @@ fun PlayerScreen(
                     .clip(RoundedCornerShape(8.dp))
             ) {
                 val artworkUriString = currentPlayingSong.artworkPath
+                val artworkUri = artworkUriString.takeIf { it.isNotEmpty() }?.let { Uri.parse(it) }
 
-                if (artworkUriString.isNotEmpty()) {
-                    val artworkUri = artworkUriString.takeIf { it.isNotEmpty() }?.let {
-                        Uri.parse(it)
-                    }
+                if (artworkUri != null) {
                     AsyncImage(
                         model = ImageRequest.Builder(LocalContext.current)
                             .data(artworkUri)
@@ -646,13 +646,23 @@ fun EditSongDialog(
                                 contentScale = ContentScale.Crop
                             )
                         } else if (song.artworkPath.isNotEmpty()) {
-                            val artworkUri = Uri.parse(song.artworkPath)
-                            AsyncImage(
-                                model = artworkUri,
-                                contentDescription = "Current Artwork",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
+                            val artworkUri = song.artworkPath.takeIf { it.isNotEmpty() }?.let { Uri.parse(it) }
+                            if (artworkUri != null) {
+                                AsyncImage(
+                                    model = artworkUri,
+                                    contentDescription = "Current Artwork",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            } else {
+                                // Fallback if artworkPath is not empty but Uri cannot be parsed
+                                Image(
+                                    painter = painterResource(id = R.drawable.image),
+                                    contentDescription = "Default Album Art",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
                         } else {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,

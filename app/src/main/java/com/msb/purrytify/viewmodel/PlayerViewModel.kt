@@ -374,7 +374,7 @@ class PlayerViewModel @Inject constructor(
     fun setMiniPlayerVisible(isVisible: Boolean) {
         playerManager.setMiniPlayerVisible(isVisible)
     }
-
+    
     /**
      * Adds a new song to the repository
      */

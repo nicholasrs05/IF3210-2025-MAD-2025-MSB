@@ -11,6 +11,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -148,32 +149,76 @@ class PlayerManager @Inject constructor(
 
     fun playSong(song: Song) {
         try {
+            Log.d("PlayerManager", "Playing song: ${song.title}, artwork: ${song.artworkPath}, filePath: ${song.filePath}")
+            
+            // Check if the song has a valid file path
+            if (song.filePath.isEmpty()) {
+                Log.e("PlayerManager", "Cannot play song with empty file path: ${song.title}")
+                return
+            }
+            
             ensureServiceStarted()
             audioService?.play(song)
             _currentSong.value = song
             _isPlaying.value = true
             _isMiniPlayerVisible.value = true
+            
+            // Start a delayed update for duration
+            CoroutineScope(Dispatchers.Main).launch {
+                delay(500) // Wait for MediaPlayer to initialize
+                _duration.value = audioService?.getDuration()?.toFloat() ?: song.duration.toFloat()
+                Log.d("PlayerManager", "Updated duration to: ${_duration.value}")
+            }
         } catch (e: Exception) {
-            Log.e("PlayerManager", "Error playing song: ${e.message}")
+            Log.e("PlayerManager", "Error playing song: ${e.message}", e)
         }
     }
 
     fun setPlaylist(songs: List<Song>, startIndex: Int = 0) {
-        if (songs.isEmpty()) return
+        if (songs.isEmpty()) {
+            Log.w("PlayerManager", "Cannot set empty playlist")
+            return
+        }
         
         try {
+            Log.d("PlayerManager", "Setting playlist of ${songs.size} songs, starting at $startIndex")
+            val startSong = if (startIndex >= 0 && startIndex < songs.size) songs[startIndex] else null
+            
+            startSong?.let { 
+                Log.d("PlayerManager", "Start song: ${it.title}, artwork: ${it.artworkPath}, filePath: ${it.filePath}")
+                
+                // Check if the song has a valid file path
+                if (it.filePath.isEmpty()) {
+                    Log.e("PlayerManager", "Cannot play song with empty file path: ${it.title}")
+                    return
+                }
+            } ?: run {
+                Log.e("PlayerManager", "Invalid start index: $startIndex for playlist size: ${songs.size}")
+                return
+            }
+            
             ensureServiceStarted()
+            Log.d("PlayerManager", "Starting service to set playlist 1111111")
             audioService?.setPlaylist(songs, startIndex)
             
             // Update our internal state to match the service
             if (startIndex >= 0 && startIndex < songs.size) {
+                Log.d("PlayerManager", "Setting current song to: ${songs[startIndex].title}")
                 _currentSong.value = songs[startIndex]
+                Log.d("PlayerManager", "Set isPlaying to true")
                 _isPlaying.value = true
+                Log.d("PlayerManager", "Set isMiniPlayerVisible to true")
                 _isMiniPlayerVisible.value = true
-                // Duration will be updated by the service
+                
+                // Start a delayed update for duration
+                CoroutineScope(Dispatchers.Main).launch {
+                    delay(500) // Wait for MediaPlayer to initialize
+                    _duration.value = audioService?.getDuration()?.toFloat() ?: songs[startIndex].duration.toFloat()
+                    Log.d("PlayerManager", "Updated duration to: ${_duration.value}")
+                }
             }
         } catch (e: Exception) {
-            Log.e("PlayerManager", "Error setting playlist: ${e.message}")
+            Log.e("PlayerManager", "Error setting playlist: ${e.message}", e)
         }
     }
 

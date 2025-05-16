@@ -40,6 +40,7 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import android.util.Log
 
 @Composable
 fun MiniPlayer(
@@ -71,9 +72,11 @@ fun MiniPlayer(
     LaunchedEffect(currentSong.id, currentSong.artworkPath) {
         try {
             val bitmap = if (currentSong.artworkPath.isNotEmpty()) {
-                val artworkUri = Uri.parse(currentSong.artworkPath)
-                val inputStream = context.contentResolver.openInputStream(artworkUri)
-                inputStream?.use { BitmapFactory.decodeStream(it) }
+                val artworkUri = currentSong.artworkPath.takeIf { it.isNotEmpty() }?.let { Uri.parse(it) }
+                artworkUri?.let {
+                    val inputStream = context.contentResolver.openInputStream(it)
+                    inputStream?.use { stream -> BitmapFactory.decodeStream(stream) }
+                }
             } else {
                 BitmapFactory.decodeResource(context.resources, R.drawable.image)
             }
@@ -95,7 +98,7 @@ fun MiniPlayer(
                 }
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e("MiniPlayer", "Error processing artwork", e)
         }
     }
 
@@ -135,12 +138,9 @@ fun MiniPlayer(
                             .padding(4.dp)
                             .clip(RoundedCornerShape(4.dp))
                     ) {
-                        val artworkUriString = currentSong.artworkPath
+                        val artworkUri = currentSong.artworkPath.takeIf { it.isNotEmpty() }?.let { Uri.parse(it) }
 
-                        if (artworkUriString.isNotEmpty()) {
-                            val artworkUri = artworkUriString.takeIf { it.isNotEmpty() }?.let {
-                                Uri.parse(it)
-                            }
+                        if (artworkUri != null) {
                             AsyncImage(
                                 model = ImageRequest.Builder(LocalContext.current)
                                     .data(artworkUri)
