@@ -1,57 +1,38 @@
 package com.msb.purrytify.receiver
 
+import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import com.msb.purrytify.media.MediaPlayerManager
-import com.msb.purrytify.service.MusicNotificationService
-import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
+import android.util.Log
+import com.msb.purrytify.service.AudioService
 
-@AndroidEntryPoint
 class MediaControlReceiver : BroadcastReceiver() {
-    @Inject
-    lateinit var mediaPlayerManager: MediaPlayerManager
-
-    @Inject
-    lateinit var notificationService: MusicNotificationService
-
     companion object {
-        const val ACTION_PLAY = "com.msb.purrytify.action.PLAY"
-        const val ACTION_PAUSE = "com.msb.purrytify.action.PAUSE"
-        const val ACTION_NEXT = "com.msb.purrytify.action.NEXT"
-        const val ACTION_PREVIOUS = "com.msb.purrytify.action.PREVIOUS"
-        const val ACTION_DISMISS = "com.msb.purrytify.action.DISMISS"
-    }
-
-    override fun onReceive(context: Context?, intent: Intent?) {
-        val currentSong = mediaPlayerManager.getCurrentSong() ?: return
-
-        when (intent?.action) {
-            ACTION_PLAY -> {
-                mediaPlayerManager.resume()
-                notificationService.showPlayingNotification(currentSong, true)
+        /**
+         * Create PendingIntent for notification actions
+         */
+        fun createPendingIntent(context: Context, action: String, requestCode: Int): PendingIntent {
+            val intent = Intent(context, MediaControlReceiver::class.java).apply {
+                this.action = action
             }
-            ACTION_PAUSE -> {
-                mediaPlayerManager.pause()
-                notificationService.showPlayingNotification(currentSong, false)
-            }
-            ACTION_NEXT -> {
-                mediaPlayerManager.playNext()
-                mediaPlayerManager.getCurrentSong()?.let { song ->
-                    notificationService.showPlayingNotification(song, mediaPlayerManager.isPlaying())
-                }
-            }
-            ACTION_PREVIOUS -> {
-                mediaPlayerManager.playPrevious()
-                mediaPlayerManager.getCurrentSong()?.let { song ->
-                    notificationService.showPlayingNotification(song, mediaPlayerManager.isPlaying())
-                }
-            }
-            ACTION_DISMISS -> {
-                mediaPlayerManager.pause()
-                notificationService.hidePlayingNotification()
-            }
+            
+            return PendingIntent.getBroadcast(
+                context,
+                requestCode,
+                intent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
         }
     }
-} 
+
+    override fun onReceive(context: Context, intent: Intent) {
+        Log.d("MediaControlReceiver", "Received action: ${intent.action}")
+
+        val serviceIntent = Intent(context, AudioService::class.java).apply {
+            action = intent.action
+        }
+
+        context.startService(serviceIntent)
+    }
+}

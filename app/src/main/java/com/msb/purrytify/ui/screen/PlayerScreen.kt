@@ -48,10 +48,10 @@ import androidx.palette.graphics.Palette
 import coil3.compose.AsyncImage
 import com.msb.purrytify.R
 import com.msb.purrytify.data.local.entity.Song
-import com.msb.purrytify.media.MediaPlayerManager
 import com.msb.purrytify.ui.component.qrcode.ShareSongQRDialog
 import com.msb.purrytify.utils.DeepLinkUtils
 import com.msb.purrytify.viewmodel.PlayerViewModel
+import com.msb.purrytify.service.RepeatMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -71,7 +71,6 @@ fun PlayerScreen(
     onAnimationComplete: () -> Unit = {},
     viewModel: PlayerViewModel = hiltViewModel(),
 ) {
-    val mediaPlayerManager = viewModel.mediaPlayerManager
     val currentPlayingSong = viewModel.currentSong.value ?: song
     
     var localIsDismissing by remember { mutableStateOf(false) }
@@ -106,7 +105,7 @@ fun PlayerScreen(
 
         if (!isAlreadyPlaying) {
             Log.d("PlayerScreen", "Not already playing, setting new song")
-            mediaPlayerManager.setPlaylist(listOf(song))
+            viewModel.setPlaylist(listOf(song))
             viewModel.playSong(song)
         } else if (wasPlaying) {
             Log.d("PlayerScreen", "Already playing, resuming song")
@@ -114,27 +113,13 @@ fun PlayerScreen(
         }
     }
     
-    DisposableEffect(Unit) {
-        val songChangeListener = object : MediaPlayerManager.SongChangeListener {
-            override fun onSongChanged(newSong: Song) {
-                viewModel.updateCurrentSong()
-            }
-            
-            override fun onPlayerReleased() {
-                viewModel.resetCurrentSong()
-                viewModel.viewModelScope.launch {
-                    delay(300)
-                    if (mediaPlayerManager.getCurrentSong() == null) {
+    // Monitor song state changes
+    LaunchedEffect(viewModel.currentSong.value) {
+        // Handle song changes
+        if (viewModel.currentSong.value == null) {
+            // End of playlist or player released - close the player screen
                         localIsDismissing = true
                         onDismissWithAnimation()
-                    }
-                }
-            }
-        }
-        mediaPlayerManager.addSongChangeListener(songChangeListener)
-        
-        onDispose {
-            mediaPlayerManager.removeSongChangeListener(songChangeListener)
         }
     }
     
@@ -513,12 +498,13 @@ fun PlayerScreen(
                 IconButton(onClick = { viewModel.toggleRepeat() }) {
                     Icon(
                         imageVector = when (viewModel.repeatMode.value) {
-                            PlayerViewModel.RepeatMode.NONE -> Icons.Filled.Repeat
-                            PlayerViewModel.RepeatMode.ONE -> Icons.Filled.RepeatOne
-                            PlayerViewModel.RepeatMode.ALL -> Icons.Filled.RepeatOn
+                            RepeatMode.NONE -> Icons.Filled.Repeat
+                            RepeatMode.ONE -> Icons.Filled.RepeatOne
+                            RepeatMode.ALL -> Icons.Filled.RepeatOn
+                            else -> Icons.Filled.Repeat
                         },
                         contentDescription = "Repeat",
-                        tint = if (viewModel.repeatMode.value != PlayerViewModel.RepeatMode.NONE) 
+                        tint = if (viewModel.repeatMode.value != RepeatMode.NONE) 
                             accentColor else textColor.copy(alpha = 0.5f)
                     )
                 }
@@ -834,7 +820,6 @@ fun EditSongDialog(
                                     try {
                                         val artworkFilePath = selectedArtworkUri?.toString() ?: song.artworkPath
                                         
-                                        // Update the song in the database
                                         viewModel.updateSong(
                                             songId = song.id,
                                             title = title,
@@ -842,10 +827,8 @@ fun EditSongDialog(
                                             artworkPath = artworkFilePath
                                         )
 
-                                        // Wait for the database update to complete
-                                        delay(100)
-                                        
-                                        // Refresh the UI
+//                                        delay(100)
+
                                         viewModel.updateSongFromRepo()
                                         
                                         Toast.makeText(

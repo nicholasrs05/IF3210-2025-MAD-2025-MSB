@@ -9,6 +9,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
@@ -61,8 +63,10 @@
             <intent-filter>
                 <action android:name="com.msb.purrytify.action.PLAY" />
                 <action android:name="com.msb.purrytify.action.PAUSE" />
+                <action android:name="com.msb.purrytify.action.TOGGLE_PLAY" />
                 <action android:name="com.msb.purrytify.action.NEXT" />
                 <action android:name="com.msb.purrytify.action.PREVIOUS" />
+                <action android:name="com.msb.purrytify.action.STOP" />
             </intent-filter>
         </receiver>
         <provider
@@ -74,6 +78,11 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+
+        <service
+            android:name=".service.AudioService"
+            android:foregroundServiceType="mediaPlayback"
+            android:exported="false" />
     </application>
     <queries>
         <package android:name="com.google.android.apps.maps" />
