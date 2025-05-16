@@ -12,6 +12,7 @@ import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.msb.purrytify.data.local.PurrytifyDatabase
 import com.msb.purrytify.data.local.dao.SongDao
 import com.msb.purrytify.data.repository.SongRepository
+import com.msb.purrytify.data.repository.OnlineSongRepository
 import com.msb.purrytify.qr.QRSharingService
 import com.msb.purrytify.service.PlayerManager
 import dagger.Module
@@ -98,6 +99,12 @@ object AppModule {
     @Singleton
     fun provideSongRepository(songDao: SongDao): SongRepository {
         return SongRepository(songDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideOnlineSongRepository(apiService: ApiService): OnlineSongRepository {
+        return OnlineSongRepository(apiService)
     }
 
     @Provides

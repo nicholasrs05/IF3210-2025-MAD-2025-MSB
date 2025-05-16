@@ -40,4 +40,7 @@ interface ApiService {
     /* Song API */
     @GET("/api/song/{songId}")
     suspend fun getSongById(@Path("songId") songId: String): Response<SongResponse>
+    
+    @GET("/api/top-songs/global")
+    suspend fun getGlobalTopSongs(): Response<List<SongResponse>>
 }
