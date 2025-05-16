@@ -31,12 +31,16 @@ import com.msb.purrytify.viewmodel.HomeViewModel
 import com.msb.purrytify.viewmodel.PlayerViewModel
 import java.io.File
 import android.net.Uri
+import androidx.compose.ui.platform.LocalContext
+import androidx.navigation.NavController
+import com.msb.purrytify.ui.navigation.Screen
 
 
 @Composable
 fun HomeScreen(
     homeViewModel: HomeViewModel = hiltViewModel(),
-    playerViewModel: PlayerViewModel = hiltViewModel()
+    playerViewModel: PlayerViewModel = hiltViewModel(),
+    navController: NavController? = null
 ) {
     val recentlyPlayedState: androidx.compose.runtime.State<List<Song>> =
         homeViewModel.recentlyPlayedSongs.observeAsState(initial = emptyList())
@@ -71,6 +75,27 @@ fun HomeScreen(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(bottom = 80.dp)
         ) {
+
+            item {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Online Songs",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.W800,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+
+            item {
+                OnlineSongsSection(
+                    onFiftyGlobalClick = {
+                        navController?.navigate(Screen.FiftyGlobal.route)
+                    },
+                    onTop10CountryClick = {
+                        navController?.navigate(Screen.Top10Country.route)
+                    }
+                )
+            }
 
             item {
                 Spacer(modifier = Modifier.height(8.dp))
@@ -247,5 +272,77 @@ fun RecentlyPlayedItem(song: Song, onSongClick: (Song) -> Unit) {
                 overflow = TextOverflow.Ellipsis
             )
         }
+    }
+}
+
+@Composable
+fun OnlineSongsSection(
+    onFiftyGlobalClick: () -> Unit,
+    onTop10CountryClick: () -> Unit
+) {
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            OnlineSongItem(
+                imageRes = R.drawable.fiftyglobal,
+                title = "Fifty Global",
+                description = "Daily update of world's most played songs",
+                onClick = onFiftyGlobalClick
+            )
+        }
+        
+        item {
+            OnlineSongItem(
+                imageRes = R.drawable.fiftyglobal, // Using same image for now
+                title = "Top 10 Country",
+                description = "Best hits from your country",
+                onClick = onTop10CountryClick
+            )
+        }
+    }
+}
+
+@Composable
+fun OnlineSongItem(
+    imageRes: Int,
+    title: String,
+    description: String,
+    onClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .width(96.dp)
+            .clickable { onClick() },
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Image(
+            painter = painterResource(id = imageRes),
+            contentDescription = title,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .size(90.dp)
+                .clip(MaterialTheme.shapes.small)
+        )
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        
+        Text(
+            text = description,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center
+        )
     }
 }
