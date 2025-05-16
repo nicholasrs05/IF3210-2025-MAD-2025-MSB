@@ -78,7 +78,7 @@ class PlayerViewModel @Inject constructor(
             audioService?.currentSong?.value?.let { song ->
                 _currentSong.value = song
                 _isPlaying.value = audioService?.isPlaying?.value ?: false
-                _duration.floatValue = audioService?.getDuration()?.toFloat() ?: 0f
+                _duration.floatValue = song.duration.toFloat()
                 checkLikedStatus(song.id)
                 _isMiniPlayerVisible.value = true
             }
@@ -97,7 +97,7 @@ class PlayerViewModel @Inject constructor(
             playerManager.currentSong.collectLatest { song ->
                 song?.let {
                     _currentSong.value = it
-                    _duration.floatValue = playerManager.getDuration()
+                    _duration.floatValue = it.duration.toFloat()
                     checkLikedStatus(it.id)
                 } ?: run {
                     _currentSong.value = null
@@ -123,7 +123,9 @@ class PlayerViewModel @Inject constructor(
         
         viewModelScope.launch {
             playerManager.duration.collectLatest { duration ->
-                _duration.floatValue = duration
+                if (duration > _duration.floatValue) {
+                    _duration.floatValue = duration
+                }
             }
         }
         
@@ -169,7 +171,7 @@ class PlayerViewModel @Inject constructor(
                 service.currentSong.collectLatest { song ->
                     song?.let {
                         _currentSong.value = it
-                        _duration.floatValue = service.getDuration().toFloat()
+                        _duration.floatValue = it.duration.toFloat()
                         checkLikedStatus(it.id)
                         _isMiniPlayerVisible.value = true
                     }
@@ -184,9 +186,9 @@ class PlayerViewModel @Inject constructor(
             
             viewModelScope.launch {
                 service.playbackProgress.collectLatest { progress ->
-                    val duration = service.getDuration()
-                    if (duration > 0) {
-                        _currentPosition.floatValue = progress * duration
+                    val songDuration = if (service.isPlaying.value) service.getDuration() else _currentSong.value?.duration?.toInt() ?: 0
+                    if (songDuration > 0) {
+                        _currentPosition.floatValue = progress * songDuration
                     }
                 }
             }

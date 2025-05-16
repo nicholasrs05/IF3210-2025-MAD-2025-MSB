@@ -67,6 +67,9 @@ class AudioService : Service() {
     private val serviceJob = SupervisorJob()
     private val serviceScope = CoroutineScope(Dispatchers.Main + serviceJob)
 
+    // Add flag to track if MediaPlayer is prepared
+    private var mediaPlayerPrepared = false
+
     private var playlist: List<Song> = emptyList()
     private var currentSongIndex: Int = -1
 
@@ -224,6 +227,8 @@ class AudioService : Service() {
             releaseMediaPlayer()
 
             mediaPlayer = MediaPlayer()
+            // Reset prepared flag when creating a new MediaPlayer
+            mediaPlayerPrepared = false
             
             mediaPlayer?.setOnErrorListener { mp, what, extra ->
                 Log.e("AudioService", "MediaPlayer error: $what, $extra")
@@ -247,6 +252,8 @@ class AudioService : Service() {
             
             mediaPlayer?.setOnPreparedListener {
                 try {
+                    // Set prepared flag to true when MediaPlayer is prepared
+                    mediaPlayerPrepared = true
                     it.start()
                     _isPlaying.value = true
                     updatePlaybackState()
@@ -360,7 +367,7 @@ class AudioService : Service() {
     private fun startPlaybackTracking() {
         serviceScope.launch {
             while (true) {
-                if (_isPlaying.value && mediaPlayer != null) {
+                if (_isPlaying.value && mediaPlayer != null && mediaPlayerPrepared) {
                     val currentPosition = mediaPlayer?.currentPosition ?: 0
                     val duration = mediaPlayer?.duration ?: 1
                     _playbackProgress.value = currentPosition.toFloat() / duration.toFloat()
@@ -580,9 +587,11 @@ class AudioService : Service() {
 
     fun getDuration(): Int {
         return try {
-            if (mediaPlayer != null) {
-                mediaPlayer?.duration ?: 0
+            if (mediaPlayer != null && mediaPlayerPrepared) {
+                // Only call duration on the MediaPlayer if it's prepared
+                mediaPlayer?.duration ?: _currentSong.value?.duration?.toInt() ?: 0
             } else {
+                // Fall back to the song's metadata duration if MediaPlayer isn't ready
                 _currentSong.value?.duration?.toInt() ?: 0
             }
         } catch (e: Exception) {
@@ -593,6 +602,7 @@ class AudioService : Service() {
 
     private fun releaseMediaPlayer() {
         try {
+            mediaPlayerPrepared = false
             mediaPlayer?.apply {
                 if (isPlaying) {
                     stop()
