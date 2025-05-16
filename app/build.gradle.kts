@@ -46,37 +46,46 @@ android {
 }
 
 dependencies {
+    // Edit profile Location
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+
+    // Maps
+    implementation("com.google.android.gms:play-services-maps:18.2.0")
+    implementation("com.google.maps.android:maps-compose:2.14.0")
+    
     // QR Code Generation
-    implementation("com.google.zxing:core:3.5.2")
-    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+    implementation(libs.core)
+    implementation(libs.zxing.android.embedded)
     
     // Camera and ML Kit
-    implementation("androidx.camera:camera-camera2:1.3.3")
-    implementation("androidx.camera:camera-lifecycle:1.3.3")
-    implementation("androidx.camera:camera-view:1.3.3")
-    implementation("com.google.mlkit:barcode-scanning:17.2.0")
+    implementation("androidx.camera:camera-camera2:1.4.2")
+    implementation(libs.androidx.camera.lifecycle)
+    implementation("androidx.camera:camera-view:1.4.2")
+    implementation(libs.barcode.scanning)
     
     // Hilt
     implementation(libs.hilt.android)
-    ksp("androidx.hilt:hilt-compiler:1.2.0")
-    ksp("com.google.dagger:hilt-android-compiler:2.51.1")
+    implementation(libs.androidx.compose.material)
+    ksp(libs.androidx.hilt.compiler)
+    ksp(libs.hilt.android.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
-    implementation("androidx.hilt:hilt-work:1.2.0")
-    implementation("androidx.work:work-runtime-ktx:2.9.0")
+    implementation(libs.androidx.hilt.work)
+    implementation(libs.androidx.work.runtime.ktx)
 
     // Core
-    implementation("androidx.core:core-ktx:1.12.0")
+    implementation("androidx.core:core-ktx:1.16.0")
 
     // Jetpack Compose
-    val composeBom = platform("androidx.compose:compose-bom:2025.02.00")
+    val composeBom = platform("androidx.compose:compose-bom:2025.05.00")
     implementation(composeBom)
     androidTestImplementation(composeBom)
     implementation(libs.androidx.material3)
-    implementation(libs.androidx.ui.tooling.preview) // Android Studio Preview Support
+    implementation(libs.androidx.ui.tooling.preview)
+    implementation("androidx.compose.foundation:foundation")
     debugImplementation(libs.androidx.ui.tooling)
-    androidTestImplementation(libs.androidx.ui.test.junit4) // UI Test
+    androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.test.manifest)
-    implementation(libs.androidx.lifecycle.viewmodel.compose) // Integration with ViewModel
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.ui.text.google.fonts)
@@ -110,5 +119,5 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
-    implementation("androidx.media:media:1.6.0")
+    implementation("androidx.media:media:1.7.0")
 }
