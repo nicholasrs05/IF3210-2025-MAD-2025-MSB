@@ -8,7 +8,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.msb.purrytify.media.MediaPlayerManager
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.msb.purrytify.data.local.entity.Song
 import com.msb.purrytify.ui.screen.PlayerScreen
@@ -29,24 +28,10 @@ fun PlayerContainer(
 
     var selectedSong by remember { mutableStateOf<Song?>(null) }
 
-    DisposableEffect(playerViewModel) {
-        val songChangeListener = object : MediaPlayerManager.SongChangeListener {
-            override fun onSongChanged(newSong: Song) {
-                playerViewModel.updateCurrentSong()
-                if (!showFullPlayer) {
-                    playerViewModel.setMiniPlayerVisible(true)
-                }
-            }
-
-            override fun onPlayerReleased() {
-                playerViewModel.resetCurrentSong()
-            }
-        }
-
-        playerViewModel.mediaPlayerManager.addSongChangeListener(songChangeListener)
-
-        onDispose {
-            playerViewModel.mediaPlayerManager.removeSongChangeListener(songChangeListener)
+    // Monitor changes to currentSong to update UI
+    LaunchedEffect(currentSong) {
+        if (currentSong != null && !showFullPlayer) {
+            playerViewModel.setMiniPlayerVisible(true)
         }
     }
 
@@ -73,9 +58,7 @@ fun PlayerContainer(
                         isPlaying = isPlaying,
                         onTogglePlayPause = { playerViewModel.togglePlayPause() },
                         onPlayerClick = { song ->
-                            val playingSong =
-                                playerViewModel.mediaPlayerManager.getCurrentSong() ?: song
-                            selectedSong = playingSong
+                            selectedSong = currentSong ?: song
                             showFullPlayer = true
                             playerViewModel.setLargePlayerVisible(true)
                         },

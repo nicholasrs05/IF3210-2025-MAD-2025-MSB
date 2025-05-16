@@ -71,6 +71,11 @@ class AudioService : Service() {
     private var playlist: List<Song> = emptyList()
     private var currentSongIndex: Int = -1
 
+    // Repeat and shuffle states
+    private var repeatMode = 0 // 0: none, 1: all, 2: one
+    private var shuffleMode = false
+    private var originalPlaylist: List<Song> = emptyList()
+
     // State flows for player state
     private val _currentSong = MutableStateFlow<Song?>(null)
     val currentSong: StateFlow<Song?> = _currentSong.asStateFlow()
@@ -373,8 +378,22 @@ class AudioService : Service() {
         
         // Load artwork
         var artwork: Bitmap? = null
-        if (song.artworkPath.isNotEmpty()) {
-            artwork = loadArtwork(song.artworkPath)
+        try {
+            if (song.artworkPath.isNotEmpty()) {
+                artwork = if (song.artworkPath.startsWith("content:")) {
+                    val inputStream = contentResolver.openInputStream(Uri.parse(song.artworkPath))
+                    BitmapFactory.decodeStream(inputStream)
+                } else {
+                    BitmapFactory.decodeFile(song.artworkPath)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("AudioService", "Error loading artwork: ${e.message}")
+        }
+        
+        // If artwork couldn't be loaded, use default
+        if (artwork == null) {
+            artwork = BitmapFactory.decodeResource(resources, R.drawable.image)
         }
         
         // Create media style
@@ -384,7 +403,7 @@ class AudioService : Service() {
         
         // Build notification
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher_foreground) // Replace with your app icon
+            .setSmallIcon(R.mipmap.ic_launcher_foreground)
             .setContentTitle(song.title)
             .setContentText(song.artist)
             .setLargeIcon(artwork)
@@ -392,23 +411,33 @@ class AudioService : Service() {
             .setDeleteIntent(stopIntent)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setStyle(mediaStyle)
-            .addAction(R.drawable.ic_prev, "Previous", prevIntent) // Replace icon
+            .setColorized(true)
+            .setColor(0xFF121212.toInt()) // Match the app's dark theme
+            .addAction(R.drawable.ic_prev, "Previous", prevIntent)
             .addAction(
                 if (_isPlaying.value) R.drawable.ic_pause else R.drawable.ic_play,
                 if (_isPlaying.value) "Pause" else "Play",
                 playPauseIntent
-            ) // Replace icons
-            .addAction(R.drawable.ic_next, "Next", nextIntent) // Replace icon
-            .addAction(R.drawable.ic_close, "Close", stopIntent) // Replace icon
+            )
+            .addAction(R.drawable.ic_next, "Next", nextIntent)
+            .addAction(R.drawable.ic_close, "Close", stopIntent)
             .setOngoing(_isPlaying.value)
             .build()
         
-        // Start foreground service with notification
-        startForeground(NOTIFICATION_ID, notification)
-        
-        // Update notification if paused
-        if (!_isPlaying.value) {
+        // Start foreground service with notification when playing
+        if (_isPlaying.value) {
+            startForeground(NOTIFICATION_ID, notification)
+        } else {
+            // Update notification if paused, but don't make it a foreground service
             notificationManager.notify(NOTIFICATION_ID, notification)
+            
+            // On newer Android versions, we need to stop foreground but keep notification
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                stopForeground(STOP_FOREGROUND_DETACH)
+            } else {
+                @Suppress("DEPRECATION")
+                stopForeground(false)
+            }
         }
     }
 
@@ -437,7 +466,38 @@ class AudioService : Service() {
     fun playNext() {
         if (playlist.isEmpty() || currentSongIndex == -1) return
         
-        val nextIndex = (currentSongIndex + 1) % playlist.size
+        // Handle repeat modes
+        if (repeatMode == 2) { // Repeat One
+            // Just replay the current song
+            _currentSong.value?.let { prepareAndPlay(it) }
+            return
+        }
+        
+        // Calculate next index
+        val nextIndex = if (currentSongIndex < playlist.size - 1) {
+            currentSongIndex + 1
+        } else {
+            if (repeatMode == 1) { // Repeat All
+                0 // Wrap around to the beginning
+            } else { // No repeat
+                // If at end of playlist and not repeating, stop playback and release resources
+                releaseMediaPlayer()
+                _currentSong.value = null
+                _isPlaying.value = false
+                updatePlaybackState()
+                
+                // Stop foreground service
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    stopForeground(STOP_FOREGROUND_REMOVE)
+                } else {
+                    @Suppress("DEPRECATION")
+                    stopForeground(true)
+                }
+                
+                return
+            }
+        }
+        
         currentSongIndex = nextIndex
         _currentSong.value = playlist[nextIndex]
         prepareAndPlay(playlist[nextIndex])
@@ -446,7 +506,31 @@ class AudioService : Service() {
     fun playPrevious() {
         if (playlist.isEmpty() || currentSongIndex == -1) return
         
-        val prevIndex = if (currentSongIndex > 0) currentSongIndex - 1 else playlist.size - 1
+        // If we're more than 3 seconds into the song, restart it instead of going to previous
+        if ((mediaPlayer?.currentPosition ?: 0) > 3000) {
+            mediaPlayer?.seekTo(0)
+            return
+        }
+        
+        // Handle repeat modes
+        if (repeatMode == 2) { // Repeat One
+            // Just replay the current song
+            _currentSong.value?.let { prepareAndPlay(it) }
+            return
+        }
+        
+        // Calculate previous index
+        val prevIndex = if (currentSongIndex > 0) {
+            currentSongIndex - 1
+        } else {
+            if (repeatMode == 1) { // Repeat All
+                playlist.size - 1 // Wrap around to the end
+            } else { // No repeat
+                // If at start of playlist and not repeating, stay at first song
+                0
+            }
+        }
+        
         currentSongIndex = prevIndex
         _currentSong.value = playlist[prevIndex]
         prepareAndPlay(playlist[prevIndex])
@@ -475,6 +559,14 @@ class AudioService : Service() {
         stopSelf()
     }
 
+    fun getCurrentPosition(): Int {
+        return mediaPlayer?.currentPosition ?: 0
+    }
+
+    fun getDuration(): Int {
+        return mediaPlayer?.duration ?: 0
+    }
+
     private fun releaseMediaPlayer() {
         mediaPlayer?.release()
         mediaPlayer = null
@@ -483,5 +575,77 @@ class AudioService : Service() {
     private fun releaseResources() {
         releaseMediaPlayer()
         mediaSession.release()
+    }
+
+    fun isCurrentlyPlaying(): Boolean {
+        return _isPlaying.value && mediaPlayer != null
+    }
+
+    fun shuffle() {
+        if (playlist.isEmpty()) return
+        
+        if (!shuffleMode) {
+            // Enable shuffle
+            shuffleMode = true
+            originalPlaylist = playlist.toList()
+            
+            // Shuffle the playlist but keep current song at current index
+            val currentSong = if (currentSongIndex >= 0) playlist[currentSongIndex] else null
+            val remainingSongs = playlist.toMutableList()
+            if (currentSong != null) {
+                remainingSongs.remove(currentSong)
+            }
+            
+            remainingSongs.shuffle()
+            
+            // Put current song back at current index
+            if (currentSong != null) {
+                playlist = if (currentSongIndex >= 0) {
+                    remainingSongs.toMutableList().apply {
+                        add(currentSongIndex, currentSong)
+                    }
+                } else {
+                    remainingSongs
+                }
+            } else {
+                playlist = remainingSongs
+            }
+        } else {
+            // Disable shuffle
+            shuffleMode = false
+            
+            // Restore original playlist order
+            val currentSong = if (currentSongIndex >= 0) playlist[currentSongIndex] else null
+            playlist = originalPlaylist
+            
+            // Update current index to match restored playlist
+            if (currentSong != null) {
+                currentSongIndex = playlist.indexOfFirst { it.id == currentSong.id }
+            }
+        }
+    }
+    
+    fun setRepeatMode(mode: Int) {
+        repeatMode = mode
+    }
+    
+    fun noRepeat() {
+        repeatMode = 0 // None
+    }
+    
+    fun repeatAll() {
+        repeatMode = 1 // All
+    }
+    
+    fun repeatOne() {
+        repeatMode = 2 // One
+    }
+    
+    fun getRepeatMode(): Int {
+        return repeatMode
+    }
+    
+    fun isShuffleEnabled(): Boolean {
+        return shuffleMode
     }
 }

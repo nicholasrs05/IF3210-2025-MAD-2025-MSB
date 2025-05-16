@@ -12,9 +12,8 @@ import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.msb.purrytify.data.local.PurrytifyDatabase
 import com.msb.purrytify.data.local.dao.SongDao
 import com.msb.purrytify.data.repository.SongRepository
-import com.msb.purrytify.media.MediaPlayerManager
 import com.msb.purrytify.qr.QRSharingService
-import com.msb.purrytify.service.MusicNotificationService
+import com.msb.purrytify.service.PlayerManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -103,23 +102,15 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideMediaPlayerManager(@ApplicationContext context: Context): MediaPlayerManager {
-        return MediaPlayerManager(context)
-    }
-
-    @Provides
-    @Singleton
     fun provideQRSharingService(@ApplicationContext context: Context): QRSharingService {
         return QRSharingService(context)
     }
     
     @Provides
     @Singleton
-    fun provideMusicNotificationService(
-        @ApplicationContext context: Context
-    ): MusicNotificationService {
-        return MusicNotificationService(context)
+    fun providePlayerManager(@ApplicationContext context: Context): PlayerManager {
+        return PlayerManager(context)
     }
     
-    // Note: AudioService is a system service and will be provided through ServiceConnection
+    // AudioService is a system service and will be provided through ServiceConnection
 }

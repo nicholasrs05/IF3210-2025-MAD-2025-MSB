@@ -6,8 +6,8 @@ import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.msb.purrytify.data.local.entity.Song
 import com.msb.purrytify.data.repository.SongRepository
-import com.msb.purrytify.media.MediaPlayerManager
 import com.msb.purrytify.model.ProfileModel
+import com.msb.purrytify.service.PlayerManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,7 +18,7 @@ import android.util.Log
 @HiltViewModel
 class LibraryViewModel @Inject constructor(
     private val songRepository: SongRepository,
-    val mediaPlayerManager: MediaPlayerManager,
+    private val playerManager: PlayerManager,
     private val profileModel: ProfileModel
 ) : ViewModel() {
     
@@ -62,14 +62,14 @@ class LibraryViewModel @Inject constructor(
             // Update last played timestamp
             songRepository.updateLastPlayedAt(song.id)
             
-            // Play the song
-            mediaPlayerManager.play(song)
+            // Play the song using PlayerManager
+            playerManager.playSong(song)
         }
     }
     
     fun playLibrarySong(songs: List<Song>, selectedSong: Song) {
         Log.d("LibraryViewModel", "playLibrarySong called with ${songs.size} songs")
-        mediaPlayerManager.setPlaylist(songs)
+        playerManager.setPlaylist(songs)
         playSong(selectedSong)
     }
     
