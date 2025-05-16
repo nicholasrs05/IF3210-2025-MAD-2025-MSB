@@ -48,6 +48,7 @@ import androidx.navigation.compose.rememberNavController
 import com.msb.purrytify.ui.navigation.Screen
 import com.msb.purrytify.viewmodel.AuthViewModel
 import com.msb.purrytify.viewmodel.PlayerViewModel
+import com.msb.purrytify.ui.component.NoInternet
 
 @Composable
 fun ProfileScreen(
@@ -370,28 +371,5 @@ fun ErrorScreen(errorMessage: String) {
             color = Color.Red,
             textAlign = TextAlign.Center
         )
-    }
-}
-
-@Composable
-fun NoInternet() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF121212)),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = "No internet connection",
-                color = Color.White,
-                fontWeight = FontWeight.SemiBold
-            )
-            Text(
-                text = "Don't worry! You can still play your music!",
-                color = Color.White,
-                fontWeight = FontWeight.Medium
-            )
-        }
     }
 }

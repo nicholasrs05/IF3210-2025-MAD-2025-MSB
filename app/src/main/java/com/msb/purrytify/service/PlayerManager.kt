@@ -61,7 +61,7 @@ class PlayerManager @Inject constructor(
             audioService?.currentSong?.value?.let { song ->
                 _currentSong.value = song
                 _isPlaying.value = audioService?.isPlaying?.value ?: false
-                _duration.value = audioService?.getDuration()?.toFloat() ?: 0f
+                _duration.value = song.duration.toFloat()
                 _isMiniPlayerVisible.value = true
             }
             
@@ -255,7 +255,13 @@ class PlayerManager @Inject constructor(
     }
 
     fun getDuration(): Float {
-        return audioService?.getDuration()?.toFloat() ?: _duration.value
+        val serviceDuration = audioService?.getDuration()?.toFloat() ?: 0f
+        
+        if (serviceDuration <= 0f) {
+            return _currentSong.value?.duration?.toFloat() ?: _duration.value
+        }
+        
+        return serviceDuration
     }
 
     fun release() {
