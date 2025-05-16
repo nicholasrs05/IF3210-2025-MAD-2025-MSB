@@ -42,6 +42,12 @@ import androidx.navigation.NavType
 import androidx.navigation.navigation
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
+import com.msb.purrytify.ui.screen.FiftyGlobalScreen
+import com.msb.purrytify.ui.screen.TenCountryScreen
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 
 sealed class Screen(
     val route: String,
@@ -85,6 +91,10 @@ sealed class Screen(
     data object EditProfile : Screen("edit_profile", "Edit Profile")
     
     data object MapLocationPicker : Screen("map_location_picker", "Map Location Picker")
+
+    data object FiftyGlobal : Screen("fifty_global", "Fifty Global")
+
+    data object Top10Country : Screen("top10_country", "Top 10 Country")
 
     data object SongDetail : Screen("song/{songId}", "Song Detail") {
         fun createRoute(songId: String): String {
@@ -175,6 +185,7 @@ fun NavigationComponent(
                                         composable(Screen.Home.route) {
                                             HomeScreen(
                                                 playerViewModel = playerViewModel,
+                                                navController = navController
                                             )
                                         }
                                         composable(Screen.Library.route) {
@@ -217,7 +228,10 @@ fun NavigationComponent(
                                             // Show minimal UI while loading or redirect
                                             Box(modifier = Modifier.fillMaxSize()) {
                                                 if (isLoggedIn) {
-                                                    HomeScreen(playerViewModel = playerViewModel)
+                                                    HomeScreen(
+                                                        playerViewModel = playerViewModel,
+                                                        navController = navController
+                                                    )
                                                 }
                                             }
                                         }
@@ -239,7 +253,12 @@ fun NavigationComponent(
                                     startDestination = startDestination,
                                     modifier = Modifier.padding(innerPadding)
                                 ) {
-                                    composable(Screen.Home.route) { HomeScreen(playerViewModel = playerViewModel) }
+                                    composable(Screen.Home.route) {
+                                        HomeScreen(
+                                            playerViewModel = playerViewModel,
+                                            navController = navController
+                                        )
+                                    }
                                     composable(Screen.Library.route) {
                                         LibraryScreen(
                                             playerViewModel = playerViewModel,
@@ -276,6 +295,40 @@ fun NavigationComponent(
                                                 navController = navController
                                             )
                                         }
+                                    }
+                                    composable(Screen.FiftyGlobal.route) {
+                                        var isDismissing by remember { mutableStateOf(false) }
+
+                                        FiftyGlobalScreen(
+                                            onDismiss = {
+                                                navController.navigateUp()
+                                            },
+                                            onDismissWithAnimation = {
+                                                isDismissing = true
+                                            },
+                                            isDismissing = isDismissing,
+                                            onAnimationComplete = {
+                                                isDismissing = false
+                                            },
+                                            playerViewModel = playerViewModel
+                                        )
+                                    }
+                                    composable(Screen.Top10Country.route) {
+                                        var isDismissing by remember { mutableStateOf(false) }
+
+                                        TenCountryScreen(
+                                            onDismiss = {
+                                                navController.navigateUp()
+                                            },
+                                            onDismissWithAnimation = {
+                                                isDismissing = true
+                                            },
+                                            isDismissing = isDismissing,
+                                            onAnimationComplete = {
+                                                isDismissing = false
+                                            },
+                                            playerViewModel = playerViewModel
+                                        )
                                     }
                                     composable(
                                         route = Screen.SongDetail.route,
