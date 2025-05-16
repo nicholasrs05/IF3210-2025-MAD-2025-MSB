@@ -137,11 +137,9 @@ fun PlayerScreen(
     LaunchedEffect(currentPlayingSong.id, currentPlayingSong.artworkPath) {
         try {
             val bitmap = if (currentPlayingSong.artworkPath.isNotEmpty()) {
-                val artworkUri = currentPlayingSong.artworkPath.takeIf { it.isNotEmpty() }?.let { Uri.parse(it) }
-                artworkUri?.let {
-                    val inputStream = context.contentResolver.openInputStream(it)
-                    inputStream?.use { stream -> BitmapFactory.decodeStream(stream) }
-                }
+                val artworkUri = Uri.parse(currentPlayingSong.artworkPath)
+                val inputStream = context.contentResolver.openInputStream(artworkUri)
+                inputStream?.use { BitmapFactory.decodeStream(it) }
             } else {
                 BitmapFactory.decodeResource(context.resources, R.drawable.image)
             }
@@ -163,7 +161,7 @@ fun PlayerScreen(
                 }
             }
         } catch (e: Exception) {
-            Log.e("PlayerScreen", "Error processing artwork", e)
+            e.printStackTrace()
         }
     }
     
@@ -183,9 +181,11 @@ fun PlayerScreen(
                     .clip(RoundedCornerShape(8.dp))
             ) {
                 val artworkUriString = currentPlayingSong.artworkPath
-                val artworkUri = artworkUriString.takeIf { it.isNotEmpty() }?.let { Uri.parse(it) }
 
-                if (artworkUri != null) {
+                if (artworkUriString.isNotEmpty()) {
+                    val artworkUri = artworkUriString.takeIf { it.isNotEmpty() }?.let {
+                        Uri.parse(it)
+                    }
                     AsyncImage(
                         model = ImageRequest.Builder(LocalContext.current)
                             .data(artworkUri)
@@ -646,23 +646,13 @@ fun EditSongDialog(
                                 contentScale = ContentScale.Crop
                             )
                         } else if (song.artworkPath.isNotEmpty()) {
-                            val artworkUri = song.artworkPath.takeIf { it.isNotEmpty() }?.let { Uri.parse(it) }
-                            if (artworkUri != null) {
-                                AsyncImage(
-                                    model = artworkUri,
-                                    contentDescription = "Current Artwork",
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            } else {
-                                // Fallback if artworkPath is not empty but Uri cannot be parsed
-                                Image(
-                                    painter = painterResource(id = R.drawable.image),
-                                    contentDescription = "Default Album Art",
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            }
+                            val artworkUri = Uri.parse(song.artworkPath)
+                            AsyncImage(
+                                model = artworkUri,
+                                contentDescription = "Current Artwork",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
                         } else {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -830,7 +820,6 @@ fun EditSongDialog(
                                     try {
                                         val artworkFilePath = selectedArtworkUri?.toString() ?: song.artworkPath
                                         
-                                        // Update the song in the database
                                         viewModel.updateSong(
                                             songId = song.id,
                                             title = title,
@@ -838,10 +827,8 @@ fun EditSongDialog(
                                             artworkPath = artworkFilePath
                                         )
 
-                                        // Wait for the database update to complete
-                                        delay(100)
-                                        
-                                        // Refresh the UI
+//                                        delay(100)
+
                                         viewModel.updateSongFromRepo()
                                         
                                         Toast.makeText(

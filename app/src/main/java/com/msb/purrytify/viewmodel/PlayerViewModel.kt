@@ -37,7 +37,6 @@ class PlayerViewModel @Inject constructor(
     private val qrSharingService: QRSharingService
 ) : AndroidViewModel(application) {
 
-    // Player UI state
     private val _currentSong = mutableStateOf<Song?>(null)
     val currentSong: State<Song?> = _currentSong
 
@@ -59,28 +58,23 @@ class PlayerViewModel @Inject constructor(
     private val _isLiked = mutableStateOf(false)
     val isLiked: State<Boolean> = _isLiked
 
-    // UI visibility states
     private val _isMiniPlayerVisible = mutableStateOf(false)
     val isMiniPlayerVisible: State<Boolean> = _isMiniPlayerVisible
     private val _isLargePlayerVisible = mutableStateOf(false)
     val isLargePlayerVisible: State<Boolean> = _isLargePlayerVisible
     val userId = profileModel.currentProfile.value.id
 
-    // Audio Service
     private var audioService: AudioService? = null
     private var bound = false
 
-    // Service connection
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             val binder = service as AudioService.AudioServiceBinder
             audioService = binder.getService()
             bound = true
             
-            // Start collecting flows from the service
             collectServiceFlows()
             
-            // Initialize current song if already playing
             audioService?.currentSong?.value?.let { song ->
                 _currentSong.value = song
                 _isPlaying.value = audioService?.isPlaying?.value ?: false
@@ -97,10 +91,8 @@ class PlayerViewModel @Inject constructor(
     }
 
     init {
-        // Connect to AudioService
         connectToService()
 
-        // Collect state from PlayerManager
         viewModelScope.launch {
             playerManager.currentSong.collectLatest { song ->
                 song?.let {
@@ -108,7 +100,6 @@ class PlayerViewModel @Inject constructor(
                     _duration.floatValue = playerManager.getDuration()
                     checkLikedStatus(it.id)
                 } ?: run {
-                    // Song became null (end of playlist)
                     _currentSong.value = null
                     _duration.floatValue = 0f
                     _currentPosition.floatValue = 0f
@@ -214,16 +205,10 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Sets visibility for the large player screen
-     */
     fun setLargePlayerVisible(isVisible: Boolean) {
         playerManager.setLargePlayerVisible(isVisible)
     }
 
-    /**
-     * Plays a specific song and updates UI state accordingly
-     */
     fun playSong(song: Song) {
         viewModelScope.launch {
             songRepository.updateLastPlayedAt(song.id)
@@ -232,45 +217,27 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Sets playlist for playback
-     */
     fun setPlaylist(songs: List<Song>, startIndex: Int = 0) {
         if (songs.isEmpty()) return
         playerManager.setPlaylist(songs, startIndex)
     }
 
-    /**
-     * Toggles play/pause state of the current song
-     */
     fun togglePlayPause() {
         playerManager.togglePlayPause()
     }
 
-    /**
-     * Skips to the next song in the playlist
-     */
     fun skipToNext() {
         playerManager.playNext()
     }
 
-    /**
-     * Skips to the previous song in the playlist
-     */
     fun skipToPrevious() {
         playerManager.playPrevious()
     }
 
-    /**
-     * Seeks to a specific position in the current song
-     */
     fun seekTo(position: Float) {
         playerManager.seekTo(position)
     }
 
-    /**
-     * Toggles like status for the current song
-     */
     fun toggleLike() {
         viewModelScope.launch {
             _currentSong.value?.let { song ->
@@ -281,30 +248,18 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Toggles shuffle mode for the playlist
-     */
     fun toggleShuffle() {
         playerManager.toggleShuffle()
     }
 
-    /**
-     * Cycles through repeat modes (NONE -> ALL -> ONE -> NONE)
-     */
     fun toggleRepeat() {
         playerManager.toggleRepeat()
     }
 
-    /**
-     * Updates the current playback position
-     */
     fun updatePosition() {
         playerManager.updatePosition()
     }
 
-    /**
-     * Updates the current song information from the repository
-     */
     fun updateSongFromRepo() {
         _currentSong.value?.let { song ->
             viewModelScope.launch {
@@ -316,9 +271,6 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Checks and updates the liked status of a song
-     */
     private fun checkLikedStatus(songId: Long) {
         viewModelScope.launch {
             val song = songRepository.getSongById(songId)
@@ -326,9 +278,6 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Resets the player state completely
-     */
     fun resetCurrentSong() {
         _currentSong.value = null
         _isPlaying.value = false
@@ -337,47 +286,29 @@ class PlayerViewModel @Inject constructor(
         _isLiked.value = false
     }
 
-    /**
-     * Sets the current song with a specified song
-     */
     fun setCurrentSong(song: Song) {
         _currentSong.value = song
         checkLikedStatus(song.id)
     }
 
-    /**
-     * Resumes playback of the current song
-     */
     fun resumeCurrentSong() {
         playerManager.resumePlayback()
     }
 
-    /**
-     * Stops the media player and resets its state
-     */
     fun stopMediaPlayer() {
         playerManager.stopPlayback()
     }
 
-    /**
-     * Share the current song via QR code
-     */
     fun shareCurrentSongViaQR() {
         currentSong.value?.let { song ->
             qrSharingService.shareSongViaQR(song)
         }
     }
 
-    /**
-     * Sets the visibility of the mini player
-     */
     fun setMiniPlayerVisible(isVisible: Boolean) {
         playerManager.setMiniPlayerVisible(isVisible)
     }
-    
-    /**
-     * Adds a new song to the repository
-     */
+
     fun addSong(title: String, artist: String, filePath: String, artworkPath: String, duration: Long) {
         viewModelScope.launch(Dispatchers.IO) {
             val song = Song(
@@ -392,28 +323,17 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Gets metadata for a song file
-     */
     fun getSongMetadata(filePath: String): Pair<String?, String?> {
         return SongRepository.extractMetadata(filePath)
     }
 
-    /**
-     * Gets the duration of a song file
-     */
     fun getSongDuration(filePath: String): Long {
         return SongRepository.getDuration(filePath)
     }
 
-    /**
-     * Play a song by its ID (for deep links)
-     * @param songIdStr The song ID as a string from the deep link
-     */
     fun playSongById(songIdStr: String) {
         viewModelScope.launch {
             try {
-                // First try to find a local song with this ID
                 val songId = songIdStr.toLongOrNull()
                 if (songId != null) {
                     val song = songRepository.getSongById(songId)
@@ -424,13 +344,10 @@ class PlayerViewModel @Inject constructor(
                     }
                 }
                 
-                // If not found locally, try to fetch from API
                 val apiSong = apiSongRepository.fetchSongById(songIdStr)
                 if (apiSong != null) {
-                    // Convert the API song to a local Song entity for playback
                     val localSong = apiSongRepository.convertApiSongToLocalSong(apiSong, userId)
                     
-                    // Save the song to the database to make it available in the library
                     val insertedId = songRepository.insert(localSong)
                     val savedSong = songRepository.getSongById(insertedId)
                     
@@ -449,9 +366,6 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Updates an existing song in the database
-     */
     fun updateSong(songId: Long, title: String, artist: String, artworkPath: String) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -463,7 +377,6 @@ class PlayerViewModel @Inject constructor(
                     )
                     songRepository.update(updatedSong)
                     
-                    // Update current song if it's the one being edited
                     if (_currentSong.value?.id == songId) {
                         _currentSong.value = updatedSong
                     }
@@ -477,7 +390,6 @@ class PlayerViewModel @Inject constructor(
     override fun onCleared() {
         super.onCleared()
         
-        // Unbind from the service
         if (bound) {
             getApplication<Application>().unbindService(serviceConnection)
             bound = false

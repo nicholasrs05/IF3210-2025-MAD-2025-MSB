@@ -1,7 +1,5 @@
 package com.msb.purrytify.service
 
-import android.annotation.SuppressLint
-import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -12,7 +10,6 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.media.MediaMetadataRetriever
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Binder
@@ -36,7 +33,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class AudioService : Service() {
@@ -44,14 +40,12 @@ class AudioService : Service() {
         private const val NOTIFICATION_ID = 1
         private const val CHANNEL_ID = "PurrytifyMusicChannel"
 
-        // Action constants
         const val ACTION_PLAY = "com.msb.purrytify.action.PLAY"
         const val ACTION_PAUSE = "com.msb.purrytify.action.PAUSE"
         const val ACTION_TOGGLE_PLAY = "com.msb.purrytify.action.TOGGLE_PLAY"
         const val ACTION_NEXT = "com.msb.purrytify.action.NEXT"
         const val ACTION_PREVIOUS = "com.msb.purrytify.action.PREVIOUS"
         const val ACTION_STOP = "com.msb.purrytify.action.STOP"
-        
         // Request codes for pending intents
         private const val REQ_PLAY_PAUSE = 1
         private const val REQ_NEXT = 2
@@ -60,23 +54,19 @@ class AudioService : Service() {
         private const val REQ_CONTENT = 5
     }
 
-    // Media player components
     private var mediaPlayer: MediaPlayer? = null
     private lateinit var mediaSession: MediaSessionCompat
     private lateinit var notificationManager: NotificationManager
     private val serviceJob = SupervisorJob()
     private val serviceScope = CoroutineScope(Dispatchers.Main + serviceJob)
 
-    // Playlist management
     private var playlist: List<Song> = emptyList()
     private var currentSongIndex: Int = -1
 
-    // Repeat and shuffle states
     private var repeatMode = 0 // 0: none, 1: all, 2: one
     private var shuffleMode = false
     private var originalPlaylist: List<Song> = emptyList()
 
-    // State flows for player state
     private val _currentSong = MutableStateFlow<Song?>(null)
     val currentSong: StateFlow<Song?> = _currentSong.asStateFlow()
 
@@ -86,7 +76,6 @@ class AudioService : Service() {
     private val _playbackProgress = MutableStateFlow(0f)
     val playbackProgress: StateFlow<Float> = _playbackProgress.asStateFlow()
 
-    // Broadcast receiver for media controls
     private val mediaControlReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             when (intent?.action) {
@@ -100,7 +89,6 @@ class AudioService : Service() {
         }
     }
 
-    // Binder for service connection
     inner class AudioServiceBinder : Binder() {
         fun getService(): AudioService = this@AudioService
     }
@@ -109,13 +97,10 @@ class AudioService : Service() {
         super.onCreate()
         Log.d("AudioService", "Creating audio service")
 
-        // Create notification channel
         createNotificationChannel()
 
-        // Initialize media session
         initMediaSession()
 
-        // Register broadcast receiver
         val filter = IntentFilter().apply {
             addAction(ACTION_PLAY)
             addAction(ACTION_PAUSE)
@@ -125,11 +110,6 @@ class AudioService : Service() {
             addAction(ACTION_STOP)
         }
 
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-//            registerReceiver(mediaControlReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
-//        } else {
-//            registerReceiver(mediaControlReceiver, filter)
-//        }
         registerReceiver(mediaControlReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
     }
 
@@ -225,7 +205,6 @@ class AudioService : Service() {
             _currentSong.value = song
             prepareAndPlay(song)
         } else {
-            // Add to playlist if not present
             playlist = playlist + song
             currentSongIndex = playlist.size - 1
             _currentSong.value = song
@@ -235,44 +214,30 @@ class AudioService : Service() {
 
     private fun prepareAndPlay(song: Song) {
         try {
-            Log.d("AudioService", "Preparing to play song: ${song.title}, file path: ${song.filePath}")
-            
-            // Release any existing media player
             releaseMediaPlayer()
 
-            if (song.filePath.isEmpty()) {
-                Log.e("AudioService", "Cannot play song with empty file path")
-                return
-            }
-
-            // Create a new media player
             mediaPlayer = MediaPlayer()
             
-            // Set up error handling
             mediaPlayer?.setOnErrorListener { mp, what, extra ->
                 Log.e("AudioService", "MediaPlayer error: $what, $extra")
                 releaseMediaPlayer()
                 _isPlaying.value = false
                 updatePlaybackState()
-                true // Error handled
+                true
             }
             
-            // Set the data source
             try {
                 if (song.filePath.startsWith("content:")) {
-                    Log.d("AudioService", "Setting content URI data source: ${song.filePath}")
                     mediaPlayer?.setDataSource(applicationContext, Uri.parse(song.filePath))
                 } else {
-                    Log.d("AudioService", "Setting file path data source: ${song.filePath}")
                     mediaPlayer?.setDataSource(song.filePath)
                 }
             } catch (e: Exception) {
-                Log.e("AudioService", "Error setting data source: ${e.message}", e)
+                Log.e("AudioService", "Error setting data source: ${e.message}")
                 releaseMediaPlayer()
                 return
             }
             
-            // Set listeners AFTER data source has been set
             mediaPlayer?.setOnPreparedListener {
                 try {
                     it.start()
@@ -280,30 +245,25 @@ class AudioService : Service() {
                     updatePlaybackState()
                     startPlaybackTracking()
                     showNotification()
-                    Log.d("AudioService", "MediaPlayer started successfully")
                 } catch (e: Exception) {
-                    Log.e("AudioService", "Error starting playback: ${e.message}", e)
+                    Log.e("AudioService", "Error starting playback: ${e.message}")
                 }
             }
             
             mediaPlayer?.setOnCompletionListener {
-                Log.d("AudioService", "Song completed, playing next")
                 playNext()
             }
             
-            // Prepare asynchronously
             try {
-                Log.d("AudioService", "Preparing media player asynchronously")
                 mediaPlayer?.prepareAsync()
             } catch (e: Exception) {
-                Log.e("AudioService", "Error preparing media player: ${e.message}", e)
+                Log.e("AudioService", "Error preparing media player: ${e.message}")
                 releaseMediaPlayer()
-                return
             }
             
             updateMediaMetadata(song)
         } catch (e: Exception) {
-            Log.e("AudioService", "Error playing song: ${e.message}", e)
+            Log.e("AudioService", "Error playing song: ${e.message}")
             releaseMediaPlayer()
         }
     }
@@ -314,7 +274,6 @@ class AudioService : Service() {
             putString(MediaMetadataCompat.METADATA_KEY_ARTIST, song.artist)
             putLong(MediaMetadataCompat.METADATA_KEY_DURATION, song.duration)
             
-            // Try to load artwork
             if (song.artworkPath.isNotEmpty()) {
                 try {
                     val artwork = loadArtwork(song.artworkPath)
@@ -333,7 +292,6 @@ class AudioService : Service() {
     private fun loadArtwork(artworkPath: String): Bitmap? {
         return try {
             if (artworkPath.isEmpty()) {
-                // Return null for empty paths to use default artwork
                 return null
             }
             
@@ -391,7 +349,6 @@ class AudioService : Service() {
         val song = _currentSong.value ?: return
         Log.d("AudioService", "Showing notification for song: ${song.title}, artwork path: ${song.artworkPath}")
         
-        // Create content intent that opens the app
         val contentIntent = PendingIntent.getActivity(
             this,
             REQ_CONTENT,
@@ -399,7 +356,6 @@ class AudioService : Service() {
             PendingIntent.FLAG_IMMUTABLE
         )
         
-        // Create action intents
         val playPauseIntent = MediaControlReceiver.createPendingIntent(
             this,
             if (_isPlaying.value) ACTION_PAUSE else ACTION_PLAY,
@@ -424,7 +380,6 @@ class AudioService : Service() {
             REQ_STOP
         )
         
-        // Load artwork
         var artwork: Bitmap? = null
         try {
             if (song.artworkPath.isNotEmpty()) {
@@ -439,18 +394,15 @@ class AudioService : Service() {
             Log.e("AudioService", "Error loading artwork: ${e.message}", e)
         }
         
-        // If artwork couldn't be loaded, use default
         if (artwork == null) {
             Log.d("AudioService", "Using default artwork for notification")
             artwork = BitmapFactory.decodeResource(resources, R.drawable.image)
         }
         
-        // Create media style
         val mediaStyle = MediaStyle()
             .setMediaSession(mediaSession.sessionToken)
             .setShowActionsInCompactView(0, 1, 2) // Display prev, play/pause, next in compact view
         
-        // Build notification
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher_foreground)
             .setContentTitle(song.title)
@@ -473,14 +425,11 @@ class AudioService : Service() {
             .setOngoing(_isPlaying.value)
             .build()
         
-        // Start foreground service with notification when playing
         if (_isPlaying.value) {
             startForeground(NOTIFICATION_ID, notification)
         } else {
-            // Update notification if paused, but don't make it a foreground service
             notificationManager.notify(NOTIFICATION_ID, notification)
             
-            // On newer Android versions, we need to stop foreground but keep notification
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 stopForeground(STOP_FOREGROUND_DETACH)
             } else {
@@ -515,27 +464,22 @@ class AudioService : Service() {
     fun playNext() {
         if (playlist.isEmpty() || currentSongIndex == -1) return
         
-        // Handle repeat modes
-        if (repeatMode == 2) { // Repeat One
-            // Just replay the current song
+        if (repeatMode == 2) {
             _currentSong.value?.let { prepareAndPlay(it) }
             return
         }
         
-        // Calculate next index
         val nextIndex = if (currentSongIndex < playlist.size - 1) {
             currentSongIndex + 1
         } else {
-            if (repeatMode == 1) { // Repeat All
-                0 // Wrap around to the beginning
-            } else { // No repeat
-                // If at end of playlist and not repeating, stop playback and release resources
+            if (repeatMode == 1) {
+                0
+            } else {
                 releaseMediaPlayer()
                 _currentSong.value = null
                 _isPlaying.value = false
                 updatePlaybackState()
                 
-                // Stop foreground service
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                     stopForeground(STOP_FOREGROUND_REMOVE)
                 } else {
@@ -555,27 +499,22 @@ class AudioService : Service() {
     fun playPrevious() {
         if (playlist.isEmpty() || currentSongIndex == -1) return
         
-        // If we're more than 3 seconds into the song, restart it instead of going to previous
         if ((mediaPlayer?.currentPosition ?: 0) > 3000) {
             mediaPlayer?.seekTo(0)
             return
         }
         
-        // Handle repeat modes
-        if (repeatMode == 2) { // Repeat One
-            // Just replay the current song
+        if (repeatMode == 2) {
             _currentSong.value?.let { prepareAndPlay(it) }
             return
         }
         
-        // Calculate previous index
         val prevIndex = if (currentSongIndex > 0) {
             currentSongIndex - 1
         } else {
-            if (repeatMode == 1) { // Repeat All
-                playlist.size - 1 // Wrap around to the end
-            } else { // No repeat
-                // If at start of playlist and not repeating, stay at first song
+            if (repeatMode == 1) {
+                playlist.size - 1
+            } else {
                 0
             }
         }
@@ -591,12 +530,10 @@ class AudioService : Service() {
     }
 
     fun stopPlayback() {
-        // Stop playback
         mediaPlayer?.stop()
         _isPlaying.value = false
         updatePlaybackState()
         
-        // Stop foreground service
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             stopForeground(STOP_FOREGROUND_REMOVE)
         } else {
@@ -604,47 +541,31 @@ class AudioService : Service() {
             stopForeground(true)
         }
         
-        // Stop the service
         stopSelf()
     }
 
     fun getCurrentPosition(): Int {
         return try {
-            if (mediaPlayer != null && mediaPlayer?.isPlaying == true) {
+            if (mediaPlayer?.isPlaying == true) {
                 mediaPlayer?.currentPosition ?: 0
             } else {
                 0
             }
         } catch (e: Exception) {
-            Log.e("AudioService", "Error getting current position: ${e.message}", e)
+            Log.e("AudioService", "Error getting current position: ${e.message}")
             0
         }
     }
 
     fun getDuration(): Int {
         return try {
-            // Check if mediaPlayer is in a valid state for calling getDuration
-            val isValidState = mediaPlayer != null && 
-                (mediaPlayer?.isPlaying == true || 
-                 mediaPlayer?.currentPosition != null)
-                
-            if (isValidState) {
-                try {
-                    val duration = mediaPlayer?.duration ?: 0
-                    Log.d("AudioService", "Got duration from MediaPlayer: $duration")
-                    duration
-                } catch (e: IllegalStateException) {
-                    Log.e("AudioService", "MediaPlayer in wrong state for getDuration", e)
-                    _currentSong.value?.duration?.toInt() ?: 0
-                }
+            if (mediaPlayer != null) {
+                mediaPlayer?.duration ?: 0
             } else {
-                // Fall back to the song's stored duration
-                val fallbackDuration = _currentSong.value?.duration?.toInt() ?: 0
-                Log.d("AudioService", "Using fallback duration: $fallbackDuration")
-                fallbackDuration
+                _currentSong.value?.duration?.toInt() ?: 0
             }
         } catch (e: Exception) {
-            Log.e("AudioService", "Error getting duration: ${e.message}", e)
+            Log.e("AudioService", "Error getting duration: ${e.message}")
             _currentSong.value?.duration?.toInt() ?: 0
         }
     }
@@ -678,11 +599,9 @@ class AudioService : Service() {
         if (playlist.isEmpty()) return
         
         if (!shuffleMode) {
-            // Enable shuffle
             shuffleMode = true
             originalPlaylist = playlist.toList()
             
-            // Shuffle the playlist but keep current song at current index
             val currentSong = if (currentSongIndex >= 0) playlist[currentSongIndex] else null
             val remainingSongs = playlist.toMutableList()
             if (currentSong != null) {
@@ -691,7 +610,6 @@ class AudioService : Service() {
             
             remainingSongs.shuffle()
             
-            // Put current song back at current index
             if (currentSong != null) {
                 playlist = if (currentSongIndex >= 0) {
                     remainingSongs.toMutableList().apply {
@@ -704,14 +622,11 @@ class AudioService : Service() {
                 playlist = remainingSongs
             }
         } else {
-            // Disable shuffle
             shuffleMode = false
             
-            // Restore original playlist order
             val currentSong = if (currentSongIndex >= 0) playlist[currentSongIndex] else null
             playlist = originalPlaylist
             
-            // Update current index to match restored playlist
             if (currentSong != null) {
                 currentSongIndex = playlist.indexOfFirst { it.id == currentSong.id }
             }
@@ -723,15 +638,15 @@ class AudioService : Service() {
     }
     
     fun noRepeat() {
-        repeatMode = 0 // None
+        repeatMode = 0
     }
     
     fun repeatAll() {
-        repeatMode = 1 // All
+        repeatMode = 1
     }
     
     fun repeatOne() {
-        repeatMode = 2 // One
+        repeatMode = 2
     }
     
     fun getRepeatMode(): Int {

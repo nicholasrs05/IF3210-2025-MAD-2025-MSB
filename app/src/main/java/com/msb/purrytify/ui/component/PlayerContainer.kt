@@ -28,7 +28,6 @@ fun PlayerContainer(
 
     var selectedSong by remember { mutableStateOf<Song?>(null) }
 
-    // Monitor changes to currentSong to update UI
     LaunchedEffect(currentSong) {
         if (currentSong != null && !showFullPlayer) {
             playerViewModel.setMiniPlayerVisible(true)

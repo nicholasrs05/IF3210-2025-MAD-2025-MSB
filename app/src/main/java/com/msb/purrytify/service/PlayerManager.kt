@@ -11,7 +11,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,21 +19,15 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * Centralized manager for audio playback that can be injected into ViewModels.
- * This class handles communication with the AudioService.
- */
 @Singleton
 class PlayerManager @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
-    // Service connection
     private var audioService: AudioService? = null
     private var bound = false
     private val serviceJob = SupervisorJob()
     private val serviceScope = CoroutineScope(Dispatchers.Main + serviceJob)
 
-    // State flows that mirror the service's state
     private val _currentSong = MutableStateFlow<Song?>(null)
     val currentSong: StateFlow<Song?> = _currentSong.asStateFlow()
 
@@ -59,14 +52,12 @@ class PlayerManager @Inject constructor(
     private val _repeatMode = MutableStateFlow(0)
     val repeatMode: StateFlow<Int> = _repeatMode.asStateFlow()
 
-    // Service connection
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             val binder = service as AudioService.AudioServiceBinder
             audioService = binder.getService()
             bound = true
             
-            // Initialize state from service
             audioService?.currentSong?.value?.let { song ->
                 _currentSong.value = song
                 _isPlaying.value = audioService?.isPlaying?.value ?: false
@@ -74,11 +65,9 @@ class PlayerManager @Inject constructor(
                 _isMiniPlayerVisible.value = true
             }
             
-            // Sync shuffle and repeat states
             _isShuffle.value = audioService?.isShuffleEnabled() ?: false
             _repeatMode.value = audioService?.getRepeatMode() ?: 0
             
-            // Start monitoring for song changes
             monitorServiceState()
         }
         
@@ -91,24 +80,18 @@ class PlayerManager @Inject constructor(
     init {
         connectToService()
     }
-    
-    /**
-     * Monitors state changes from the AudioService
-     */
+
     private fun monitorServiceState() {
         audioService?.let { service ->
-            // Monitor current song to detect end of playlist
             serviceScope.launch {
                 service.currentSong.collectLatest { song ->
                     if (song == null && _currentSong.value != null) {
-                        // Song became null - playlist ended
                         handlePlaylistEnded()
                     }
                     _currentSong.value = song
                 }
             }
             
-            // Monitor playback state
             serviceScope.launch {
                 service.isPlaying.collectLatest { isPlaying ->
                     _isPlaying.value = isPlaying
@@ -116,10 +99,7 @@ class PlayerManager @Inject constructor(
             }
         }
     }
-    
-    /**
-     * Handles the end of playlist scenario
-     */
+
     private fun handlePlaylistEnded() {
         _currentSong.value = null
         _isPlaying.value = false
@@ -149,59 +129,31 @@ class PlayerManager @Inject constructor(
 
     fun playSong(song: Song) {
         try {
-            Log.d("PlayerManager", "Playing song: ${song.title}, artwork: ${song.artworkPath}, filePath: ${song.filePath}")
-            
-            // Check if the song has a valid file path
-            if (song.filePath.isEmpty()) {
-                Log.e("PlayerManager", "Cannot play song with empty file path: ${song.title}")
-                return
-            }
-            
+            Log.d("PlayerManager", "Playing song: ${song.title}, artwork: ${song.artworkPath}")
             ensureServiceStarted()
             audioService?.play(song)
             _currentSong.value = song
             _isPlaying.value = true
             _isMiniPlayerVisible.value = true
-            
-            // Start a delayed update for duration
-            CoroutineScope(Dispatchers.Main).launch {
-                delay(500) // Wait for MediaPlayer to initialize
-                _duration.value = audioService?.getDuration()?.toFloat() ?: song.duration.toFloat()
-                Log.d("PlayerManager", "Updated duration to: ${_duration.value}")
-            }
         } catch (e: Exception) {
             Log.e("PlayerManager", "Error playing song: ${e.message}", e)
         }
     }
 
     fun setPlaylist(songs: List<Song>, startIndex: Int = 0) {
-        if (songs.isEmpty()) {
-            Log.w("PlayerManager", "Cannot set empty playlist")
-            return
-        }
+        if (songs.isEmpty()) return
         
         try {
             Log.d("PlayerManager", "Setting playlist of ${songs.size} songs, starting at $startIndex")
             val startSong = if (startIndex >= 0 && startIndex < songs.size) songs[startIndex] else null
-            
             startSong?.let { 
-                Log.d("PlayerManager", "Start song: ${it.title}, artwork: ${it.artworkPath}, filePath: ${it.filePath}")
-                
-                // Check if the song has a valid file path
-                if (it.filePath.isEmpty()) {
-                    Log.e("PlayerManager", "Cannot play song with empty file path: ${it.title}")
-                    return
-                }
-            } ?: run {
-                Log.e("PlayerManager", "Invalid start index: $startIndex for playlist size: ${songs.size}")
-                return
+                Log.d("PlayerManager", "Start song: ${it.title}, artwork: ${it.artworkPath}")
             }
             
             ensureServiceStarted()
             Log.d("PlayerManager", "Starting service to set playlist 1111111")
             audioService?.setPlaylist(songs, startIndex)
             
-            // Update our internal state to match the service
             if (startIndex >= 0 && startIndex < songs.size) {
                 Log.d("PlayerManager", "Setting current song to: ${songs[startIndex].title}")
                 _currentSong.value = songs[startIndex]
@@ -209,13 +161,6 @@ class PlayerManager @Inject constructor(
                 _isPlaying.value = true
                 Log.d("PlayerManager", "Set isMiniPlayerVisible to true")
                 _isMiniPlayerVisible.value = true
-                
-                // Start a delayed update for duration
-                CoroutineScope(Dispatchers.Main).launch {
-                    delay(500) // Wait for MediaPlayer to initialize
-                    _duration.value = audioService?.getDuration()?.toFloat() ?: songs[startIndex].duration.toFloat()
-                    Log.d("PlayerManager", "Updated duration to: ${_duration.value}")
-                }
             }
         } catch (e: Exception) {
             Log.e("PlayerManager", "Error setting playlist: ${e.message}", e)
@@ -253,15 +198,15 @@ class PlayerManager @Inject constructor(
     fun toggleRepeat() {
         ensureServiceStarted()
         when (_repeatMode.value) {
-            0 -> { // NONE -> ALL
+            0 -> {
                 audioService?.repeatAll()
                 _repeatMode.value = 1
             }
-            1 -> { // ALL -> ONE
+            1 -> {
                 audioService?.repeatOne()
                 _repeatMode.value = 2
             }
-            else -> { // ONE -> NONE
+            else -> {
                 audioService?.noRepeat()
                 _repeatMode.value = 0
             }

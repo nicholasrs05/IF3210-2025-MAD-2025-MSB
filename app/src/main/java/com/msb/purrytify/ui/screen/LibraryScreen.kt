@@ -38,10 +38,9 @@ fun LibraryScreen(
         )
     }
 
-    // Trigger refresh when the screen is displayed
-    LaunchedEffect(Unit) {
-        libraryViewModel.refreshLibrary()
-    }
+//    LaunchedEffect(Unit) {
+//        libraryViewModel.refreshLibrary()
+//    }
 
     Box(
         modifier = Modifier

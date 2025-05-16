@@ -55,11 +55,10 @@ fun HomeScreen(
         homeViewModel.playNewSongs(newSongs, song)
         playerViewModel.setMiniPlayerVisible(true)
     }
-
-    // Trigger refresh when the screen is displayed
-    LaunchedEffect(Unit) {
-        homeViewModel.refreshSongs()
-    }
+//
+//    LaunchedEffect(Unit) {
+//        homeViewModel.refreshSongs()
+//    }
     
     Box(
         modifier = Modifier
@@ -142,9 +141,8 @@ fun NewSongItem(song: Song, onSongClick: (Song) -> Unit) {
             .clickable { onSongClick(song) },
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        val artworkUri = song.artworkPath.takeIf { it.isNotEmpty() }?.let { Uri.parse(it) }
-        
-        if (artworkUri != null) {
+        if (song.artworkPath.isNotEmpty()) {
+            val artworkUri = Uri.parse(song.artworkPath)
             AsyncImage(
                 model = artworkUri,
                 contentDescription = "Album Artwork",
@@ -213,9 +211,8 @@ fun RecentlyPlayedItem(song: Song, onSongClick: (Song) -> Unit) {
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        val artworkUri = song.artworkPath.takeIf { it.isNotEmpty() }?.let { Uri.parse(it) }
-        
-        if (artworkUri != null) {
+        if (song.artworkPath.isNotEmpty()) {
+            val artworkUri = Uri.parse(song.artworkPath)
             AsyncImage(
                 model = artworkUri,
                 contentDescription = "Album Artwork",
