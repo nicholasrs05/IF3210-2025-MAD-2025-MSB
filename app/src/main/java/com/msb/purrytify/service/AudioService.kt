@@ -10,6 +10,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.drawable.BitmapDrawable
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Binder
@@ -21,6 +22,11 @@ import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.media.app.NotificationCompat.MediaStyle
+import coil3.ImageLoader
+import coil3.request.ImageRequest
+import coil3.request.SuccessResult
+import coil3.request.allowHardware
+import coil3.BitmapImage
 import com.msb.purrytify.MainActivity
 import com.msb.purrytify.R
 import com.msb.purrytify.data.local.entity.Song
@@ -33,6 +39,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 @AndroidEntryPoint
 class AudioService : Service() {
@@ -295,7 +302,26 @@ class AudioService : Service() {
                 return null
             }
             
-            if (artworkPath.startsWith("content:")) {
+            if (artworkPath.startsWith("http")) {
+                var bitmap: Bitmap? = null
+                runBlocking {
+                    val loader = ImageLoader(applicationContext)
+                    val request = ImageRequest.Builder(applicationContext)
+                        .data(artworkPath)
+                        .allowHardware(false)
+                        .build()
+
+                    try {
+                        val result = loader.execute(request)
+                        if (result is SuccessResult) {
+                            bitmap = (result.image as? BitmapImage)?.bitmap
+                        }
+                    } catch (e: Exception) {
+                        Log.e("AudioService", "Error loading artwork from URL: ${e.message}", e)
+                    }
+                }
+                return bitmap
+            } else if (artworkPath.startsWith("content:")) {
                 val inputStream = contentResolver.openInputStream(Uri.parse(artworkPath))
                 BitmapFactory.decodeStream(inputStream)
             } else {
@@ -383,12 +409,7 @@ class AudioService : Service() {
         var artwork: Bitmap? = null
         try {
             if (song.artworkPath.isNotEmpty()) {
-                artwork = if (song.artworkPath.startsWith("content:")) {
-                    val inputStream = contentResolver.openInputStream(Uri.parse(song.artworkPath))
-                    BitmapFactory.decodeStream(inputStream)
-                } else {
-                    BitmapFactory.decodeFile(song.artworkPath)
-                }
+                artwork = loadArtwork(song.artworkPath)
             }
         } catch (e: Exception) {
             Log.e("AudioService", "Error loading artwork: ${e.message}", e)
