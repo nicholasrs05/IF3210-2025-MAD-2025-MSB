@@ -4,10 +4,8 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaPlayer
@@ -83,19 +81,6 @@ class AudioService : Service() {
     private val _playbackProgress = MutableStateFlow(0f)
     val playbackProgress: StateFlow<Float> = _playbackProgress.asStateFlow()
 
-    private val mediaControlReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            when (intent?.action) {
-                ACTION_PLAY -> resumePlayback()
-                ACTION_PAUSE -> pausePlayback()
-                ACTION_TOGGLE_PLAY -> togglePlayPause()
-                ACTION_NEXT -> playNext()
-                ACTION_PREVIOUS -> playPrevious()
-                ACTION_STOP -> stopPlayback()
-            }
-        }
-    }
-
     inner class AudioServiceBinder : Binder() {
         fun getService(): AudioService = this@AudioService
     }
@@ -107,17 +92,6 @@ class AudioService : Service() {
         createNotificationChannel()
 
         initMediaSession()
-
-        val filter = IntentFilter().apply {
-            addAction(ACTION_PLAY)
-            addAction(ACTION_PAUSE)
-            addAction(ACTION_TOGGLE_PLAY)
-            addAction(ACTION_NEXT)
-            addAction(ACTION_PREVIOUS)
-            addAction(ACTION_STOP)
-        }
-
-        registerReceiver(mediaControlReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
     }
 
     override fun onBind(intent: Intent?): IBinder {
@@ -143,7 +117,6 @@ class AudioService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         releaseResources()
-        unregisterReceiver(mediaControlReceiver)
         serviceJob.cancel()
     }
 

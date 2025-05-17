@@ -9,9 +9,6 @@ import com.msb.purrytify.service.AudioService
 
 class MediaControlReceiver : BroadcastReceiver() {
     companion object {
-        /**
-         * Create PendingIntent for notification actions
-         */
         fun createPendingIntent(context: Context, action: String, requestCode: Int): PendingIntent {
             val intent = Intent(context, MediaControlReceiver::class.java).apply {
                 this.action = action
