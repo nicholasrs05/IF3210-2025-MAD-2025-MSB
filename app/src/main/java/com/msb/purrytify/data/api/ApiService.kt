@@ -43,4 +43,7 @@ interface ApiService {
     
     @GET("/api/top-songs/global")
     suspend fun getGlobalTopSongs(): Response<List<SongResponse>>
+
+    @GET("api/top-songs/{country_code}")
+    suspend fun getCountryTopSongs(@Path("country_code") countryCode: String): Response<List<SongResponse>>
 }

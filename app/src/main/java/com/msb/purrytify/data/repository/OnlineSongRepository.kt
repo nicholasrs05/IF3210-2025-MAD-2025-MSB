@@ -23,6 +23,10 @@ class OnlineSongRepository @Inject constructor(
     // Add timestamp to track when data was last fetched
     private var lastFetchTimestamp: Long = 0
     private val cacheValidityPeriod: Long = 30 * 60 * 1000 // 30 minutes in milliseconds
+
+    // Add cache for country top songs
+    private val countryTopSongsCache = mutableMapOf<String, Pair<Long, List<SongResponse>>>()
+    private val countryCacheValidityPeriod: Long = 30 * 60 * 1000 // 30 minutes
     
     // Fetch global top songs with caching
     suspend fun getGlobalTopSongs(forceRefresh: Boolean = false): Flow<Resource<List<SongResponse>>> = flow {
@@ -52,6 +56,32 @@ class OnlineSongRepository @Inject constructor(
             }
         } catch (e: Exception) {
             Log.e("OnlineSongRepository", "Error fetching global top songs: ${e.message}")
+            emit(Resource.Error("Network error: ${e.message}"))
+        }
+    }
+
+    // Fetch country top songs with caching
+    suspend fun getCountryTopSongs(countryCode: String, forceRefresh: Boolean = false): Flow<Resource<List<SongResponse>>> = flow {
+        emit(Resource.Loading())
+        val cacheEntry = countryTopSongsCache[countryCode]
+        val shouldFetch = forceRefresh ||
+            cacheEntry == null ||
+            (System.currentTimeMillis() - cacheEntry.first > countryCacheValidityPeriod)
+        if (!shouldFetch) {
+            emit(Resource.Success(cacheEntry.second))
+            return@flow
+        }
+        try {
+            val response = apiService.getCountryTopSongs(countryCode)
+            if (response.isSuccessful) {
+                response.body()?.let { songs ->
+                    countryTopSongsCache[countryCode] = System.currentTimeMillis() to songs
+                    emit(Resource.Success(songs))
+                } ?: emit(Resource.Error("Empty response body"))
+            } else {
+                emit(Resource.Error("Error ${response.code()}: ${response.message()}"))
+            }
+        } catch (e: Exception) {
             emit(Resource.Error("Network error: ${e.message}"))
         }
     }

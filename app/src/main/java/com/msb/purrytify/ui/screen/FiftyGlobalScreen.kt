@@ -40,7 +40,7 @@ import com.msb.purrytify.R
 import com.msb.purrytify.data.local.entity.Song
 import com.msb.purrytify.ui.component.NoInternet
 import com.msb.purrytify.utils.NetworkStatusListener
-import com.msb.purrytify.viewmodel.FiftyGlobalViewModel
+import com.msb.purrytify.viewmodel.OnlineSongsViewModel
 import com.msb.purrytify.viewmodel.PlayerViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -51,7 +51,7 @@ fun FiftyGlobalScreen(
     onDismissWithAnimation: () -> Unit = {},
     isDismissing: Boolean = false,
     onAnimationComplete: () -> Unit = {},
-    viewModel: FiftyGlobalViewModel = hiltViewModel(),
+    viewModel: OnlineSongsViewModel = hiltViewModel(),
     playerViewModel: PlayerViewModel = hiltViewModel(),
 ) {
     var localIsDismissing by remember { mutableStateOf(false) }
