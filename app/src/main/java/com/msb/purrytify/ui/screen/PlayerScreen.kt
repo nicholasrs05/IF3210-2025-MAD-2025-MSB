@@ -2,6 +2,7 @@ package com.msb.purrytify.ui.screen
 
 import android.Manifest
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
@@ -42,8 +43,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.zIndex
 import androidx.core.graphics.ColorUtils
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.msb.purrytify.utils.FileUtils
-import androidx.lifecycle.viewModelScope
 import androidx.palette.graphics.Palette
 import coil3.compose.AsyncImage
 import com.msb.purrytify.R
@@ -59,8 +58,11 @@ import kotlinx.coroutines.withContext
 import androidx.compose.runtime.rememberCoroutineScope
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import java.io.File
 import android.util.Log
+import coil3.BitmapImage
+import coil3.ImageLoader
+import coil3.request.SuccessResult
+import coil3.request.allowHardware
 
 @Composable
 fun PlayerScreen(
@@ -113,13 +115,10 @@ fun PlayerScreen(
         }
     }
     
-    // Monitor song state changes
     LaunchedEffect(viewModel.currentSong.value) {
-        // Handle song changes
         if (viewModel.currentSong.value == null) {
-            // End of playlist or player released - close the player screen
-                        localIsDismissing = true
-                        onDismissWithAnimation()
+            localIsDismissing = true
+            onDismissWithAnimation()
         }
     }
     
@@ -137,9 +136,28 @@ fun PlayerScreen(
     LaunchedEffect(currentPlayingSong.id, currentPlayingSong.artworkPath) {
         try {
             val bitmap = if (currentPlayingSong.artworkPath.isNotEmpty()) {
-                val artworkUri = Uri.parse(currentPlayingSong.artworkPath)
-                val inputStream = context.contentResolver.openInputStream(artworkUri)
-                inputStream?.use { BitmapFactory.decodeStream(it) }
+                if (currentPlayingSong.artworkPath.startsWith("http")) {
+                    var loadedBitmap: Bitmap? = null
+                    val loader = ImageLoader(context)
+                    val request = ImageRequest.Builder(context)
+                        .data(currentPlayingSong.artworkPath)
+                        .allowHardware(false)
+                        .build()
+
+                    try {
+                        val result = loader.execute(request)
+                        if (result is SuccessResult) {
+                            loadedBitmap = (result.image as? BitmapImage)?.bitmap
+                        }
+                    } catch (e: Exception) {
+                        Log.e("MiniPlayer", "Error loading artwork from URL: ${e.message}", e)
+                    }
+                    loadedBitmap
+                } else {
+                    val artworkUri = Uri.parse(currentPlayingSong.artworkPath)
+                    val inputStream = context.contentResolver.openInputStream(artworkUri)
+                    inputStream?.use { BitmapFactory.decodeStream(it) }
+                }
             } else {
                 BitmapFactory.decodeResource(context.resources, R.drawable.image)
             }
@@ -172,7 +190,6 @@ fun PlayerScreen(
         }
     }
     
-    // Cache artwork
     val artworkContent = remember(currentPlayingSong.artworkPath) {
         @Composable {
             Box(
@@ -207,7 +224,6 @@ fun PlayerScreen(
         }
     }
     
-    // Cache player controls
     val playerControls = remember(isPlaying, accentColor, backgroundColor, textColor) {
         @Composable {
             Row(
@@ -271,7 +287,6 @@ fun PlayerScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
                 
-                // Time indicators
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -533,8 +548,7 @@ fun EditSongDialog(
     viewModel: PlayerViewModel
 ) {
     val context = LocalContext.current
-    // Using the existing playerViewModel instead of a separate SongViewModel
-    
+
     var title by remember { mutableStateOf(song.title) }
     var artist by remember { mutableStateOf(song.artist) }
     var selectedArtworkUri by remember { mutableStateOf<Uri?>(null) }
@@ -562,7 +576,6 @@ fun EditSongDialog(
         }
     }
     
-    // Permission launcher for image files
     val imagePermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -579,7 +592,6 @@ fun EditSongDialog(
         }
     }
     
-    // Function to request image permissions
     fun requestImagePermission() {
         if (Build.VERSION.SDK_INT >= 33) {
             imagePermissionLauncher.launch(arrayOf(
@@ -607,7 +619,6 @@ fun EditSongDialog(
                     .padding(horizontal = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Header
                 Text(
                     text = "Edit Song",
                     color = textColor,
@@ -617,14 +628,12 @@ fun EditSongDialog(
                     modifier = Modifier.padding(vertical = 16.dp)
                 )
                 
-                // Upload containers
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 16.dp, bottom = 24.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Upload Photo Box
                     Box(
                         modifier = Modifier
                             .weight(1f)
@@ -674,7 +683,6 @@ fun EditSongDialog(
                         }
                     }
                     
-                    // Song Info Box with Duration
                     Box(
                         modifier = Modifier
                             .weight(1f)
@@ -710,7 +718,6 @@ fun EditSongDialog(
                     }
                 }
                 
-                // Title TextField
                 Text(
                     text = "Title",
                     color = textColor,
@@ -743,7 +750,6 @@ fun EditSongDialog(
                     singleLine = true
                 )
                 
-                // Artist TextField
                 Text(
                     text = "Artist",
                     color = textColor,
@@ -778,14 +784,12 @@ fun EditSongDialog(
                 
                 Spacer(modifier = Modifier.height(40.dp))
                 
-                // Buttons
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 24.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // Cancel Button
                     Button(
                         onClick = { onDismiss() },
                         modifier = Modifier
@@ -806,7 +810,7 @@ fun EditSongDialog(
                     }
 
                     val coroutineScope = rememberCoroutineScope()
-                    // Save Button
+
                     Button(
                         onClick = {
                             if (title.isBlank() || artist.isBlank()) {
@@ -826,8 +830,6 @@ fun EditSongDialog(
                                             artist = artist,
                                             artworkPath = artworkFilePath
                                         )
-
-//                                        delay(100)
 
                                         viewModel.updateSongFromRepo()
                                         
