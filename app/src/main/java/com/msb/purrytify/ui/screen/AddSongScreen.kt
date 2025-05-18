@@ -438,9 +438,9 @@ fun AddSongScreen(
                                             duration = duration
                                         )
 
-                                        // Refresh the library and home screen data
-                                        libraryViewModel.refreshLibrary()
-                                        homeViewModel.refreshSongs()
+//                                        // Refresh the library and home screen data
+//                                        libraryViewModel.refreshLibrary()
+//                                        homeViewModel.refreshSongs()
 
                                         Toast.makeText(
                                             context,

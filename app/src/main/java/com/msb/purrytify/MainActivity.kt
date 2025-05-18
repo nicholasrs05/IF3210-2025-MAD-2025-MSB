@@ -21,17 +21,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.fillMaxSize
 import com.msb.purrytify.ui.component.NetworkPopUp
 import com.msb.purrytify.utils.NetworkStatusListener
+import com.msb.purrytify.utils.NotificationPermissionHelper
 import com.msb.purrytify.viewmodel.PlayerViewModel
-
+import android.content.pm.PackageManager
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // Process deep link if coming from intent
-        // Note: This is actually handled by the Navigation component with navDeepLink
-        // but we'll log it for debugging purposes
+        if (!NotificationPermissionHelper.hasNotificationPermission(this)) {
+            NotificationPermissionHelper.requestNotificationPermission(this)
+        }
+        
         intent?.data?.let { uri ->
             if (uri.scheme == "purrytify" && uri.host == "song") {
                 val songId = uri.lastPathSegment
@@ -56,7 +58,31 @@ class MainActivity : ComponentActivity() {
                         isConnected = isConnected,
                         isMiniPlayerVisible = isMiniPlayerVisible
                     )
+                }
+            }
+        }
+    }
 
+    @Suppress("OVERRIDE_DEPRECATION")
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when (requestCode) {
+            NotificationPermissionHelper.NOTIFICATION_PERMISSION_REQUEST_CODE -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Log.d("MainActivity", "Notification permission granted")
+                } else {
+                    Log.d("MainActivity", "Notification permission denied")
+                }
+            }
+            102 -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Log.d("MainActivity", "Camera permission granted")
+                } else {
+                    Log.d("MainActivity", "Camera permission denied")
                 }
             }
         }

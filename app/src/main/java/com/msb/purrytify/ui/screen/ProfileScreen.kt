@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -42,9 +43,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
+import com.msb.purrytify.ui.navigation.Screen
 import com.msb.purrytify.data.local.entity.SoundCapsule
 import com.msb.purrytify.viewmodel.AuthViewModel
 import com.msb.purrytify.viewmodel.PlayerViewModel
+import com.msb.purrytify.ui.component.NoInternet
 import com.msb.purrytify.viewmodel.SoundCapsuleViewModel
 import com.msb.purrytify.ui.component.SoundCapsuleCard
 import java.time.LocalDateTime
@@ -61,7 +66,7 @@ fun ProfileScreen(
     authViewModel: AuthViewModel,
     playerViewModel: PlayerViewModel,
     soundCapsuleViewModel: SoundCapsuleViewModel = hiltViewModel(),
-    navController: NavController
+    navController: NavController = rememberNavController()
 ) {
     val context = LocalContext.current
     var isConnected by remember { mutableStateOf(true) }
@@ -116,6 +121,7 @@ fun ProfileScreen(
                     ProfileContent(
                         profile = (profileUiState as ProfileUiState.Success).profile,
                         logout = { logout() },
+                        onScanQRCode = { navController.navigate(Screen.QRScanner.route) },
                         soundCapsule = soundCapsuleState,
                         dayStreaks = dayStreaksState,
                         isLoading = isLoading,
@@ -150,6 +156,7 @@ fun ProfileScreen(
 fun ProfileContent(
     profile: com.msb.purrytify.data.model.Profile,
     logout: () -> Unit,
+    onScanQRCode: () -> Unit,
     soundCapsule: SoundCapsule?,
     dayStreaks: List<DayStreak>,
     isLoading: Boolean,
@@ -210,9 +217,10 @@ fun ProfileContent(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // First row of buttons
         Row {
             Button(
-                onClick = {},
+                onClick = { navController.navigate(Screen.EditProfile.route) },
                 shape = RoundedCornerShape(45.dp),
                 contentPadding = PaddingValues(0.dp),
                 modifier = Modifier
@@ -264,6 +272,39 @@ fun ProfileContent(
             }
         }
 
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // QR Scanner button
+        Button(
+            onClick = onScanQRCode,
+            shape = RoundedCornerShape(45.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            modifier = Modifier
+                .defaultMinSize(
+                    minWidth = ButtonDefaults.MinWidth,
+                    minHeight = 10.dp
+                )
+                .height(40.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF2E8B57),
+                contentColor = Color.White,
+            )
+        ) {
+            Icon(
+                imageVector = Icons.Default.QrCodeScanner,
+                contentDescription = "Scan QR Code",
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                "Scan QR Code",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color.White,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+
         Spacer(modifier = Modifier.height(24.dp))
 
         Row(
@@ -280,7 +321,7 @@ fun ProfileContent(
         // Sound Capsule Section
         SoundCapsuleTitle()
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         if (isLoading) {
             CircularProgressIndicator()
         } else if (error != null) {

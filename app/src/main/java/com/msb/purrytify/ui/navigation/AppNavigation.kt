@@ -26,7 +26,13 @@ import com.msb.purrytify.viewmodel.PlayerViewModel
 import com.msb.purrytify.viewmodel.SoundCapsuleViewModel
 import com.msb.purrytify.ui.component.NavigationBarComponent
 import com.msb.purrytify.ui.component.PlayerContainer
-import com.msb.purrytify.ui.screen.*
+import com.msb.purrytify.qr.ModernQRScannerScreen
+import com.msb.purrytify.ui.screen.EditProfileScreen
+import com.msb.purrytify.ui.screen.HomeScreen
+import com.msb.purrytify.ui.screen.LibraryScreen
+import com.msb.purrytify.ui.screen.LoginScreen
+import com.msb.purrytify.ui.screen.MapLocationPickerScreen
+import com.msb.purrytify.ui.screen.ProfileScreen
 import androidx.compose.ui.unit.dp
 import com.msb.purrytify.R
 import androidx.compose.ui.res.painterResource
@@ -37,8 +43,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
+import androidx.navigation.navigation
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
+import com.msb.purrytify.ui.screen.FiftyGlobalScreen
+import com.msb.purrytify.ui.screen.TenCountryScreen
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.msb.purrytify.data.DummyData
 
 sealed class Screen(
@@ -78,6 +91,16 @@ sealed class Screen(
 
     data object Login : Screen("login", "Login")
 
+    data object QRScanner : Screen("qr_scanner", "QR Scanner")
+
+    data object EditProfile : Screen("edit_profile", "Edit Profile")
+
+    data object MapLocationPicker : Screen("map_location_picker", "Map Location Picker")
+
+    data object FiftyGlobal : Screen("fifty_global", "Fifty Global")
+
+    data object Top10Country : Screen("top10_country", "Top 10 Country")
+
     data object SongDetail : Screen("song/{songId}", "Song Detail") {
         fun createRoute(songId: String): String {
             return "song/$songId"
@@ -102,8 +125,6 @@ sealed class Screen(
         }
     }
 }
-
-// Preview annotations remain the same
 
 @Composable
 fun NavigationComponent(
@@ -172,7 +193,7 @@ fun NavigationComponent(
                     content = {
                         if (isLandscape) {
                             Row(
-                                modifier = Modifier.fillMaxSize().background(Color(0xFF121212))
+                                modifier = Modifier.fillMaxSize()
                             ) {
                                 val showNavBar = isLoggedIn && currentRouteForUI != Screen.Login.route
                                 if (showNavBar) {
@@ -183,11 +204,12 @@ fun NavigationComponent(
                                     NavHost(
                                         navController = navController,
                                         startDestination = startDestination,
-                                        modifier = Modifier.fillMaxSize().background(Color(0xFF121212))
+                                        modifier = Modifier.fillMaxSize()
                                     ) {
                                         composable(Screen.Home.route) {
                                             HomeScreen(
                                                 playerViewModel = playerViewModel,
+                                                navController = navController
                                             )
                                         }
                                         composable(Screen.Library.route) {
@@ -230,7 +252,10 @@ fun NavigationComponent(
                                             // Show minimal UI while loading or redirect
                                             Box(modifier = Modifier.fillMaxSize()) {
                                                 if (isLoggedIn) {
-                                                    HomeScreen(playerViewModel = playerViewModel)
+                                                    HomeScreen(
+                                                        playerViewModel = playerViewModel,
+                                                        navController = navController
+                                                    )
                                                 }
                                             }
                                         }
@@ -313,7 +338,12 @@ fun NavigationComponent(
                                     startDestination = startDestination,
                                     modifier = Modifier.padding(innerPadding)
                                 ) {
-                                    composable(Screen.Home.route) { HomeScreen(playerViewModel = playerViewModel) }
+                                    composable(Screen.Home.route) {
+                                        HomeScreen(
+                                            playerViewModel = playerViewModel,
+                                            navController = navController
+                                        )
+                                    }
                                     composable(Screen.Library.route) {
                                         LibraryScreen(
                                             playerViewModel = playerViewModel,
@@ -331,6 +361,66 @@ fun NavigationComponent(
                                             authViewModel = authViewModel
                                         )
                                     }
+                                    composable(Screen.QRScanner.route) {
+                                        ModernQRScannerScreen(
+                                            navigateUp = { navController.navigateUp() },
+                                            onQRCodeScanned = { songId ->
+                                                playerViewModel.playSongById(songId)
+                                                navController.navigate(Screen.Home.route) {
+                                                    popUpTo(Screen.QRScanner.route) { inclusive = true }
+                                                }
+                                            }
+                                        )
+                                    }
+                                    navigation(
+                                        route = "editProfileGraph",
+                                        startDestination = Screen.EditProfile.route
+                                    ) {
+                                        composable(Screen.EditProfile.route) {
+                                            EditProfileScreen(
+                                                navController = navController
+                                            )
+                                        }
+                                        composable(Screen.MapLocationPicker.route) {
+                                            MapLocationPickerScreen(
+                                                navController = navController
+                                            )
+                                        }
+                                    }
+                                    composable(Screen.FiftyGlobal.route) {
+                                        var isDismissing by remember { mutableStateOf(false) }
+
+                                        FiftyGlobalScreen(
+                                            onDismiss = {
+                                                navController.navigateUp()
+                                            },
+                                            onDismissWithAnimation = {
+                                                isDismissing = true
+                                            },
+                                            isDismissing = isDismissing,
+                                            onAnimationComplete = {
+                                                isDismissing = false
+                                            },
+                                            playerViewModel = playerViewModel
+                                        )
+                                    }
+                                    composable(Screen.Top10Country.route) {
+                                        var isDismissing by remember { mutableStateOf(false) }
+
+                                        TenCountryScreen(
+                                            onDismiss = {
+                                                navController.navigateUp()
+                                            },
+                                            onDismissWithAnimation = {
+                                                isDismissing = true
+                                            },
+                                            isDismissing = isDismissing,
+                                            onAnimationComplete = {
+                                                isDismissing = false
+                                            },
+                                            playerViewModel = playerViewModel
+                                        )
+                                    }
                                     composable(
                                         route = Screen.SongDetail.route,
                                         arguments = listOf(
@@ -346,8 +436,6 @@ fun NavigationComponent(
                                         LaunchedEffect(songId) {
                                             if (songId != null) {
                                                 if (!isLoggedIn) {
-                                                    // If not logged in, store the songId to play after login
-                                                    // This could be stored in a temporary preference or viewmodel state
                                                     navController.navigate(Screen.Login.route)
                                                 } else {
                                                     playerViewModel.playSongById(songId)

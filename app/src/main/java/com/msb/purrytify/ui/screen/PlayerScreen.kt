@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -47,9 +48,10 @@ import androidx.palette.graphics.Palette
 import coil3.compose.AsyncImage
 import com.msb.purrytify.R
 import com.msb.purrytify.data.local.entity.Song
-import com.msb.purrytify.media.MediaPlayerManager
+import com.msb.purrytify.ui.component.qrcode.ShareSongQRDialog
 import com.msb.purrytify.utils.DeepLinkUtils
 import com.msb.purrytify.viewmodel.PlayerViewModel
+import com.msb.purrytify.service.RepeatMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -69,7 +71,6 @@ fun PlayerScreen(
     onAnimationComplete: () -> Unit = {},
     viewModel: PlayerViewModel = hiltViewModel(),
 ) {
-    val mediaPlayerManager = viewModel.mediaPlayerManager
     val currentPlayingSong = viewModel.currentSong.value ?: song
     
     var localIsDismissing by remember { mutableStateOf(false) }
@@ -104,7 +105,7 @@ fun PlayerScreen(
 
         if (!isAlreadyPlaying) {
             Log.d("PlayerScreen", "Not already playing, setting new song")
-            mediaPlayerManager.setPlaylist(listOf(song))
+            viewModel.setPlaylist(listOf(song))
             viewModel.playSong(song)
         } else if (wasPlaying) {
             Log.d("PlayerScreen", "Already playing, resuming song")
@@ -112,27 +113,13 @@ fun PlayerScreen(
         }
     }
     
-    DisposableEffect(Unit) {
-        val songChangeListener = object : MediaPlayerManager.SongChangeListener {
-            override fun onSongChanged(newSong: Song) {
-                viewModel.updateCurrentSong()
-            }
-            
-            override fun onPlayerReleased() {
-                viewModel.resetCurrentSong()
-                viewModel.viewModelScope.launch {
-                    delay(300)
-                    if (mediaPlayerManager.getCurrentSong() == null) {
+    // Monitor song state changes
+    LaunchedEffect(viewModel.currentSong.value) {
+        // Handle song changes
+        if (viewModel.currentSong.value == null) {
+            // End of playlist or player released - close the player screen
                         localIsDismissing = true
                         onDismissWithAnimation()
-                    }
-                }
-            }
-        }
-        mediaPlayerManager.addSongChangeListener(songChangeListener)
-        
-        onDispose {
-            mediaPlayerManager.removeSongChangeListener(songChangeListener)
         }
     }
     
@@ -363,6 +350,7 @@ fun PlayerScreen(
                 
                 var showMenu by remember { mutableStateOf(false) }
                 var showEditDialog by remember { mutableStateOf(false) }
+                var showQRDialog by remember { mutableStateOf(false) }
                 
                 Box {
                     IconButton(onClick = { showMenu = !showMenu }) {
@@ -402,17 +390,36 @@ fun PlayerScreen(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(
                                         imageVector = Icons.Filled.Share,
-                                        contentDescription = "Share Song",
+                                        contentDescription = "Share URL",
                                         tint = textColor,
                                         modifier = Modifier.size(20.dp)
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Share Song", color = textColor)
+                                    Text("Share URL", color = textColor)
                                 }
                             },
                             onClick = {
                                 showMenu = false
                                 DeepLinkUtils.shareSong(context, currentPlayingSong)
+                            }
+                        )
+                        
+                        DropdownMenuItem(
+                            text = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Filled.QrCode,
+                                        contentDescription = "Share QR Code",
+                                        tint = textColor,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Share QR Code", color = textColor)
+                                }
+                            },
+                            onClick = {
+                                showMenu = false
+                                viewModel.shareCurrentSongViaQR()
                             }
                         )
                     }
@@ -426,6 +433,13 @@ fun PlayerScreen(
                         textColor = textColor,
                         accentColor = accentColor,
                         viewModel = viewModel
+                    )
+                }
+                
+                if (showQRDialog) {
+                    ShareSongQRDialog(
+                        song = currentPlayingSong,
+                        onDismiss = { showQRDialog = false }
                     )
                 }
             }
@@ -484,12 +498,13 @@ fun PlayerScreen(
                 IconButton(onClick = { viewModel.toggleRepeat() }) {
                     Icon(
                         imageVector = when (viewModel.repeatMode.value) {
-                            PlayerViewModel.RepeatMode.NONE -> Icons.Filled.Repeat
-                            PlayerViewModel.RepeatMode.ONE -> Icons.Filled.RepeatOne
-                            PlayerViewModel.RepeatMode.ALL -> Icons.Filled.RepeatOn
+                            RepeatMode.NONE -> Icons.Filled.Repeat
+                            RepeatMode.ONE -> Icons.Filled.RepeatOne
+                            RepeatMode.ALL -> Icons.Filled.RepeatOn
+                            else -> Icons.Filled.Repeat
                         },
                         contentDescription = "Repeat",
-                        tint = if (viewModel.repeatMode.value != PlayerViewModel.RepeatMode.NONE) 
+                        tint = if (viewModel.repeatMode.value != RepeatMode.NONE) 
                             accentColor else textColor.copy(alpha = 0.5f)
                     )
                 }
@@ -805,7 +820,6 @@ fun EditSongDialog(
                                     try {
                                         val artworkFilePath = selectedArtworkUri?.toString() ?: song.artworkPath
                                         
-                                        // Update the song in the database
                                         viewModel.updateSong(
                                             songId = song.id,
                                             title = title,
@@ -813,10 +827,8 @@ fun EditSongDialog(
                                             artworkPath = artworkFilePath
                                         )
 
-                                        // Wait for the database update to complete
-                                        delay(100)
-                                        
-                                        // Refresh the UI
+//                                        delay(100)
+
                                         viewModel.updateSongFromRepo()
                                         
                                         Toast.makeText(

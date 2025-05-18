@@ -1,35 +1,42 @@
 package com.msb.purrytify.viewmodel
 
 import android.app.Application
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
+import android.os.IBinder
 import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.msb.purrytify.data.local.entity.Song
 import com.msb.purrytify.data.repository.ApiSongRepository
 import com.msb.purrytify.data.repository.SongRepository
-import com.msb.purrytify.media.MediaPlayerManager
 import com.msb.purrytify.model.ProfileModel
+import com.msb.purrytify.qr.QRSharingService
+import com.msb.purrytify.service.AudioService
+import com.msb.purrytify.service.PlayerManager
+import com.msb.purrytify.service.RepeatMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
 
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
     application: Application,
     private val songRepository: SongRepository,
     private val apiSongRepository: ApiSongRepository,
-    val mediaPlayerManager: MediaPlayerManager,
-    private val profileModel: ProfileModel
+    private val playerManager: PlayerManager,
+    profileModel: ProfileModel,
+    private val qrSharingService: QRSharingService
 ) : AndroidViewModel(application) {
 
-    // Player UI state
     private val _currentSong = mutableStateOf<Song?>(null)
     val currentSong: State<Song?> = _currentSong
 
@@ -51,127 +58,188 @@ class PlayerViewModel @Inject constructor(
     private val _isLiked = mutableStateOf(false)
     val isLiked: State<Boolean> = _isLiked
 
-    // UI visibility states
     private val _isMiniPlayerVisible = mutableStateOf(false)
     val isMiniPlayerVisible: State<Boolean> = _isMiniPlayerVisible
-
     private val _isLargePlayerVisible = mutableStateOf(false)
-    
+    val isLargePlayerVisible: State<Boolean> = _isLargePlayerVisible
     val userId = profileModel.currentProfile.value.id
-    val allSongs: LiveData<List<Song>> = songRepository.fetchAllSongs(userId).asLiveData()
-    val likedSongs: LiveData<List<Song>> = songRepository.fetchLikedSongs(userId).asLiveData()
-    val recentlyPlayedSongs: LiveData<List<Song>> = songRepository.fetchRecentlyPlayedSongs(userId).asLiveData()
-    val newSongs: LiveData<List<Song>> = songRepository.fetchNewSongs(userId).asLiveData()
+
+    private var audioService: AudioService? = null
+    private var bound = false
+
+    private val serviceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            val binder = service as AudioService.AudioServiceBinder
+            audioService = binder.getService()
+            bound = true
+            
+            collectServiceFlows()
+            
+            audioService?.currentSong?.value?.let { song ->
+                _currentSong.value = song
+                _isPlaying.value = audioService?.isPlaying?.value ?: false
+                _duration.floatValue = song.duration.toFloat()
+                checkLikedStatus(song.id)
+                _isMiniPlayerVisible.value = true
+            }
+        }
+        
+        override fun onServiceDisconnected(name: ComponentName?) {
+            audioService = null
+            bound = false
+        }
+    }
 
     init {
-//        loadPlaylist()
+        connectToService()
 
-        // Setup current song state (from PlayerViewModel)
-        mediaPlayerManager.getCurrentSong()?.let { song ->
-            _currentSong.value = song
-            _isPlaying.value = mediaPlayerManager.isPlaying()
-            _duration.floatValue = mediaPlayerManager.getDuration().toFloat()
-            _currentPosition.floatValue = mediaPlayerManager.getCurrentPosition().toFloat()
-            checkLikedStatus(song.id)
-        }
-
-        // Set up completion handler
-        mediaPlayerManager.onCompletion = {
-            handleSongCompletion()
-        }
-    }
-
-    /**
-     * Loads the playlist for the current user
-     */
-//    private fun loadPlaylist() {
-//        viewModelScope.launch {
-//            val userId = profileModel.currentProfile.value.id
-//            songRepository.fetchAllSongs(userId).collect { songs ->
-//                Log.d("PlayerViewModel", "Loaded playlist with ${songs.size} songs")
-//                mediaPlayerManager.setPlaylist(songs)
-//            }
-//        }
-//    }
-
-    /**
-     * Sets visibility for the large player screen
-     */
-    fun setLargePlayerVisible(isVisible: Boolean) {
-        _isLargePlayerVisible.value = isVisible
-        if (!isVisible) {
-            _isMiniPlayerVisible.value = _currentSong.value != null
-        } else {
-            _isMiniPlayerVisible.value = false
-        }
-    }
-
-    /**
-     * Plays a specific song and updates UI state accordingly
-     */
-    fun playSong(song: Song) {
         viewModelScope.launch {
-            _currentSong.value = song
-            _isPlaying.value = true
-
-            songRepository.updateLastPlayedAt(song.id)
-            checkLikedStatus(song.id)
-
-            mediaPlayerManager.play(song)
-            _duration.floatValue = mediaPlayerManager.getDuration().toFloat()
-            _currentPosition.floatValue = 0f
-            _isMiniPlayerVisible.value = true
+            playerManager.currentSong.collectLatest { song ->
+                song?.let {
+                    _currentSong.value = it
+                    _duration.floatValue = it.duration.toFloat()
+                    checkLikedStatus(it.id)
+                } ?: run {
+                    _currentSong.value = null
+                    _duration.floatValue = 0f
+                    _currentPosition.floatValue = 0f
+                    _isLargePlayerVisible.value = false
+                    _isMiniPlayerVisible.value = false
+                }
+            }
         }
-    }
-
-    /**
-     * Toggles play/pause state of the current song
-     */
-    fun togglePlayPause() {
-        if (_isPlaying.value) {
-            mediaPlayerManager.pause()
-            _isPlaying.value = false
-        } else {
-            if (_currentSong.value != null) {
-                mediaPlayerManager.resume()
-                _isPlaying.value = true
-            } else {
-                mediaPlayerManager.getCurrentSong()?.let { song ->
-                    _currentSong.value = song
-                    mediaPlayerManager.resume()
-                    _isPlaying.value = true
+        
+        viewModelScope.launch {
+            playerManager.isPlaying.collectLatest { playing ->
+                _isPlaying.value = playing
+            }
+        }
+        
+        viewModelScope.launch {
+            playerManager.currentPosition.collectLatest { position ->
+                _currentPosition.floatValue = position
+            }
+        }
+        
+        viewModelScope.launch {
+            playerManager.duration.collectLatest { duration ->
+                if (duration > _duration.floatValue) {
+                    _duration.floatValue = duration
+                }
+            }
+        }
+        
+        viewModelScope.launch {
+            playerManager.isMiniPlayerVisible.collectLatest { visible ->
+                _isMiniPlayerVisible.value = visible
+            }
+        }
+        
+        viewModelScope.launch {
+            playerManager.isLargePlayerVisible.collectLatest { visible ->
+                _isLargePlayerVisible.value = visible
+            }
+        }
+        
+        viewModelScope.launch {
+            playerManager.isShuffle.collectLatest { shuffleEnabled ->
+                _isShuffle.value = shuffleEnabled
+            }
+        }
+        
+        viewModelScope.launch {
+            playerManager.repeatMode.collectLatest { mode ->
+                _repeatMode.value = when(mode) {
+                    0 -> RepeatMode.NONE
+                    1 -> RepeatMode.ALL
+                    2 -> RepeatMode.ONE
+                    else -> RepeatMode.NONE
                 }
             }
         }
     }
 
-    /**
-     * Skips to the next song in the playlist
-     */
+    private fun connectToService() {
+        Intent(getApplication(), AudioService::class.java).also { intent ->
+            getApplication<Application>().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+        }
+    }
+
+    private fun collectServiceFlows() {
+        audioService?.let { service ->
+            viewModelScope.launch {
+                service.currentSong.collectLatest { song ->
+                    song?.let {
+                        _currentSong.value = it
+                        _duration.floatValue = it.duration.toFloat()
+                        checkLikedStatus(it.id)
+                        _isMiniPlayerVisible.value = true
+                    }
+                }
+            }
+            
+            viewModelScope.launch {
+                service.isPlaying.collectLatest { playing ->
+                    _isPlaying.value = playing
+                }
+            }
+            
+            viewModelScope.launch {
+                service.playbackProgress.collectLatest { progress ->
+                    val songDuration = if (service.isPlaying.value) service.getDuration() else _currentSong.value?.duration?.toInt() ?: 0
+                    if (songDuration > 0) {
+                        _currentPosition.floatValue = progress * songDuration
+                    }
+                }
+            }
+        }
+    }
+
+    private fun ensureServiceStarted() {
+        if (audioService == null) {
+            Intent(getApplication(), AudioService::class.java).also { intent ->
+                getApplication<Application>().startService(intent)
+                
+                if (!bound) {
+                    getApplication<Application>().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+                }
+            }
+        }
+    }
+
+    fun setLargePlayerVisible(isVisible: Boolean) {
+        playerManager.setLargePlayerVisible(isVisible)
+    }
+
+    fun playSong(song: Song) {
+        viewModelScope.launch {
+            songRepository.updateLastPlayedAt(song.id)
+            checkLikedStatus(song.id)
+            playerManager.playSong(song)
+        }
+    }
+
+    fun setPlaylist(songs: List<Song>, startIndex: Int = 0) {
+        if (songs.isEmpty()) return
+        playerManager.setPlaylist(songs, startIndex)
+    }
+
+    fun togglePlayPause() {
+        playerManager.togglePlayPause()
+    }
+
     fun skipToNext() {
-        mediaPlayerManager.playNext()
-        updateCurrentSong()
+        playerManager.playNext()
     }
 
-    /**
-     * Skips to the previous song in the playlist
-     */
     fun skipToPrevious() {
-        mediaPlayerManager.playPrevious()
-        updateCurrentSong()
+        playerManager.playPrevious()
     }
 
-    /**
-     * Seeks to a specific position in the current song
-     */
     fun seekTo(position: Float) {
-        mediaPlayerManager.seekTo(position.toInt())
-        _currentPosition.floatValue = position
+        playerManager.seekTo(position)
     }
 
-    /**
-     * Toggles like status for the current song
-     */
     fun toggleLike() {
         viewModelScope.launch {
             _currentSong.value?.let { song ->
@@ -182,67 +250,18 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Updates the current song index in the MediaPlayerManager
-     */
-    fun updateCurrentSongIdx() {
-        mediaPlayerManager.updateCurrentSongIdx()
-    }
-
-    /**
-     * Toggles shuffle mode for the playlist
-     */
     fun toggleShuffle() {
-        _isShuffle.value = !_isShuffle.value
-        mediaPlayerManager.shuffle()
+        playerManager.toggleShuffle()
     }
 
-    /**
-     * Cycles through repeat modes (NONE -> ALL -> ONE -> NONE)
-     */
     fun toggleRepeat() {
-        _repeatMode.value = when (_repeatMode.value) {
-            RepeatMode.NONE -> RepeatMode.ALL
-            RepeatMode.ALL -> RepeatMode.ONE
-            RepeatMode.ONE -> RepeatMode.NONE
-        }
-        when (_repeatMode.value) {
-            RepeatMode.NONE -> mediaPlayerManager.noRepeat()
-            RepeatMode.ALL -> mediaPlayerManager.repeatAll()
-            RepeatMode.ONE -> mediaPlayerManager.repeatOne()
-        }
+        playerManager.toggleRepeat()
     }
 
-    /**
-     * Updates the current playback position
-     */
     fun updatePosition() {
-        if (_isPlaying.value) {
-            _currentPosition.floatValue = mediaPlayerManager.getCurrentPosition().toFloat()
-        }
+        playerManager.updatePosition()
     }
 
-    /**
-     * Updates the current song information from the media player
-     */
-    fun updateCurrentSong() {
-        val currentSong = mediaPlayerManager.getCurrentSong()
-        if (currentSong != null) {
-            _currentSong.value = currentSong
-            _duration.floatValue = mediaPlayerManager.getDuration().toFloat()
-            _currentPosition.floatValue = mediaPlayerManager.getCurrentPosition().toFloat()
-            _isPlaying.value = mediaPlayerManager.isPlaying()
-            checkLikedStatus(currentSong.id)
-
-            viewModelScope.launch {
-                songRepository.updateLastPlayedAt(currentSong.id)
-            }
-        }
-    }
-
-    /**
-     * Updates the current song information from the repository
-     */
     fun updateSongFromRepo() {
         _currentSong.value?.let { song ->
             viewModelScope.launch {
@@ -254,9 +273,6 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Checks and updates the liked status of a song
-     */
     private fun checkLikedStatus(songId: Long) {
         viewModelScope.launch {
             val song = songRepository.getSongById(songId)
@@ -264,20 +280,6 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Handles song completion based on the current repeat mode
-     */
-    private fun handleSongCompletion() {
-        when (_repeatMode.value) {
-            RepeatMode.NONE -> skipToNext()
-            RepeatMode.ALL -> skipToNext()
-            RepeatMode.ONE -> updateCurrentSong()
-        }
-    }
-
-    /**
-     * Resets the player state completely
-     */
     fun resetCurrentSong() {
         _currentSong.value = null
         _isPlaying.value = false
@@ -286,58 +288,29 @@ class PlayerViewModel @Inject constructor(
         _isLiked.value = false
     }
 
-    /**
-     * Sets the current song to null without resetting other states
-     */
-    fun setCurrentSongNull() {
-        _currentSong.value = null
-    }
-
-    /**
-     * Sets the current song with a specified song
-     */
     fun setCurrentSong(song: Song) {
         _currentSong.value = song
         checkLikedStatus(song.id)
     }
 
-    /**
-     * Resumes playback of the current song
-     */
     fun resumeCurrentSong() {
-        if (!_isPlaying.value) {
-            mediaPlayerManager.resume()
-            _isPlaying.value = true
-        }
-        updateCurrentSong()
+        playerManager.resumePlayback()
     }
 
-    /**
-     * Stops the media player and resets its state
-     */
     fun stopMediaPlayer() {
-        _isMiniPlayerVisible.value = false
-        mediaPlayerManager.stop()
-        _currentSong.value = null
+        playerManager.stopPlayback()
     }
 
-    /**
-     * Sets the visibility of the mini player
-     */
+    fun shareCurrentSongViaQR() {
+        currentSong.value?.let { song ->
+            qrSharingService.shareSongViaQR(song)
+        }
+    }
+
     fun setMiniPlayerVisible(isVisible: Boolean) {
-        _isMiniPlayerVisible.value = isVisible
+        playerManager.setMiniPlayerVisible(isVisible)
     }
 
-    /**
-     * Repeat modes for the player
-     */
-    enum class RepeatMode {
-        NONE, ALL, ONE
-    }
-    
-    /**
-     * Adds a new song to the repository
-     */
     fun addSong(title: String, artist: String, filePath: String, artworkPath: String, duration: Long) {
         viewModelScope.launch(Dispatchers.IO) {
             val song = Song(
@@ -352,28 +325,17 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Gets metadata for a song file
-     */
     fun getSongMetadata(filePath: String): Pair<String?, String?> {
         return SongRepository.extractMetadata(filePath)
     }
 
-    /**
-     * Gets the duration of a song file
-     */
     fun getSongDuration(filePath: String): Long {
         return SongRepository.getDuration(filePath)
     }
 
-    /**
-     * Play a song by its ID (for deep links)
-     * @param songIdStr The song ID as a string from the deep link
-     */
     fun playSongById(songIdStr: String) {
         viewModelScope.launch {
             try {
-                // First try to find a local song with this ID
                 val songId = songIdStr.toLongOrNull()
                 if (songId != null) {
                     val song = songRepository.getSongById(songId)
@@ -384,13 +346,10 @@ class PlayerViewModel @Inject constructor(
                     }
                 }
                 
-                // If not found locally, try to fetch from API
                 val apiSong = apiSongRepository.fetchSongById(songIdStr)
                 if (apiSong != null) {
-                    // Convert the API song to a local Song entity for playback
                     val localSong = apiSongRepository.convertApiSongToLocalSong(apiSong, userId)
                     
-                    // Save the song to the database to make it available in the library
                     val insertedId = songRepository.insert(localSong)
                     val savedSong = songRepository.getSongById(insertedId)
                     
@@ -409,9 +368,6 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Updates an existing song in the database
-     */
     fun updateSong(songId: Long, title: String, artist: String, artworkPath: String) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -423,7 +379,6 @@ class PlayerViewModel @Inject constructor(
                     )
                     songRepository.update(updatedSong)
                     
-                    // Update current song if it's the one being edited
                     if (_currentSong.value?.id == songId) {
                         _currentSong.value = updatedSong
                     }
@@ -436,5 +391,10 @@ class PlayerViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
+        
+        if (bound) {
+            getApplication<Application>().unbindService(serviceConnection)
+            bound = false
+        }
     }
 }

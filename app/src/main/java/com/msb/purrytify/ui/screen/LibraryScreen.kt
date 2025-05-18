@@ -23,6 +23,7 @@ import com.msb.purrytify.ui.component.LibraryAdapter
 import com.msb.purrytify.ui.theme.AppTheme
 import com.msb.purrytify.viewmodel.LibraryViewModel
 import com.msb.purrytify.viewmodel.PlayerViewModel
+import android.util.Log
 
 @Composable
 fun LibraryScreen(
@@ -37,10 +38,9 @@ fun LibraryScreen(
         )
     }
 
-    // Trigger refresh when the screen is displayed
-    LaunchedEffect(Unit) {
-        libraryViewModel.refreshLibrary()
-    }
+//    LaunchedEffect(Unit) {
+//        libraryViewModel.refreshLibrary()
+//    }
 
     Box(
         modifier = Modifier
@@ -97,16 +97,14 @@ fun LibraryScreen(
                         RecyclerView(ctx).apply {
                             layoutManager = LinearLayoutManager(ctx)
                             adapter = LibraryAdapter(songsToDisplay) { clickedSong ->
-                                libraryViewModel.playLibrarySong(songsToDisplay, clickedSong)
                                 val songIndex = songsToDisplay.indexOfFirst { it.id == clickedSong.id }
                                 if (songIndex >= 0) {
+                                    Log.d("LibraryScreen", "Playing song at index: $songIndex")
                                     libraryViewModel.playLibrarySong(songsToDisplay, clickedSong)
-                                    playerViewModel.setCurrentSong(clickedSong)
                                 } else {
+                                    Log.d("LibraryScreen", "Playing song directly: ${clickedSong.title}")
                                     libraryViewModel.playSong(clickedSong)
-                                    playerViewModel.setCurrentSong(clickedSong)
                                 }
-
                                 playerViewModel.setMiniPlayerVisible(true)
                             }
                             layoutParams = RecyclerView.LayoutParams(
