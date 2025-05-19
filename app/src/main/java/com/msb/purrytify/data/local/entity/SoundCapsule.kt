@@ -11,11 +11,11 @@ import java.time.LocalDateTime
 data class SoundCapsule(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
-    val month: String,
+    val month: Int,
     val year: Int,
     val timeListenedMinutes: Int,
-    val topArtist: String,
-    val topSong: String,
+    val topArtistId: Long,
+    val topSongId: Long,
     val lastUpdated: LocalDateTime,
     val ownerId: Long
 )
@@ -26,8 +26,7 @@ data class DayStreak(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val soundCapsuleId: Long,
-    val songTitle: String,
-    val artist: String,
+    val songId: Long,
     val startDate: LocalDateTime,
     val endDate: LocalDateTime,
     val streakDays: Int
@@ -41,4 +40,15 @@ data class DailyListeningTime(
     val soundCapsuleId: Long,
     val date: LocalDateTime,
     val minutes: Int
-) 
+)
+
+@Entity(tableName = "monthly_song_play_counts")
+@TypeConverters(DateTimeConverter::class)
+data class MonthlySongPlayCount(
+    @PrimaryKey(autoGenerate = true)
+    val id: Long = 0,
+    val songId: Long,
+    val soundCapsuleId: Long,
+    val playCount: Int = 0,
+    val lastUpdated: LocalDateTime = LocalDateTime.now()
+)
