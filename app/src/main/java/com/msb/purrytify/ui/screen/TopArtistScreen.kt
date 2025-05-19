@@ -8,11 +8,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.AlignmentLine
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.buildAnnotatedString
@@ -21,16 +22,26 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.msb.purrytify.R
-import com.msb.purrytify.data.model.Artist
+import com.msb.purrytify.data.local.entity.Artist
+import com.msb.purrytify.viewmodel.SoundCapsuleViewModel
 
 @Composable
 fun TopArtistScreen(
-    month: String,
-    year: Int,
-    artists: List<Artist>,
-    onBackClick: () -> Unit
+    soundCapsuleId: Long,
+    onBackClick: () -> Unit,
+    viewModel: SoundCapsuleViewModel = hiltViewModel()
 ) {
+    val soundCapsule by viewModel.currentSoundCapsule.collectAsStateWithLifecycle()
+    val artists by viewModel.topArtists.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+
+    LaunchedEffect(soundCapsuleId) {
+        viewModel.loadSoundCapsuleDetails(soundCapsuleId)
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -64,45 +75,54 @@ fun TopArtistScreen(
             )
         }
 
-        // Content
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 18.dp)
-        ) {
-            // Date
-            Text(
-                text = "$month $year",
-                color = Color.White,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Normal,
-                modifier = Modifier.padding(top = 16.dp)
-            )
-
-            // Title
-            Text(
-                text = buildAnnotatedString {
-                    append("You listened to ")
-                    withStyle(style = SpanStyle(color = Color(0xFF669BEC))) {
-                        append("${artists.size} artists")
-                    }
-                    append(" this month.")
-                },
-                color = Color.White,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(top = 8.dp)
-            )
-
-            // Artist List
-            artists.forEachIndexed { index, artist ->
-                ArtistItem(
-                    artist = artist,
-                    rank = index + 1,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(108.dp)
+        if (isLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = Color(0xFF1DB954))
+            }
+        } else {
+            // Content
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 18.dp)
+            ) {
+                // Date
+                Text(
+                    text = viewModel.getMonthYearString(soundCapsule),
+                    color = Color.White,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Normal,
+                    modifier = Modifier.padding(top = 16.dp)
                 )
+
+                // Title
+                Text(
+                    text = buildAnnotatedString {
+                        append("You listened to ")
+                        withStyle(style = SpanStyle(color = Color(0xFF669BEC))) {
+                            append("${artists.size} artists")
+                        }
+                        append(" this month.")
+                    },
+                    color = Color.White,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+
+                // Artist List
+                artists.forEachIndexed { index, artist ->
+                    ArtistItem(
+                        artist = artist,
+                        rank = index + 1,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(108.dp)
+                    )
+                }
             }
         }
     }

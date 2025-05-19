@@ -51,21 +51,16 @@ import com.msb.purrytify.viewmodel.AuthViewModel
 import com.msb.purrytify.viewmodel.PlayerViewModel
 import com.msb.purrytify.ui.component.NoInternet
 import com.msb.purrytify.viewmodel.SoundCapsuleViewModel
-import com.msb.purrytify.ui.component.SoundCapsuleCard
+import com.msb.purrytify.ui.component.soundcapsule.SoundCapsuleSection
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import com.msb.purrytify.utils.FileShareUtil
-import androidx.navigation.NavController
-import com.msb.purrytify.data.local.entity.DayStreak
-import com.msb.purrytify.ui.navigation.Screen
-import androidx.compose.material.icons.outlined.Download
 
 @Composable
 fun ProfileScreen(
     viewModel: ProfileViewModel = hiltViewModel(),
     authViewModel: AuthViewModel,
     playerViewModel: PlayerViewModel,
-    soundCapsuleViewModel: SoundCapsuleViewModel = hiltViewModel(),
     navController: NavController = rememberNavController()
 ) {
     val context = LocalContext.current
@@ -74,11 +69,6 @@ fun ProfileScreen(
     val isLandscape = configuration.screenWidthDp > configuration.screenHeightDp
     val scrollState = rememberScrollState()
     val lifecycleOwner = LocalLifecycleOwner.current
-
-    val soundCapsuleState by soundCapsuleViewModel.soundCapsuleState.collectAsState()
-    val dayStreaksState by soundCapsuleViewModel.dayStreaksState.collectAsState()
-    val isLoading by soundCapsuleViewModel.isLoading.collectAsState()
-    val error by soundCapsuleViewModel.error.collectAsState()
 
     fun logout() {
         authViewModel.logout()
@@ -90,10 +80,6 @@ fun ProfileScreen(
         lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
             Log.d("ProfileScreen", "ProfileScreen STARTED, refreshing profile")
             viewModel.refreshProfile()
-            // Load current month's sound capsule
-            val currentMonth = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMMM"))
-            val currentYear = LocalDateTime.now().year
-            soundCapsuleViewModel.loadSoundCapsule(currentMonth, currentYear)
         }
     }
 
@@ -122,21 +108,6 @@ fun ProfileScreen(
                         profile = (profileUiState as ProfileUiState.Success).profile,
                         logout = { logout() },
                         onScanQRCode = { navController.navigate(Screen.QRScanner.route) },
-                        soundCapsule = soundCapsuleState,
-                        dayStreaks = dayStreaksState,
-                        isLoading = isLoading,
-                        error = error,
-                        onShare = {
-                            val csvData = soundCapsuleViewModel.exportToCSV()
-                            val fileName = "sound_capsule_${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))}.csv"
-                            FileShareUtil.shareCsvFile(context, csvData, fileName)
-                        },
-                        onTopArtistClick = { month, year ->
-                            navController.navigate(Screen.TopArtists.createRoute(month, year))
-                        },
-                        onTopSongClick = { month, year ->
-                            navController.navigate(Screen.TopSongs.createRoute(month, year))
-                        },
                         navController = navController,
                         modifier = if (isLandscape) Modifier.verticalScroll(scrollState) else Modifier
                     )
@@ -157,13 +128,6 @@ fun ProfileContent(
     profile: com.msb.purrytify.data.model.Profile,
     logout: () -> Unit,
     onScanQRCode: () -> Unit,
-    soundCapsule: SoundCapsule?,
-    dayStreaks: List<DayStreak>,
-    isLoading: Boolean,
-    error: String?,
-    onShare: () -> Unit,
-    onTopArtistClick: (String, Int) -> Unit,
-    onTopSongClick: (String, Int) -> Unit,
     navController: NavController,
     modifier: Modifier = Modifier
 ) {
@@ -319,34 +283,10 @@ fun ProfileContent(
         Spacer(modifier = Modifier.height(24.dp))
 
         // Sound Capsule Section
-        SoundCapsuleTitle()
-        Spacer(modifier = Modifier.height(16.dp))
-
-        if (isLoading) {
-            CircularProgressIndicator()
-        } else if (error != null) {
-            Text(
-                text = error,
-                color = Color.Red,
-                modifier = Modifier.padding(16.dp)
-            )
-        } else if (soundCapsule != null) {
-            SoundCapsuleCard(
-                soundCapsule = soundCapsule,
-                dayStreaks = dayStreaks,
-                onShare = onShare,
-                onTopArtistClick = { onTopArtistClick(soundCapsule.month, soundCapsule.year) },
-                onTopSongClick = { onTopSongClick(soundCapsule.month, soundCapsule.year) },
-                onTimeListenedClick = { navController.navigate(Screen.TimeListened.createRoute(soundCapsule.month, soundCapsule.year)) },
-                modifier = Modifier.fillMaxWidth()
-            )
-        } else {
-            Text(
-                text = "No data available",
-                color = Color.Gray,
-                modifier = Modifier.padding(16.dp)
-            )
-        }
+        SoundCapsuleSection(
+            navController = navController,
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
 
@@ -467,31 +407,3 @@ fun NoInternet() {
     }
 }
 
-@Composable
-fun SoundCapsuleTitle() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(46.dp),
-        contentAlignment = Alignment.CenterStart
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Your Sound Capsule",
-                style = MaterialTheme.typography.titleLarge,
-                color = Color.White,
-                fontWeight = FontWeight.Bold
-            )
-            Icon(
-                imageVector = Icons.Outlined.Download,
-                contentDescription = "Download",
-                tint = Color.White,
-                modifier = Modifier.size(24.dp)
-            )
-        }
-    }
-}

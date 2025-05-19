@@ -9,6 +9,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -21,16 +23,27 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.msb.purrytify.R
 import com.msb.purrytify.data.local.entity.Song
+import com.msb.purrytify.data.local.entity.SoundCapsule
+import com.msb.purrytify.viewmodel.SoundCapsuleViewModel
 
 @Composable
 fun TopSongScreen(
-    month: String,
-    year: Int,
-    songs: List<Song>,
-    onBackClick: () -> Unit
+    soundCapsuleId: Long,
+    onBackClick: () -> Unit,
+    viewModel: SoundCapsuleViewModel = hiltViewModel()
 ) {
+    val soundCapsule by viewModel.currentSoundCapsule.collectAsStateWithLifecycle()
+    val songs by viewModel.topSongs.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+
+    LaunchedEffect(soundCapsuleId) {
+        viewModel.loadSoundCapsuleDetails(soundCapsuleId)
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -64,45 +77,54 @@ fun TopSongScreen(
             )
         }
 
-        // Content
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 18.dp)
-        ) {
-            // Date
-            Text(
-                text = "$month $year",
-                color = Color.White,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Normal,
-                modifier = Modifier.padding(top = 16.dp)
-            )
-
-            // Title
-            Text(
-                text = buildAnnotatedString {
-                    append("You played ")
-                    withStyle(style = SpanStyle(color = Color(0xFFF8E747))) {
-                        append("${songs.size} different songs")
-                    }
-                    append(" this month.")
-                },
-                color = Color.White,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(top = 8.dp)
-            )
-
-            // Song List
-            songs.forEachIndexed { index, song ->
-                SongItem(
-                    song = song,
-                    rank = index + 1,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(108.dp)
+        if (isLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = Color(0xFF1DB954))
+            }
+        } else {
+            // Content
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 18.dp)
+            ) {
+                // Date
+                Text(
+                    text = viewModel.getMonthYearString(soundCapsule),
+                    color = Color.White,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Normal,
+                    modifier = Modifier.padding(top = 16.dp)
                 )
+
+                // Title
+                Text(
+                    text = buildAnnotatedString {
+                        append("You played ")
+                        withStyle(style = SpanStyle(color = Color(0xFFF8E747))) {
+                            append("${songs.size} different songs")
+                        }
+                        append(" this month.")
+                    },
+                    color = Color.White,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+
+                // Song List
+                songs.forEachIndexed { index, song ->
+                    SongItem(
+                        song = song,
+                        rank = index + 1,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(108.dp)
+                    )
+                }
             }
         }
     }
@@ -152,7 +174,7 @@ private fun SongItem(
 
                 // Artist
                 Text(
-                    text = song.artist,
+                    text = song.artistName,
                     color = Color.White,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Normal,

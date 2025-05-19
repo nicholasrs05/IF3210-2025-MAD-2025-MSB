@@ -13,6 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.msb.purrytify.viewmodel.SoundCapsuleViewModel
 import com.msb.purrytify.data.local.entity.DailyListeningTime
 import com.patrykandpatrick.vico.compose.axis.horizontal.rememberBottomAxis
@@ -27,18 +28,16 @@ import java.time.format.DateTimeFormatter
 
 @Composable
 fun TimeListenedScreen(
-    month: String,
-    year: Int,
+    soundCapsuleId: Long,
     onBackClick: () -> Unit,
-    soundCapsuleViewModel: SoundCapsuleViewModel = hiltViewModel()
+    viewModel: SoundCapsuleViewModel = hiltViewModel()
 ) {
-    val dailyListeningTimes by soundCapsuleViewModel.dailyListeningTimesState.collectAsState()
-    val isLoading by soundCapsuleViewModel.isLoading.collectAsState()
-    val errorState by soundCapsuleViewModel.error.collectAsState()
-    val errorMessage = errorState ?: ""
+    val soundCapsule by viewModel.currentSoundCapsule.collectAsStateWithLifecycle()
+    val dailyListeningTimes by viewModel.dailyListeningTimes.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
 
-    LaunchedEffect(month, year) {
-        soundCapsuleViewModel.loadSoundCapsule(month, year)
+    LaunchedEffect(soundCapsuleId) {
+        viewModel.loadSoundCapsuleDetails(soundCapsuleId)
     }
 
     Column(
@@ -74,100 +73,100 @@ fun TimeListenedScreen(
             )
         }
 
-        // Content
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 18.dp)
-        ) {
-            // Date
-            Text(
-                text = "$month $year",
-                color = Color.White,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Normal,
-                modifier = Modifier.padding(top = 16.dp)
-            )
-
-            // Title
-            val totalMinutes = dailyListeningTimes.sumOf { it.minutes }
-            Text(
-                text = "You listened to music for $totalMinutes minutes this month.",
-                color = Color.White,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(top = 8.dp)
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Column {
-                // Daily Average Text
-                val dailyAvg = calculateDailyAverage(dailyListeningTimes)
+        if (isLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = Color(0xFF1DB954))
+            }
+        } else {
+            // Content
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 18.dp)
+            ) {
+                // Date
                 Text(
-                    text = "Daily average: $dailyAvg min",
-                    color = Color(0xFFB3B3B3),
+                    text = viewModel.getMonthYearString(soundCapsule),
+                    color = Color.White,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Normal,
-                    lineHeight = 18.sp,
-                    modifier = Modifier
-                        .padding(top = 8.dp)
+                    modifier = Modifier.padding(top = 16.dp)
                 )
 
-                Spacer(modifier = Modifier.height(4.dp))
+                // Title
+                val totalMinutes = dailyListeningTimes.sumOf { it.minutes }
+                Text(
+                    text = "You listened to music for $totalMinutes minutes this month.",
+                    color = Color.White,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
 
-                when {
-                    isLoading -> {
-                        CircularProgressIndicator()
-                    }
-                    errorMessage.isNotEmpty() -> {
-                        Text(
-                            text = errorMessage,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-                    dailyListeningTimes.isEmpty() -> {
-                        Text(
-                            text = "No listening data available",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    else -> {
-                        // Line Chart only
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(300.dp)
-                        ) {
-                            Box(
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Column {
+                    // Daily Average Text
+                    val dailyAvg = calculateDailyAverage(dailyListeningTimes)
+                    Text(
+                        text = "Daily average: $dailyAvg min",
+                        color = Color(0xFFB3B3B3),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Normal,
+                        lineHeight = 18.sp,
+                        modifier = Modifier
+                            .padding(top = 8.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    when {
+                        dailyListeningTimes.isEmpty() -> {
+                            Text(
+                                text = "No listening data available",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        else -> {
+                            // Line Chart only
+                            Card(
                                 modifier = Modifier
-                                    .padding(16.dp)
-                                    .fillMaxSize()
+                                    .fillMaxWidth()
+                                    .height(300.dp)
                             ) {
-                                Chart(
-                                    chart = lineChart(
-                                        lines = listOf(
-                                            com.patrykandpatrick.vico.compose.chart.line.lineSpec(
-                                                lineColor = Color(0xFF1DB954)
+                                Box(
+                                    modifier = Modifier
+                                        .padding(16.dp)
+                                        .fillMaxSize()
+                                ) {
+                                    Chart(
+                                        chart = lineChart(
+                                            lines = listOf(
+                                                com.patrykandpatrick.vico.compose.chart.line.lineSpec(
+                                                    lineColor = Color(0xFF1DB954)
+                                                )
                                             )
+                                        ),
+                                        model = entryModelOf(dailyListeningTimes.mapIndexed { index, time ->
+                                            entryOf(index.toFloat(), time.minutes.toFloat())
+                                        }),
+                                        modifier = Modifier.fillMaxSize(),
+                                        startAxis = rememberStartAxis(
+                                            valueFormatter = AxisValueFormatter<AxisPosition.Vertical.Start> { value, _ ->
+                                                "${value.toInt()}"
+                                            }
+                                        ),
+                                        bottomAxis = rememberBottomAxis(
+                                            valueFormatter = AxisValueFormatter<AxisPosition.Horizontal.Bottom> { value, _ ->
+                                                val date = dailyListeningTimes[value.toInt()].date.toLocalDate()
+                                                date.format(DateTimeFormatter.ofPattern("dd"))
+                                            }
                                         )
-                                    ),
-                                    model = entryModelOf(dailyListeningTimes.mapIndexed { index, time ->
-                                        entryOf(index.toFloat(), time.minutes.toFloat())
-                                    }),
-                                    modifier = Modifier.fillMaxSize(),
-                                    startAxis = rememberStartAxis(
-                                        valueFormatter = AxisValueFormatter<AxisPosition.Vertical.Start> { value, _ ->
-                                            "${value.toInt()}"
-                                        }
-                                    ),
-                                    bottomAxis = rememberBottomAxis(
-                                        valueFormatter = AxisValueFormatter<AxisPosition.Horizontal.Bottom> { value, _ ->
-                                            val date = dailyListeningTimes[value.toInt()].date.toLocalDate()
-                                            date.format(DateTimeFormatter.ofPattern("dd"))
-                                        }
                                     )
-                                )
+                                }
                             }
                         }
                     }
