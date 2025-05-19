@@ -1,39 +1,188 @@
-package com.msb.purrytify.ui.component
+package com.msb.purrytify.ui.component.soundcapsule
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import android.content.Context
+import android.util.Log
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.msb.purrytify.R
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import com.msb.purrytify.data.local.entity.DayStreak
 import com.msb.purrytify.data.local.entity.SoundCapsule
+import com.msb.purrytify.ui.navigation.Screen
+import com.msb.purrytify.viewmodel.SoundCapsuleViewModel
+import kotlinx.coroutines.launch
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.platform.LocalContext
+import com.msb.purrytify.utils.FileShareUtil
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+
+
+@Composable
+fun SoundCapsuleSection(
+    navController: NavController,
+    modifier: Modifier = Modifier,
+    viewModel: SoundCapsuleViewModel = hiltViewModel(),
+) {
+
+    fun shareSoundCapsule(
+        capsuleToShare: SoundCapsule?,
+        soundCapsuleViewModel: SoundCapsuleViewModel,
+        context: Context
+    ) {
+        val csvData = soundCapsuleViewModel.exportToCSV(capsuleToShare)
+        if (csvData.startsWith("No SoundCapsule data")) {
+            Log.w("ProfileScreen", "Attempted to share but no capsule data: $csvData")
+        } else {
+            val fileName = "sound_capsule_${capsuleToShare?.month}_${capsuleToShare?.year}_${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))}.csv"
+            FileShareUtil.shareCsvFile(context, csvData, fileName)
+        }
+    }
+
+    val context = LocalContext.current
+    val soundCapsulesState by viewModel.soundCapsulesState.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val error by viewModel.error.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.loadAllSoundCapsules()
+    }
+
+    Column(modifier = modifier) {
+        Spacer(modifier = Modifier.height(16.dp))
+
+        when {
+            isLoading && soundCapsulesState.isEmpty() -> {
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+            error != null -> {
+                Text(
+                    text = error ?: "An unknown error occurred",
+                    color = Color.Red,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+            soundCapsulesState.isNotEmpty() -> {
+                SoundCapsuleTitle()
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(soundCapsulesState) { capsule ->
+                        SoundCapsuleCard(
+                            soundCapsule = capsule,
+                            viewModel = viewModel,
+                            onShare = { shareSoundCapsule(capsule, viewModel, context) },
+                            onTopArtistClick = { navController.navigate(Screen.TopArtists.createRoute(capsule.id)) },
+                            onTopSongClick = { navController.navigate(Screen.TopSongs.createRoute(capsule.id))  },
+                            onTimeListenedClick = { navController.navigate(Screen.TimeListened.createRoute(capsule.id)) },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+            }
+            else -> {
+                EmptySoundCapsuleState()
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmptySoundCapsuleState() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "No Sound Capsule Available",
+                color = Color.White,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Your listening history will appear here",
+                color = Color(0xFFB3B3B3),
+                fontSize = 14.sp
+            )
+        }
+    }
+}
+
+@Composable
+fun SoundCapsuleTitle() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(46.dp),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Your Sound Capsule",
+                style = MaterialTheme.typography.titleLarge,
+                color = Color.White,
+                fontWeight = FontWeight.Bold
+            )
+            Icon(
+                imageVector = Icons.Outlined.Download,
+                contentDescription = "Download",
+                tint = Color.White,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+    }
+}
 
 @Composable
 fun SoundCapsuleCard(
     soundCapsule: SoundCapsule,
-    dayStreaks: List<DayStreak>,
+    viewModel: SoundCapsuleViewModel,
     onShare: () -> Unit,
     onTopArtistClick: () -> Unit,
     onTopSongClick: () -> Unit,
     onTimeListenedClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var longestStreak by remember { mutableStateOf<DayStreak?>(null) }
+    var isLoadingStreak by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(soundCapsule.id) {
+        isLoadingStreak = true
+        coroutineScope.launch {
+            longestStreak = viewModel.getLongestDayStreak(soundCapsule.id)
+            isLoadingStreak = false
+        }
+    }
+
     Column(
         modifier = modifier.fillMaxWidth()
     ) {
@@ -78,12 +227,12 @@ fun SoundCapsuleCard(
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 TopArtistSection(
-                    artist = soundCapsule.topArtist,
+                    artist = "Artist ID: ${soundCapsule.topArtistId}",
                     modifier = Modifier.weight(1f),
                     onClick = onTopArtistClick
                 )
                 TopSongSection(
-                    songTitle = soundCapsule.topSong,
+                    songTitle = "Song ID: ${soundCapsule.topSongId}",
                     modifier = Modifier.weight(1f),
                     onClick = onTopSongClick
                 )
@@ -91,171 +240,29 @@ fun SoundCapsuleCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Day Streaks
-            DayStreaksSection(dayStreaks)
+            // Longest Day Streak
+            when {
+                isLoadingStreak -> {
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = Color(0xFF1DB954)
+                        )
+                    }
+                }
+                longestStreak != null -> {
+                    DayStreaksSection(
+                        streak = longestStreak,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
         }
     }
 }
 
-@Composable
-private fun TimeListenedSection(
-    minutes: Int,
-    onClick: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(0xFF2A2A2A), RoundedCornerShape(6.dp))
-            .padding(12.dp)
-            .clickable(onClick = onClick)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Time listened",
-                color = Color.White,
-                fontSize = 8.sp
-            )
-            Icon(
-                imageVector = Icons.Default.KeyboardArrowRight,
-                contentDescription = "View more",
-                tint = Color.White,
-                modifier = Modifier.size(16.dp)
-            )
-        }
-        Text(
-            text = "$minutes minutes",
-            color = Color(0xFF1DB954),
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold
-        )
-    }
-}
 
-@Composable
-private fun TopArtistSection(
-    artist: String,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
-    Column(
-        modifier = modifier
-            .background(Color(0xFF2A2A2A), RoundedCornerShape(6.dp))
-            .padding(12.dp)
-            .clickable(onClick = onClick)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Top artist",
-                color = Color.White,
-                fontSize = 8.sp
-            )
-            Icon(
-                imageVector = Icons.Default.KeyboardArrowRight,
-                contentDescription = "View more",
-                tint = Color.White,
-                modifier = Modifier.size(16.dp)
-            )
-        }
-        Text(
-            text = artist,
-            color = Color(0xFF669BEC),
-            fontSize = 14.sp,
-            fontWeight = FontWeight.SemiBold
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Image(
-            painter = painterResource(id = R.drawable.image),
-            contentDescription = "Artist album cover",
-            modifier = Modifier
-                .size(80.dp)
-                .clip(CircleShape),
-            contentScale = ContentScale.Crop
-        )
-    }
-}
 
-@Composable
-private fun TopSongSection(
-    songTitle: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier
-            .background(Color(0xFF2A2A2A), RoundedCornerShape(6.dp))
-            .padding(12.dp)
-            .clickable(onClick = onClick)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Top song",
-                color = Color.White,
-                fontSize = 8.sp
-            )
-            Icon(
-                imageVector = Icons.Default.KeyboardArrowRight,
-                contentDescription = "View more",
-                tint = Color.White,
-                modifier = Modifier.size(16.dp)
-            )
-        }
-        Text(
-            text = songTitle,
-            color = Color(0xFFF8E747),
-            fontSize = 14.sp,
-            fontWeight = FontWeight.SemiBold
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Image(
-            painter = painterResource(id = R.drawable.image),
-            contentDescription = "Song album cover",
-            modifier = Modifier
-                .size(80.dp)
-                .clip(CircleShape),
-            contentScale = ContentScale.Crop
-        )
-    }
-}
-
-@Composable
-private fun DayStreaksSection(dayStreaks: List<DayStreak>) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(0xFF2A2A2A), RoundedCornerShape(6.dp))
-            .padding(12.dp)
-    ) {
-        Text(
-            text = "Streak",
-            color = Color.White,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.SemiBold
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        dayStreaks.forEach { streak ->
-            Text(
-                text = "${streak.songTitle} by ${streak.artist}",
-                color = Color.White,
-                fontSize = 11.sp
-            )
-            Text(
-                text = "${streak.streakDays} days streak",
-                color = Color(0xFFB3B3B3),
-                fontSize = 11.sp
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-    }
-} 
