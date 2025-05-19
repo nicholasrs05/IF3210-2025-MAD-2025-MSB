@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.msb.purrytify.data.local.entity.Song
 import com.msb.purrytify.data.model.Resource
 import com.msb.purrytify.data.repository.OnlineSongRepository
+import com.msb.purrytify.model.ProfileModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,7 +16,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class OnlineSongsViewModel @Inject constructor(
-    private val onlineSongRepository: OnlineSongRepository
+    private val onlineSongRepository: OnlineSongRepository,
+    private val profileModel: ProfileModel
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(OnlineSongsUiState())
@@ -24,10 +26,26 @@ class OnlineSongsViewModel @Inject constructor(
     private val _countryUiState = MutableStateFlow(OnlineSongsUiState())
     val countryUiState: StateFlow<OnlineSongsUiState> = _countryUiState.asStateFlow()
 
+    private val _currentCountryCode = MutableStateFlow("")
+    val currentCountryCode: StateFlow<String> = _currentCountryCode.asStateFlow()
+
     private val availableCountries = setOf("ID", "MY", "US", "GB", "CH", "DE", "BR")
     
     init {
         fetchGlobalTopSongs()
+        updateCountryCodeFromProfile()
+    }
+
+    private fun updateCountryCodeFromProfile() {
+        viewModelScope.launch {
+            profileModel.currentProfile.collect { profile ->
+                val countryCode = profile.location.uppercase()
+                if (countryCode.isNotBlank() && countryCode != _currentCountryCode.value) {
+                    _currentCountryCode.value = countryCode
+                    fetchCountryTopSongs(countryCode)
+                }
+            }
+        }
     }
     
     fun fetchGlobalTopSongs(forceRefresh: Boolean = false) {
@@ -62,7 +80,7 @@ class OnlineSongsViewModel @Inject constructor(
         }
     }
 
-    fun fetchCountryTopSongs(countryCode: String, forceRefresh: Boolean = false) {
+    fun fetchCountryTopSongs(countryCode: String = _currentCountryCode.value, forceRefresh: Boolean = false) {
         if (countryCode !in availableCountries) {
             _countryUiState.update { it.copy(isLoading = false, songs = emptyList(), error = "Top 10 country songs are not available in your location yet") }
             return

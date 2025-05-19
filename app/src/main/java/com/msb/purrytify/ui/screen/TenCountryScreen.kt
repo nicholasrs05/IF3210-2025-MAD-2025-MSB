@@ -63,7 +63,7 @@ fun TenCountryScreen(
     onlineSongsViewModel: OnlineSongsViewModel = hiltViewModel(),
     playerViewModel: PlayerViewModel = hiltViewModel(),
 ) {
-    val countryCode = "ID" // nanti diganti spy jdi lokasi user
+    val countryCode by onlineSongsViewModel.currentCountryCode.collectAsState()
     val uiState by onlineSongsViewModel.countryUiState.collectAsState()
     val coroutineScope = rememberCoroutineScope()
 
@@ -289,12 +289,24 @@ fun TenCountryScreen(
                                     modifier = Modifier.fillMaxSize(),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text(
-                                        text = uiState.error ?: "Top 10 country songs are not available in your location yet",
-                                        color = textColor,
-                                        fontWeight = FontWeight.Medium,
-                                        textAlign = TextAlign.Center
-                                    )
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        modifier = Modifier.padding(16.dp)
+                                    ) {
+                                        Text(
+                                            text = "Location Not Supported",
+                                            color = textColor,
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = 18.sp
+                                        )
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Text(
+                                            text = "Top 10 songs are not available for your current location ($countryCode). Please update your location in profile settings.",
+                                            color = textColor,
+                                            fontWeight = FontWeight.Medium,
+                                            textAlign = TextAlign.Center
+                                        )
+                                    }
                                 }
                             }
                             uiState.error != null -> {
