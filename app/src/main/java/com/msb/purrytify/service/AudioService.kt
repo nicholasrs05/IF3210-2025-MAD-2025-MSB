@@ -4,17 +4,13 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.drawable.BitmapDrawable
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Binder
-import android.os.Build
 import android.os.IBinder
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
@@ -53,7 +49,7 @@ class AudioService : Service() {
         const val ACTION_NEXT = "com.msb.purrytify.action.NEXT"
         const val ACTION_PREVIOUS = "com.msb.purrytify.action.PREVIOUS"
         const val ACTION_STOP = "com.msb.purrytify.action.STOP"
-        // Request codes for pending intents
+
         private const val REQ_PLAY_PAUSE = 1
         private const val REQ_NEXT = 2
         private const val REQ_PREV = 3
@@ -67,7 +63,6 @@ class AudioService : Service() {
     private val serviceJob = SupervisorJob()
     private val serviceScope = CoroutineScope(Dispatchers.Main + serviceJob)
 
-    // Add flag to track if MediaPlayer is prepared
     private var mediaPlayerPrepared = false
 
     private var playlist: List<Song> = emptyList()
@@ -86,19 +81,6 @@ class AudioService : Service() {
     private val _playbackProgress = MutableStateFlow(0f)
     val playbackProgress: StateFlow<Float> = _playbackProgress.asStateFlow()
 
-    private val mediaControlReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            when (intent?.action) {
-                ACTION_PLAY -> resumePlayback()
-                ACTION_PAUSE -> pausePlayback()
-                ACTION_TOGGLE_PLAY -> togglePlayPause()
-                ACTION_NEXT -> playNext()
-                ACTION_PREVIOUS -> playPrevious()
-                ACTION_STOP -> stopPlayback()
-            }
-        }
-    }
-
     inner class AudioServiceBinder : Binder() {
         fun getService(): AudioService = this@AudioService
     }
@@ -110,17 +92,6 @@ class AudioService : Service() {
         createNotificationChannel()
 
         initMediaSession()
-
-        val filter = IntentFilter().apply {
-            addAction(ACTION_PLAY)
-            addAction(ACTION_PAUSE)
-            addAction(ACTION_TOGGLE_PLAY)
-            addAction(ACTION_NEXT)
-            addAction(ACTION_PREVIOUS)
-            addAction(ACTION_STOP)
-        }
-
-        registerReceiver(mediaControlReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
     }
 
     override fun onBind(intent: Intent?): IBinder {
@@ -146,26 +117,21 @@ class AudioService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         releaseResources()
-        unregisterReceiver(mediaControlReceiver)
         serviceJob.cancel()
     }
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "Purrytify Music Playback",
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description = "Controls for music playback"
-                setShowBadge(false)
-            }
-            
-            notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
-        } else {
-            notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            "Purrytify Music Playback",
+            NotificationManager.IMPORTANCE_LOW
+        ).apply {
+            description = "Controls for music playback"
+            setShowBadge(false)
         }
+
+        notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.createNotificationChannel(channel)
     }
 
     private fun initMediaSession() {
@@ -227,7 +193,6 @@ class AudioService : Service() {
             releaseMediaPlayer()
 
             mediaPlayer = MediaPlayer()
-            // Reset prepared flag when creating a new MediaPlayer
             mediaPlayerPrepared = false
             
             mediaPlayer?.setOnErrorListener { mp, what, extra ->
@@ -252,7 +217,6 @@ class AudioService : Service() {
             
             mediaPlayer?.setOnPreparedListener {
                 try {
-                    // Set prepared flag to true when MediaPlayer is prepared
                     mediaPlayerPrepared = true
                     it.start()
                     _isPlaying.value = true
@@ -458,12 +422,7 @@ class AudioService : Service() {
         } else {
             notificationManager.notify(NOTIFICATION_ID, notification)
             
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                stopForeground(STOP_FOREGROUND_DETACH)
-            } else {
-                @Suppress("DEPRECATION")
-                stopForeground(false)
-            }
+            stopForeground(STOP_FOREGROUND_DETACH)
         }
     }
 
@@ -508,13 +467,8 @@ class AudioService : Service() {
                 _isPlaying.value = false
                 updatePlaybackState()
                 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                    stopForeground(STOP_FOREGROUND_REMOVE)
-                } else {
-                    @Suppress("DEPRECATION")
-                    stopForeground(true)
-                }
-                
+                stopForeground(STOP_FOREGROUND_REMOVE)
+
                 return
             }
         }
@@ -562,12 +516,7 @@ class AudioService : Service() {
         _isPlaying.value = false
         updatePlaybackState()
         
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            stopForeground(STOP_FOREGROUND_REMOVE)
-        } else {
-            @Suppress("DEPRECATION")
-            stopForeground(true)
-        }
+        stopForeground(STOP_FOREGROUND_REMOVE)
         
         stopSelf()
     }
@@ -588,10 +537,8 @@ class AudioService : Service() {
     fun getDuration(): Int {
         return try {
             if (mediaPlayer != null && mediaPlayerPrepared) {
-                // Only call duration on the MediaPlayer if it's prepared
                 mediaPlayer?.duration ?: _currentSong.value?.duration?.toInt() ?: 0
             } else {
-                // Fall back to the song's metadata duration if MediaPlayer isn't ready
                 _currentSong.value?.duration?.toInt() ?: 0
             }
         } catch (e: Exception) {
