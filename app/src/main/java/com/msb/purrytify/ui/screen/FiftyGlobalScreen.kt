@@ -287,7 +287,7 @@ fun FiftyGlobalScreen(
                                         )
                                         Spacer(modifier = Modifier.height(16.dp))
                                         Button(
-                                            onClick = { viewModel.fetchGlobalTopSongs(true) },
+                                            onClick = { viewModel.fetchGlobalTopSongs() },
                                             colors = ButtonDefaults.buttonColors(
                                                 containerColor = accentColor
                                             )

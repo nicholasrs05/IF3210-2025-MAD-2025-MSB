@@ -48,9 +48,9 @@ class OnlineSongsViewModel @Inject constructor(
         }
     }
     
-    fun fetchGlobalTopSongs(forceRefresh: Boolean = false) {
+    fun fetchGlobalTopSongs() {
         viewModelScope.launch {
-            onlineSongRepository.getGlobalTopSongs(forceRefresh).collect { result ->
+            onlineSongRepository.getGlobalTopSongs().collect { result ->
                 when (result) {
                     is Resource.Loading -> {
                         _uiState.update { it.copy(isLoading = true) }
@@ -80,13 +80,13 @@ class OnlineSongsViewModel @Inject constructor(
         }
     }
 
-    fun fetchCountryTopSongs(countryCode: String = _currentCountryCode.value, forceRefresh: Boolean = false) {
+    fun fetchCountryTopSongs(countryCode: String = _currentCountryCode.value) {
         if (countryCode !in availableCountries) {
             _countryUiState.update { it.copy(isLoading = false, songs = emptyList(), error = "Top 10 country songs are not available in your location yet") }
             return
         }
         viewModelScope.launch {
-            onlineSongRepository.getCountryTopSongs(countryCode, forceRefresh).collect { result ->
+            onlineSongRepository.getCountryTopSongs(countryCode).collect { result ->
                 when (result) {
                     is Resource.Loading -> _countryUiState.update { it.copy(isLoading = true) }
                     is Resource.Success -> {

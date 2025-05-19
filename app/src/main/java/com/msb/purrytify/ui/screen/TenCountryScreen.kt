@@ -327,7 +327,7 @@ fun TenCountryScreen(
                                         )
                                         Spacer(modifier = Modifier.height(16.dp))
                                         Button(
-                                            onClick = { onlineSongsViewModel.fetchCountryTopSongs(countryCode, forceRefresh = true) },
+                                            onClick = { onlineSongsViewModel.fetchCountryTopSongs(countryCode) },
                                             colors = ButtonDefaults.buttonColors(
                                                 containerColor = accentColor
                                             )
