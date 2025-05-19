@@ -58,16 +58,18 @@ class OnlineSongRepository @Inject constructor(
 
     // Convert to playable songs (without storing in database)
     fun convertToPlayableSongs(songResponses: List<SongResponse>): List<Song> {
+        // Create entity artist
         return songResponses.map { songResponse ->
             Song(
                 id = songResponse.id,
                 title = songResponse.title,
-                artist = songResponse.artist,
+                artistName = songResponse.artist,
                 filePath = songResponse.url,
                 artworkPath = songResponse.artwork,
                 duration = convertDurationStringToMs(songResponse.duration),
                 isLiked = false,
                 ownerId = -1, // Use a special value for online songs
+                artistId = -1,
                 isFromApi = true
             )
         }

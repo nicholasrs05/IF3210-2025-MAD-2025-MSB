@@ -37,7 +37,7 @@ class QRSharingService @Inject constructor(
             val qrBitmap = QRGenerator.generateQRCodeWithInfo(
                 songId = song.id.toString(),
                 title = song.title,
-                artist = song.artist,
+                artist = song.artistName,
                 qrSize = 512
             )
             
@@ -51,7 +51,7 @@ class QRSharingService @Inject constructor(
                     putExtra(Intent.EXTRA_STREAM, uri)
                     type = "image/png"
                     putExtra(Intent.EXTRA_SUBJECT, "Check out this song: ${song.title}")
-                    putExtra(Intent.EXTRA_TEXT, "Check out \"${song.title}\" by ${song.artist} on Purrytify!")
+                    putExtra(Intent.EXTRA_TEXT, "Check out \"${song.title}\" by ${song.artistName} on Purrytify!")
                     
                     // Grant permission to receive app
                     flags = Intent.FLAG_GRANT_READ_URI_PERMISSION

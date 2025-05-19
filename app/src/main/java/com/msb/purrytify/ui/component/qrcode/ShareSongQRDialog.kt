@@ -63,7 +63,7 @@ fun ShareSongQRDialog(
             qrBitmap = QRCodeGenerator.generateQRCodeWithInfo(
                 songId = song.id.toString(),
                 songTitle = song.title,
-                artist = song.artist,
+                artist = song.artistName,
                 qrSize = 600
             )
         }
@@ -121,7 +121,7 @@ fun ShareSongQRDialog(
                 )
                 
                 Text(
-                    text = song.artist,
+                    text = song.artistName,
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -179,7 +179,7 @@ private fun shareSongQRCode(context: Context, song: Song, qrBitmap: Bitmap?) {
                     type = "image/png"
                     putExtra(Intent.EXTRA_STREAM, contentUri)
                     putExtra(Intent.EXTRA_SUBJECT, "Purrytify: ${song.title}")
-                    putExtra(Intent.EXTRA_TEXT, "Check out \"${song.title}\" by ${song.artist} on Purrytify!")
+                    putExtra(Intent.EXTRA_TEXT, "Check out \"${song.title}\" by ${song.artistName} on Purrytify!")
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
                 

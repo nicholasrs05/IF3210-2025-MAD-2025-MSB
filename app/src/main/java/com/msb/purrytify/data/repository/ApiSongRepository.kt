@@ -2,6 +2,7 @@ package com.msb.purrytify.data.repository
 
 import android.util.Log
 import com.msb.purrytify.data.api.ApiService
+import com.msb.purrytify.data.local.entity.Artist
 import com.msb.purrytify.data.local.entity.Song
 import com.msb.purrytify.data.model.SongResponse
 import kotlinx.coroutines.Dispatchers
@@ -12,6 +13,7 @@ import javax.inject.Singleton
 @Singleton
 class ApiSongRepository @Inject constructor(
     private val apiService: ApiService,
+    private val artistRepository: ArtistRepository
 ) {
     
     /**
@@ -38,17 +40,32 @@ class ApiSongRepository @Inject constructor(
      * This is useful when you need to play an API song using the same player infrastructure
      */
     suspend fun convertApiSongToLocalSong(songResponse: SongResponse, userId: Long): Song = withContext(Dispatchers.IO) {
-        // In a real implementation, you would download the artwork and song file
-        // and save them locally before creating a Song entity
+        // First, check if artist exists (case insensitive)
+        val existingArtist = artistRepository.getArtistByName(songResponse.artist.lowercase())
+        val artistId = if (existingArtist != null) {
+            // If artist exists, update their image if the new song has an artwork
+            if (songResponse.artwork.isNotEmpty()) {
+                artistRepository.updateArtist(existingArtist.copy(imageUrl = songResponse.artwork))
+            }
+            existingArtist.id
+        } else {
+            // Create new artist if doesn't exist
+            artistRepository.insertArtist(
+                Artist(
+                    name = songResponse.artist,
+                    imageUrl = if (songResponse.artwork.isNotEmpty()) songResponse.artwork else null
+                )
+            )
+        }
         
-        // For now, we'll create a Song entity with the API data
-        // In a real app, you'd implement the file downloading/caching logic here
+        // Create a Song entity with the API data
         val durationMs = convertDurationStringToMs(songResponse.duration)
         
         return@withContext Song(
             id = songResponse.id,
             title = songResponse.title,
-            artist = songResponse.artist,
+            artistName = songResponse.artist,
+            artistId = artistId,
             filePath = songResponse.url,
             artworkPath = songResponse.artwork,
             duration = durationMs,

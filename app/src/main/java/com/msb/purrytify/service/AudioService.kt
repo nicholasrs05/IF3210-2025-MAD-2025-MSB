@@ -285,7 +285,7 @@ class AudioService : Service() {
     private fun updateMediaMetadata(song: Song) {
         val metadataBuilder = MediaMetadataCompat.Builder().apply {
             putString(MediaMetadataCompat.METADATA_KEY_TITLE, song.title)
-            putString(MediaMetadataCompat.METADATA_KEY_ARTIST, song.artist)
+            putString(MediaMetadataCompat.METADATA_KEY_ARTIST, song.artistName)
             putLong(MediaMetadataCompat.METADATA_KEY_DURATION, song.duration)
             
             if (song.artworkPath.isNotEmpty()) {
@@ -434,7 +434,7 @@ class AudioService : Service() {
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher_foreground)
             .setContentTitle(song.title)
-            .setContentText(song.artist)
+            .setContentText(song.artistName)
             .setLargeIcon(artwork)
             .setContentIntent(contentIntent)
             .setDeleteIntent(stopIntent)

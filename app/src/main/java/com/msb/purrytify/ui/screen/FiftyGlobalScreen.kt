@@ -264,7 +264,7 @@ fun OnlineSongItem(song: Song, onSongClick: () -> Unit) {
             )
 
             Text(
-                text = song.artist,
+                text = song.artistName,
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.LightGray,
                 maxLines = 1,

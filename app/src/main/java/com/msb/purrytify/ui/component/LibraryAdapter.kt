@@ -29,7 +29,7 @@ class LibraryAdapter(
 
         fun bind(song: Song){
             title.text = song.title
-            artist.text = song.artist
+            artist.text = song.artistName
 
             val minutes = TimeUnit.MILLISECONDS.toMinutes(song.duration)
             val seconds = TimeUnit.MILLISECONDS.toSeconds(song.duration) - TimeUnit.MINUTES.toSeconds(minutes)

@@ -194,7 +194,7 @@ fun NewSongItem(song: Song, onSongClick: (Song) -> Unit) {
         )
 
         Text(
-            text = song.artist,
+            text = song.artistName,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
@@ -265,7 +265,7 @@ fun RecentlyPlayedItem(song: Song, onSongClick: (Song) -> Unit) {
             )
 
             Text(
-                text = song.artist,
+                text = song.artistName,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,

@@ -461,7 +461,7 @@ fun PlayerScreen(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = currentPlayingSong.artist,
+                        text = currentPlayingSong.artistName,
                         color = textColor.copy(alpha = 0.7f),
                         fontSize = 16.sp
                     )
@@ -536,7 +536,7 @@ fun EditSongDialog(
     // Using the existing playerViewModel instead of a separate SongViewModel
     
     var title by remember { mutableStateOf(song.title) }
-    var artist by remember { mutableStateOf(song.artist) }
+    var artist by remember { mutableStateOf(song.artistName) }
     var selectedArtworkUri by remember { mutableStateOf<Uri?>(null) }
     var showPermissionDialog by remember { mutableStateOf(false) }
     

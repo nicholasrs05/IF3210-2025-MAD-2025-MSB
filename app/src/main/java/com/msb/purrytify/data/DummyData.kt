@@ -1,14 +1,15 @@
 package com.msb.purrytify.data
 
+import com.msb.purrytify.data.local.entity.Artist
 import com.msb.purrytify.data.local.entity.Song
-import com.msb.purrytify.data.model.Artist
 
 object DummyData {
     val dummySongs = listOf(
         Song(
             id = 1,
             title = "Shape of You",
-            artist = "Ed Sheeran",
+            artistName = "Ed Sheeran",
+            artistId = 1, // Ed Sheeran
             duration = 235000, // 3:55 in milliseconds
             filePath = "",
             artworkPath = "",
@@ -22,7 +23,8 @@ object DummyData {
         Song(
             id = 2,
             title = "Blinding Lights",
-            artist = "The Weeknd",
+            artistName = "The Weeknd",
+            artistId = 2, // The Weeknd
             duration = 200000, // 3:20 in milliseconds
             filePath = "",
             artworkPath = "",
@@ -36,7 +38,8 @@ object DummyData {
         Song(
             id = 3,
             title = "Dance Monkey",
-            artist = "Tones and I",
+            artistName = "Tones and I",
+            artistId = 3, // Taylor Swift
             duration = 210000, // 3:30 in milliseconds
             filePath = "",
             artworkPath = "",
@@ -50,7 +53,8 @@ object DummyData {
         Song(
             id = 4,
             title = "Someone You Loved",
-            artist = "Lewis Capaldi",
+            artistName = "Lewis Capaldi",
+            artistId = 4, // Drake
             duration = 182000, // 3:02 in milliseconds
             filePath = "",
             artworkPath = "",
@@ -64,7 +68,8 @@ object DummyData {
         Song(
             id = 5,
             title = "Bad Guy",
-            artist = "Billie Eilish",
+            artistName = "Billie Eilish",
+            artistId = 5, // Billie Eilish
             duration = 194000, // 3:14 in milliseconds
             filePath = "",
             artworkPath = "",
@@ -79,27 +84,27 @@ object DummyData {
 
     val dummyArtists = listOf(
         Artist(
-            id = "1",
+            id = 1,
             name = "Ed Sheeran",
             imageUrl = null
         ),
         Artist(
-            id = "2",
+            id = 2,
             name = "The Weeknd",
             imageUrl = null
         ),
         Artist(
-            id = "3",
+            id = 3,
             name = "Taylor Swift",
             imageUrl = null
         ),
         Artist(
-            id = "4",
+            id = 4,
             name = "Drake",
             imageUrl = null
         ),
         Artist(
-            id = "5",
+            id = 5,
             name = "Billie Eilish",
             imageUrl = null
         )
