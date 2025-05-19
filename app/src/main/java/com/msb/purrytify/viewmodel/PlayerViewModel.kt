@@ -12,9 +12,12 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.msb.purrytify.data.local.entity.Artist
 import com.msb.purrytify.data.local.entity.Song
 import com.msb.purrytify.data.repository.ApiSongRepository
+import com.msb.purrytify.data.repository.ArtistRepository
 import com.msb.purrytify.data.repository.SongRepository
+import com.msb.purrytify.data.repository.SoundCapsuleRepository
 import com.msb.purrytify.model.ProfileModel
 import com.msb.purrytify.qr.QRSharingService
 import com.msb.purrytify.service.AudioService
@@ -34,7 +37,9 @@ class PlayerViewModel @Inject constructor(
     private val apiSongRepository: ApiSongRepository,
     private val playerManager: PlayerManager,
     profileModel: ProfileModel,
-    private val qrSharingService: QRSharingService
+    private val qrSharingService: QRSharingService,
+    private val artistRepository: ArtistRepository,
+    private val soundCapsuleRepository: SoundCapsuleRepository
 ) : AndroidViewModel(application) {
 
     private val _currentSong = mutableStateOf<Song?>(null)
@@ -313,9 +318,31 @@ class PlayerViewModel @Inject constructor(
 
     fun addSong(title: String, artist: String, filePath: String, artworkPath: String, duration: Long) {
         viewModelScope.launch(Dispatchers.IO) {
+            // First, check if artist exists (case insensitive)
+            val existingArtist = artistRepository.getArtistByName(artist.lowercase())
+            val artistId = if (existingArtist != null) {
+                // If artist exists, update their image if the new song has an artwork
+                if (artworkPath.isNotEmpty()) {
+                    artistRepository.updateArtist(existingArtist.copy(imageUrl = artworkPath))
+                }
+                existingArtist.id
+            } else {
+                // Create new artist if doesn't exist
+                artistRepository.insertArtist(
+                    Artist(
+                        name = artist,
+                        imageUrl = if (artworkPath.isNotEmpty()) artworkPath else null
+                    )
+                )
+            }
+
+            Log.d("Add Song", "Duration: $duration")
+
+            // Create and insert the song with only artistId
             val song = Song(
                 title = title,
-                artist = artist,
+                artistName = artist,
+                artistId = artistId,
                 filePath = filePath,
                 artworkPath = artworkPath,
                 duration = duration,
@@ -372,11 +399,17 @@ class PlayerViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 songRepository.getSongById(songId)?.let { existingSong ->
+                    val existingArtistId = existingSong.artistId
+                    val existingArtist = artistRepository.getArtistById(existingArtistId)
+                    existingArtist?.let {
+                        artistRepository.updateArtist(it.copy(name = artist))
+                    }
+
                     val updatedSong = existingSong.copy(
                         title = title,
-                        artist = artist,
                         artworkPath = artworkPath
                     )
+
                     songRepository.update(updatedSong)
                     
                     if (_currentSong.value?.id == songId) {
