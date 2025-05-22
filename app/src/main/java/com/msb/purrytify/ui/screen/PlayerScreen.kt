@@ -41,7 +41,6 @@ import androidx.compose.foundation.clickable
 import coil3.compose.rememberAsyncImagePainter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.zIndex
-import androidx.core.graphics.ColorUtils
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.palette.graphics.Palette
 import coil3.compose.AsyncImage
@@ -63,21 +62,15 @@ import coil3.BitmapImage
 import coil3.ImageLoader
 import coil3.request.SuccessResult
 import coil3.request.allowHardware
-import kotlin.math.abs
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.Brush
+import java.util.Locale
+import androidx.core.net.toUri
 
-// Enhanced color utilities for better contrast
+
 object EnhancedColorUtils {
-
-    /**
-     * Calculates if a color is light (luminance > 0.5)
-     */
     private fun Color.isLight(): Boolean = luminance() > 0.5f
 
-    /**
-     * Ensures sufficient contrast between colors
-     */
     fun ensureContrast(
         foreground: Color,
         background: Color,
@@ -87,10 +80,8 @@ object EnhancedColorUtils {
 
         return if (contrastRatio < minContrast) {
             if (background.isLight()) {
-                // Background is light, make foreground darker
                 adjustColorForContrast(foreground, background, targetLuminance = 0.15f)
             } else {
-                // Background is dark, make foreground lighter
                 adjustColorForContrast(foreground, background, targetLuminance = 0.85f)
             }
         } else {
@@ -98,9 +89,6 @@ object EnhancedColorUtils {
         }
     }
 
-    /**
-     * Calculates contrast ratio between two colors
-     */
     private fun calculateContrastRatio(color1: Color, color2: Color): Float {
         val lum1 = color1.luminance()
         val lum2 = color2.luminance()
@@ -109,9 +97,6 @@ object EnhancedColorUtils {
         return (lighter + 0.05f) / (darker + 0.05f)
     }
 
-    /**
-     * Adjusts a color to achieve target luminance
-     */
     private fun adjustColorForContrast(
         color: Color,
         background: Color,
@@ -341,7 +326,7 @@ fun PlayerScreen(
 
                 if (artworkUriString.isNotEmpty()) {
                     val artworkUri = artworkUriString.takeIf { it.isNotEmpty() }?.let {
-                        Uri.parse(it)
+                        it.toUri()
                     }
                     AsyncImage(
                         model = ImageRequest.Builder(LocalContext.current)
@@ -736,7 +721,6 @@ fun PlayerScreen(
                             RepeatMode.NONE -> Icons.Filled.Repeat
                             RepeatMode.ONE -> Icons.Filled.RepeatOne
                             RepeatMode.ALL -> Icons.Filled.RepeatOn
-                            else -> Icons.Filled.Repeat
                         },
                         contentDescription = "Repeat",
                         tint = if (viewModel.repeatMode.value != RepeatMode.NONE) 
@@ -928,7 +912,7 @@ fun EditSongDialog(
                             val minutes = song.duration / 60000
                             val seconds = (song.duration % 60000) / 1000
                             Text(
-                                text = "Duration: ${minutes}:${String.format("%02d", seconds)}",
+                                text = "Duration: ${minutes}:${String.format(Locale.getDefault(), "%02d", seconds)}",
                                 color = colorScheme.secondaryText,
                                 fontSize = 11.sp,
                                 modifier = Modifier.padding(top = 8.dp)

@@ -20,7 +20,7 @@ import com.msb.purrytify.ui.theme.AppTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.fillMaxSize
 import com.msb.purrytify.ui.component.NetworkPopUp
-import com.msb.purrytify.utils.NetworkStatusListener
+import com.msb.purrytify.utils.networkStatusListener
 import com.msb.purrytify.utils.NotificationPermissionHelper
 import com.msb.purrytify.viewmodel.PlayerViewModel
 import android.content.pm.PackageManager
@@ -46,7 +46,7 @@ class MainActivity : ComponentActivity() {
                 val configuration = resources.configuration
                 val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
-                val isConnected = NetworkStatusListener()
+                val isConnected = networkStatusListener()
                 val playerViewModel: PlayerViewModel = hiltViewModel()
                 val isMiniPlayerVisible = playerViewModel.isMiniPlayerVisible.value
 
