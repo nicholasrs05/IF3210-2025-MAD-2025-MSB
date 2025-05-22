@@ -120,4 +120,6 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
 
     implementation("androidx.media:media:1.7.0")
+
+    debugImplementation(libs.leakcanary.android)
 }

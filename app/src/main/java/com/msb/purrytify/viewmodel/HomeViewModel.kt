@@ -30,22 +30,7 @@ class HomeViewModel @Inject constructor(
     val recentlyPlayedSongs: LiveData<List<Song>> = songRepository.fetchRecentlyPlayedSongs(userId).asLiveData()
     
     val newSongs: LiveData<List<Song>> = songRepository.fetchNewSongs(userId).asLiveData()
-    
-//    init {
-//        refreshSongs()
-//    }
-//
-//    fun refreshSongs() {
-//        viewModelScope.launch {
-//            _isLoading.value = true
-//            try {
-//                // The collection happens via LiveData, no explicit refresh needed
-//                // This function is more for future extensions
-//            } finally {
-//                _isLoading.value = false
-//            }
-//        }
-//    }
+
     
     fun playSong(song: Song) {
         viewModelScope.launch {

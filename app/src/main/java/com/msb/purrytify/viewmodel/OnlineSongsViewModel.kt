@@ -1,5 +1,6 @@
 package com.msb.purrytify.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.msb.purrytify.data.local.entity.Song
@@ -94,6 +95,28 @@ class OnlineSongsViewModel @Inject constructor(
                         _countryUiState.update { it.copy(isLoading = false, songs = playableSongs, error = null) }
                     }
                     is Resource.Error -> _countryUiState.update { it.copy(isLoading = false, error = result.message) }
+                }
+            }
+        }
+    }
+
+    fun fetchSongById(songId: String, onResult: (Song?) -> Unit) {
+        viewModelScope.launch {
+            onlineSongRepository.getSongById(songId).collect { result ->
+                when (result) {
+                    is Resource.Loading -> {
+                        // Loading state handled by caller if needed
+                    }
+                    is Resource.Success -> {
+                        result.data?.let { songResponse ->
+                            val playableSong = onlineSongRepository.convertSingleSongResponse(songResponse)
+                            Log.d("OnlineSongsViewModel", "Fetched song: $playableSong")
+                            onResult(playableSong)
+                        } ?: onResult(null)
+                    }
+                    is Resource.Error -> {
+                        onResult(null)
+                    }
                 }
             }
         }

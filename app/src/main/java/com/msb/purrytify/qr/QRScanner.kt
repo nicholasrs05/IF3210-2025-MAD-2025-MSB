@@ -1,7 +1,6 @@
 package com.msb.purrytify.qr
 
 import android.content.Context
-import android.net.Uri
 import android.util.Log
 import android.widget.Toast
 import androidx.annotation.OptIn
@@ -24,7 +23,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
@@ -37,17 +35,12 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
+import androidx.core.net.toUri
 
-/**
- * QR Scanner implementation using CameraX and ML Kit
- */
 class QRScanner(private val context: Context) {
     private lateinit var cameraExecutor: ExecutorService
     private var barcodeScanner: BarcodeScanner? = null
-    
-    /**
-     * Initialize the scanner
-     */
+
     fun initialize() {
         cameraExecutor = Executors.newSingleThreadExecutor()
         barcodeScanner = BarcodeScanning.getClient(
@@ -56,10 +49,7 @@ class QRScanner(private val context: Context) {
                 .build()
         )
     }
-    
-    /**
-     * Release scanner resources
-     */
+
     fun shutdown() {
         if (::cameraExecutor.isInitialized) {
             cameraExecutor.shutdown()
@@ -82,7 +72,7 @@ class QRScanner(private val context: Context) {
         val cameraProvider = getCameraProvider()
         
         val preview = Preview.Builder().build().also {
-            it.setSurfaceProvider(previewView.surfaceProvider)
+            it.surfaceProvider = previewView.surfaceProvider
         }
         
         val imageAnalysis = ImageAnalysis.Builder()
@@ -90,16 +80,12 @@ class QRScanner(private val context: Context) {
             .build()
             .also { analysis ->
                 analysis.setAnalyzer(cameraExecutor) { imageProxy ->
-                    // Process image for QR codes
                     processImageForQR(imageProxy, onQRCodeDetected)
                 }
             }
         
         try {
-            // Unbind any previous use cases
             cameraProvider.unbindAll()
-            
-            // Bind use cases to camera
             cameraProvider.bindToLifecycle(
                 lifecycleOwner,
                 CameraSelector.DEFAULT_BACK_CAMERA,
@@ -149,9 +135,9 @@ class QRScanner(private val context: Context) {
      */
     private fun isValidPurrytifyQRCode(rawValue: String): Boolean {
         return try {
-            val uri = Uri.parse(rawValue)
+            val uri = rawValue.toUri()
             uri.scheme == "purrytify" && uri.host == "song" && uri.lastPathSegment != null
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             false
         }
     }
@@ -160,12 +146,9 @@ class QRScanner(private val context: Context) {
      * Extract song ID from QR code URI
      */
     private fun extractSongId(rawValue: String): String {
-        return Uri.parse(rawValue).lastPathSegment ?: ""
+        return rawValue.toUri().lastPathSegment ?: ""
     }
-    
-    /**
-     * Get the camera provider asynchronously
-     */
+
     private suspend fun getCameraProvider(): ProcessCameraProvider = suspendCoroutine { continuation ->
         val future = ProcessCameraProvider.getInstance(context)
         future.addListener({
@@ -174,17 +157,12 @@ class QRScanner(private val context: Context) {
     }
 }
 
-/**
- * Composable that displays a QR code scanner using CameraX
- * 
- * @param onQRCodeDetected Callback for when a QR code is detected
- */
 @Composable
 fun QRScannerScreen(
     onQRCodeDetected: (String) -> Unit
 ) {
     val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
     val scanner = remember { QRScanner(context) }
     var isScannerReady by remember { mutableStateOf(false) }
     var previewView by remember { mutableStateOf<PreviewView?>(null) }

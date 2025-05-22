@@ -50,20 +50,42 @@ class OnlineSongRepository @Inject constructor(
         }
     }
 
+    fun getSongById(songId: String): Flow<Resource<SongResponse>> = flow {
+        emit(Resource.Loading())
+        try {
+            val response = apiService.getSongById(songId)
+            Log.d("OnlineSongRepository", "Response on get song by id : \\${response.body()}")
+            if (response.isSuccessful) {
+                response.body()?.let { song ->
+                    emit(Resource.Success(song))
+                } ?: emit(Resource.Error("Song not found"))
+            } else {
+                emit(Resource.Error("Error ${response.code()}: ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Log.e("OnlineSongRepository", "Error fetching song by ID: ${e.message}")
+            emit(Resource.Error("Network error: ${e.message}"))
+        }
+    }
+
     fun convertToPlayableSongs(songResponses: List<SongResponse>): List<Song> {
         return songResponses.map { songResponse ->
-            Song(
-                id = songResponse.id,
-                title = songResponse.title,
-                artist = songResponse.artist,
-                filePath = songResponse.url,
-                artworkPath = songResponse.artwork,
-                duration = convertDurationStringToMs(songResponse.duration),
-                isLiked = false,
-                ownerId = -1,
-                isFromApi = true
-            )
+            convertSingleSongResponse(songResponse)
         }
+    }
+
+    fun convertSingleSongResponse(songResponse: SongResponse): Song {
+        return Song(
+            id = songResponse.id,
+            title = songResponse.title,
+            artist = songResponse.artist,
+            filePath = songResponse.url,
+            artworkPath = songResponse.artwork,
+            duration = convertDurationStringToMs(songResponse.duration),
+            isLiked = false,
+            ownerId = -1,
+            isFromApi = true
+        )
     }
 
     private fun convertDurationStringToMs(duration: String): Long {

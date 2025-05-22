@@ -1,11 +1,11 @@
-package com.msb.purrytify.qr
+package com.msb.purrytify.ui.screen
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
-import android.widget.Toast
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,9 +18,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -41,40 +42,36 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.msb.purrytify.R
-import com.msb.purrytify.qr.QRScanner
 import com.msb.purrytify.qr.QRScannerScreen as RealQRScannerScreen
 import com.msb.purrytify.viewmodel.PlayerViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * A screen that shows a QR code scanner or simulation
+ * A screen that shows a QR code scanner that creates deep link intents
+ * When QR code is scanned, it creates a deep link intent to handle the song
  * 
  * @param navigateUp Callback to navigate back
- * @param onQRCodeScanned Callback when a QR code is scanned
+ * @param onQRCodeScanned Callback when a QR code is scanned and deep link is executed
+ * @param playerViewModel The PlayerViewModel to show current song state
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ModernQRScannerScreen(
     navigateUp: () -> Unit,
-    onQRCodeScanned: (String) -> Unit
+    onQRCodeScanned: (String) -> Unit,
+    playerViewModel: PlayerViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
-    val playerViewModel: PlayerViewModel = hiltViewModel()
     
-    // Example song IDs for simulation
-    val sampleSongIds = listOf("1", "2", "3", "4", "5")
-    
-    // Permission state
+    // State management
     var hasCameraPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(
@@ -84,18 +81,12 @@ fun ModernQRScannerScreen(
         )
     }
     
-    // Generate a sample QR code for display
-    val sampleQrBitmap = remember {
-        val songId = sampleSongIds.random()
-        QRGenerator.generateQRCodeWithInfo(
-            songId = songId,
-            title = "Sample Song",
-            artist = "Sample Artist",
-            qrSize = 300
-        )
-    }
+    var isProcessingQR by remember { mutableStateOf(false) }
+    var processingMessage by remember { mutableStateOf("") }
     
-    // Permission launcher
+    val currentSong by playerViewModel.currentSong
+    val isPlaying by playerViewModel.isPlaying
+    
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { granted ->
@@ -108,10 +99,44 @@ fun ModernQRScannerScreen(
         }
     )
     
-    // Request camera permission if needed
     LaunchedEffect(key1 = true) {
         if (!hasCameraPermission) {
             permissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+    }
+    
+    val handleQRCodeScanned = { songId: String ->
+        if (!isProcessingQR) {
+            isProcessingQR = true
+            processingMessage = "Processing QR code..."
+            
+            scope.launch {
+                try {
+                    val songIdLong = songId.toLongOrNull()
+                    if (songIdLong != null) {
+                        processingMessage = "Creating deep link for song ID: $songId"
+                        val deepLinkUri = Uri.parse("purrytify://song/$songId")
+                        val intent = Intent(Intent.ACTION_VIEW, deepLinkUri).apply {
+                            setPackage(context.packageName)
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        try {
+                            context.startActivity(intent)
+                            delay(500)
+                            onQRCodeScanned(songId)
+                        } catch (e: Exception) {
+                            snackbarHostState.showSnackbar("Error executing deep link: ${e.message}")
+                        }
+                    } else {
+                        snackbarHostState.showSnackbar("Invalid QR code format: $songId")
+                    }
+                } catch (e: Exception) {
+                    snackbarHostState.showSnackbar("Error processing QR code: ${e.message}")
+                } finally {
+                    isProcessingQR = false
+                    processingMessage = ""
+                }
+            }
         }
     }
     
@@ -122,7 +147,7 @@ fun ModernQRScannerScreen(
                 navigationIcon = {
                     IconButton(onClick = navigateUp) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back"
                         )
                     }
@@ -132,18 +157,13 @@ fun ModernQRScannerScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         if (hasCameraPermission) {
-            // Use the real camera-based QR scanner
             Box(modifier = Modifier.padding(paddingValues)) {
+                // QR Scanner Camera View
                 RealQRScannerScreen(
-                    onQRCodeDetected = { songId ->
-                        scope.launch {
-                            snackbarHostState.showSnackbar("QR code scanned successfully!")
-                        }
-                        onQRCodeScanned(songId)
-                    }
+                    onQRCodeDetected = handleQRCodeScanned
                 )
                 
-                // Add an overlay with instructions
+                // Instruction overlay
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -152,11 +172,63 @@ fun ModernQRScannerScreen(
                         .padding(16.dp)
                 ) {
                     Text(
-                        text = "Position the QR code within the frame to scan",
+                        text = if (isProcessingQR) processingMessage else "Position the QR code within the frame to scan",
                         color = Color.White,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
                     )
+                }
+                
+                // Processing overlay
+                if (isProcessingQR) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = 0.7f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            CircularProgressIndicator(
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(48.dp)
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = processingMessage,
+                                color = Color.White,
+                                style = MaterialTheme.typography.bodyLarge,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+                
+                // Current playing song indicator (if any)
+                currentSong?.let { song ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.BottomCenter)
+                            .background(Color.Black.copy(alpha = 0.8f))
+                            .padding(16.dp)
+                    ) {
+                        Column {
+                            Text(
+                                text = if (isPlaying) "♪ Now Playing" else "⏸ Paused",
+                                color = Color.White,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Text(
+                                text = "${song.title} - ${song.artist}",
+                                color = Color.White,
+                                style = MaterialTheme.typography.bodyMedium,
+                                maxLines = 1
+                            )
+                        }
+                    }
                 }
             }
         } else {
@@ -187,7 +259,7 @@ fun ModernQRScannerScreen(
                 Spacer(modifier = Modifier.height(16.dp))
                 
                 Text(
-                    text = "To scan QR codes, we need permission to use your camera. This is only used while you're in the scanner screen.",
+                    text = "To scan QR codes and play songs, we need permission to use your camera. This is only used while you're in the scanner screen.",
                     textAlign = TextAlign.Center
                 )
                 
@@ -212,72 +284,5 @@ fun ModernQRScannerScreen(
                 }
             }
         }
-    }
-}
-
-/**
- * A view that simulates a camera feed with a QR code
- */
-@Composable
-fun CameraSimulationView(
-    sampleQrBitmap: android.graphics.Bitmap,
-    onScan: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(Color.Black)
-    ) {
-        // Camera simulation background
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-                .background(Color(0xFF333333))
-        ) {
-            // QR code preview
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Image(
-                    bitmap = sampleQrBitmap.asImageBitmap(),
-                    contentDescription = "Sample QR Code",
-                    modifier = Modifier
-                        .size(200.dp)
-                        .background(Color.White, RoundedCornerShape(8.dp))
-                        .padding(8.dp)
-                )
-                
-                Spacer(modifier = Modifier.height(32.dp))
-                
-                Text(
-                    text = "Position a QR code in the frame to scan",
-                    color = Color.White,
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                
-                Spacer(modifier = Modifier.height(24.dp))
-                
-                Button(
-                    onClick = onScan,
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.fillMaxWidth(0.6f)
-                ) {
-                    Text("Simulate Scan")
-                }
-            }
-        }
-        
-        // Scanner overlay frame
-        Box(
-            modifier = Modifier
-                .size(250.dp)
-                .align(Alignment.Center)
-                .background(Color.Transparent)
-                .padding(16.dp)
-        )
     }
 }

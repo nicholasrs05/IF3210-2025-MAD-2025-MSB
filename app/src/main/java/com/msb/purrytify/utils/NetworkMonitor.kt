@@ -49,7 +49,7 @@ object NetworkMonitor {
 }
 
 @Composable
-fun NetworkStatusListener(): Boolean {
+fun networkStatusListener(): Boolean {
     val context = LocalContext.current
     var isConnected by remember { mutableStateOf(true) }
 

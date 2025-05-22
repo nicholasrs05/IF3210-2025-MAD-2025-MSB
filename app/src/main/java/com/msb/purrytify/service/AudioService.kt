@@ -36,6 +36,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import androidx.core.net.toUri
 
 @AndroidEntryPoint
 class AudioService : Service() {
@@ -205,7 +206,7 @@ class AudioService : Service() {
             
             try {
                 if (song.filePath.startsWith("content:")) {
-                    mediaPlayer?.setDataSource(applicationContext, Uri.parse(song.filePath))
+                    mediaPlayer?.setDataSource(applicationContext, song.filePath.toUri())
                 } else {
                     mediaPlayer?.setDataSource(song.filePath)
                 }

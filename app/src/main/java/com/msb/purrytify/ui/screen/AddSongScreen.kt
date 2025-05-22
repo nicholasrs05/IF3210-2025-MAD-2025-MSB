@@ -41,8 +41,6 @@ import java.util.concurrent.TimeUnit
 fun AddSongScreen(
     showBottomSheet: Boolean = true,
     onDismiss: () -> Unit = {},
-    libraryViewModel: LibraryViewModel = hiltViewModel(),
-    homeViewModel: HomeViewModel = hiltViewModel(),
     playerViewModel: PlayerViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -88,7 +86,6 @@ fun AddSongScreen(
         }
     }
 
-    // Content launcher for image files
     val pickArtworkLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->

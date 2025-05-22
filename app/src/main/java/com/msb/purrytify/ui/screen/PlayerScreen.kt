@@ -63,6 +63,141 @@ import coil3.BitmapImage
 import coil3.ImageLoader
 import coil3.request.SuccessResult
 import coil3.request.allowHardware
+import kotlin.math.abs
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.Brush
+
+// Enhanced color utilities for better contrast
+object EnhancedColorUtils {
+    
+    /**
+     * Calculates if a color is light (luminance > 0.5)
+     */
+    private fun Color.isLight(): Boolean = luminance() > 0.5f
+    
+    /**
+     * Ensures sufficient contrast between colors
+     */
+    fun ensureContrast(
+        foreground: Color,
+        background: Color,
+        minContrast: Float = 4.5f
+    ): Color {
+        val contrastRatio = calculateContrastRatio(foreground, background)
+        
+        return if (contrastRatio < minContrast) {
+            if (background.isLight()) {
+                // Background is light, make foreground darker
+                adjustColorForContrast(foreground, background, targetLuminance = 0.15f)
+            } else {
+                // Background is dark, make foreground lighter
+                adjustColorForContrast(foreground, background, targetLuminance = 0.85f)
+            }
+        } else {
+            foreground
+        }
+    }
+    
+    /**
+     * Calculates contrast ratio between two colors
+     */
+    private fun calculateContrastRatio(color1: Color, color2: Color): Float {
+        val lum1 = color1.luminance()
+        val lum2 = color2.luminance()
+        val lighter = maxOf(lum1, lum2)
+        val darker = minOf(lum1, lum2)
+        return (lighter + 0.05f) / (darker + 0.05f)
+    }
+    
+    /**
+     * Adjusts a color to achieve target luminance
+     */
+    private fun adjustColorForContrast(
+        color: Color,
+        background: Color,
+        targetLuminance: Float
+    ): Color {
+        val currentLuminance = color.luminance()
+        val factor = if (targetLuminance > currentLuminance) {
+            // Need to lighten
+            1.0f + (targetLuminance - currentLuminance) * 2
+        } else {
+            // Need to darken
+            targetLuminance / currentLuminance
+        }
+        
+        return Color(
+            red = (color.red * factor).coerceIn(0f, 1f),
+            green = (color.green * factor).coerceIn(0f, 1f),
+            blue = (color.blue * factor).coerceIn(0f, 1f),
+            alpha = color.alpha
+        )
+    }
+    
+    /**
+     * Creates an enhanced color scheme from palette with better contrast
+     */
+    fun createEnhancedColorScheme(palette: Palette): EnhancedColorScheme {
+        // Extract base colors
+        val dominantColor = Color(palette.getDominantColor(Color(0xFF121212).toArgb()))
+        val vibrantColor = Color(palette.getVibrantColor(Color(0xFF1DB954).toArgb()))
+        val darkVibrantColor = Color(palette.getDarkVibrantColor(Color(0xFF0D7534).toArgb()))
+        val lightVibrantColor = Color(palette.getLightVibrantColor(Color(0xFF4CAF50).toArgb()))
+        val mutedColor = Color(palette.getMutedColor(Color(0xFF666666).toArgb()))
+        val darkMutedColor = Color(palette.getDarkMutedColor(Color(0xFF1A1A1A).toArgb()))
+        
+        // Determine base background - prefer dark muted over dominant for better music player aesthetics
+        val baseBackground = if (darkMutedColor.luminance() < 0.3f) darkMutedColor else dominantColor
+        
+        // Ensure background is sufficiently dark for music player
+        val backgroundColor = if (baseBackground.luminance() > 0.2f) {
+            Color(
+                red = baseBackground.red * 0.3f,
+                green = baseBackground.green * 0.3f,
+                blue = baseBackground.blue * 0.3f,
+                alpha = 1f
+            )
+        } else baseBackground
+        
+        // Choose accent color with better saturation
+        val accentColor = when {
+            vibrantColor.luminance() > 0.15f && calculateSaturation(vibrantColor) > 0.4f -> vibrantColor
+            lightVibrantColor.luminance() > 0.3f -> lightVibrantColor
+            else -> Color(0xFF1DB954) // Fallback Spotify green
+        }
+        
+        // Ensure accent has good contrast against background
+        val enhancedAccent = ensureContrast(accentColor, backgroundColor, 3.0f)
+        
+        // Calculate text colors with high contrast
+        val primaryText = ensureContrast(Color.White, backgroundColor, 7.0f)
+        val secondaryText = ensureContrast(Color.White.copy(alpha = 0.7f), backgroundColor, 4.5f)
+        
+        return EnhancedColorScheme(
+            background = backgroundColor,
+            accent = enhancedAccent,
+            primaryText = primaryText,
+            secondaryText = secondaryText,
+            controlBackground = enhancedAccent,
+            controlForeground = ensureContrast(Color.White, enhancedAccent, 4.5f)
+        )
+    }
+    
+    private fun calculateSaturation(color: Color): Float {
+        val max = maxOf(color.red, color.green, color.blue)
+        val min = minOf(color.red, color.green, color.blue)
+        return if (max != 0f) (max - min) / max else 0f
+    }
+}
+
+data class EnhancedColorScheme(
+    val background: Color,
+    val accent: Color,
+    val primaryText: Color,
+    val secondaryText: Color,
+    val controlBackground: Color,
+    val controlForeground: Color
+)
 
 @Composable
 fun PlayerScreen(
@@ -122,9 +257,19 @@ fun PlayerScreen(
         }
     }
     
-    var backgroundColor by remember { mutableStateOf(Color(0xFF121212)) }
-    var textColor by remember { mutableStateOf(Color.White) }
-    var accentColor by remember { mutableStateOf(Color(0xFF1DB954)) }
+    // Enhanced color scheme with better contrast
+    var colorScheme by remember { 
+        mutableStateOf(
+            EnhancedColorScheme(
+                background = Color(0xFF0A0A0A),
+                accent = Color(0xFF1DB954),
+                primaryText = Color.White,
+                secondaryText = Color.White.copy(alpha = 0.7f),
+                controlBackground = Color(0xFF1DB954),
+                controlForeground = Color.White
+            )
+        )
+    }
     
     val isPlaying by viewModel.isPlaying
     val isLiked by viewModel.isLiked
@@ -133,6 +278,7 @@ fun PlayerScreen(
 
     val context = LocalContext.current
 
+    // Enhanced palette extraction with better color processing
     LaunchedEffect(currentPlayingSong.id, currentPlayingSong.artworkPath) {
         try {
             val bitmap = if (currentPlayingSong.artworkPath.isNotEmpty()) {
@@ -150,7 +296,7 @@ fun PlayerScreen(
                             loadedBitmap = (result.image as? BitmapImage)?.bitmap
                         }
                     } catch (e: Exception) {
-                        Log.e("MiniPlayer", "Error loading artwork from URL: ${e.message}", e)
+                        Log.e("PlayerScreen", "Error loading artwork from URL: ${e.message}", e)
                     }
                     loadedBitmap
                 } else {
@@ -164,18 +310,11 @@ fun PlayerScreen(
 
             bitmap?.let {
                 withContext(Dispatchers.Default) {
-                    val palette = Palette.from(it).generate()
-                    val darkColor = palette.getDarkVibrantColor(
-                        palette.getDarkMutedColor(Color(0xFF121212).toArgb())
-                    )
-                    val vibrantColor = palette.getVibrantColor(
-                        palette.getLightVibrantColor(Color(0xFF1DB954).toArgb())
-                    )
-
-                    backgroundColor = Color(darkColor)
-                    accentColor = Color(vibrantColor)
-                    textColor = if (ColorUtils.calculateLuminance(darkColor) > 0.5)
-                        Color.Black else Color.White
+                    val palette = Palette.from(it)
+                        .maximumColorCount(16) // Increased for better color extraction
+                        .generate()
+                    
+                    colorScheme = EnhancedColorUtils.createEnhancedColorScheme(palette)
                 }
             }
         } catch (e: Exception) {
@@ -190,12 +329,13 @@ fun PlayerScreen(
         }
     }
     
+    // Enhanced artwork display with subtle gradient overlay
     val artworkContent = remember(currentPlayingSong.artworkPath) {
         @Composable {
             Box(
                 modifier = Modifier
-                    .size(280.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .size(320.dp) // Slightly larger for better visual impact
+                    .clip(RoundedCornerShape(12.dp)) // More rounded corners
             ) {
                 val artworkUriString = currentPlayingSong.artworkPath
 
@@ -220,11 +360,28 @@ fun PlayerScreen(
                         modifier = Modifier.fillMaxSize()
                     )
                 }
+                
+                // Subtle gradient overlay for better text readability
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    colorScheme.background.copy(alpha = 0.1f)
+                                ),
+                                startY = 0f,
+                                endY = Float.POSITIVE_INFINITY
+                            )
+                        )
+                )
             }
         }
     }
     
-    val playerControls = remember(isPlaying, accentColor, backgroundColor, textColor) {
+    // Enhanced player controls with better contrast
+    val playerControls = remember(isPlaying, colorScheme) {
         @Composable {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -233,38 +390,43 @@ fun PlayerScreen(
             ) {
                 IconButton(
                     onClick = { viewModel.skipToPrevious() },
-                    modifier = Modifier.size(48.dp)
+                    modifier = Modifier.size(56.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Filled.SkipPrevious,
                         contentDescription = "Previous",
-                        tint = textColor,
+                        tint = colorScheme.primaryText,
                         modifier = Modifier.size(48.dp)
                     )
                 }
                 
-                IconButton(
-                    onClick = { viewModel.togglePlayPause() },
+                // Enhanced play/pause button with better contrast and glow effect
+                Box(
                     modifier = Modifier
-                        .size(64.dp)
-                        .background(accentColor, RoundedCornerShape(32.dp))
+                        .size(80.dp)
+                        .background(
+                            colorScheme.controlBackground,
+                            RoundedCornerShape(40.dp)
+                        )
+                        .clickable { viewModel.togglePlayPause() },
+                    contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                         contentDescription = if (isPlaying) "Pause" else "Play",
-                        tint = backgroundColor,
-                        modifier = Modifier.size(36.dp)
+                        tint = colorScheme.controlForeground,
+                        modifier = Modifier.size(40.dp)
                     )
                 }
                 
                 IconButton(
                     onClick = { viewModel.skipToNext() },
-                    modifier = Modifier.size(48.dp)
+                    modifier = Modifier.size(56.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Filled.SkipNext,
                         contentDescription = "Next",
-                        tint = textColor,
+                        tint = colorScheme.primaryText,
                         modifier = Modifier.size(48.dp)
                     )
                 }
@@ -272,7 +434,8 @@ fun PlayerScreen(
         }
     }
     
-    val progressSlider = remember(duration) {
+    // Enhanced progress slider with better visibility
+    val progressSlider = remember(duration, colorScheme) {
         @Composable {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Slider(
@@ -280,11 +443,13 @@ fun PlayerScreen(
                     onValueChange = { viewModel.seekTo(it) },
                     valueRange = 0f..duration.coerceAtLeast(1f),
                     colors = SliderDefaults.colors(
-                        thumbColor = accentColor,
-                        activeTrackColor = accentColor,
-                        inactiveTrackColor = accentColor.copy(alpha = 0.3f)
+                        thumbColor = colorScheme.accent,
+                        activeTrackColor = colorScheme.accent,
+                        inactiveTrackColor = colorScheme.accent.copy(alpha = 0.25f)
                     ),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(32.dp) // Slightly taller for easier interaction
                 )
                 
                 Row(
@@ -293,13 +458,15 @@ fun PlayerScreen(
                 ) {
                     Text(
                         text = formatDuration(currentPosition.toInt()),
-                        color = textColor.copy(alpha = 0.7f),
-                        fontSize = 12.sp
+                        color = colorScheme.secondaryText,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium
                     )
                     Text(
                         text = formatDuration(duration.toInt()),
-                        color = textColor.copy(alpha = 0.7f),
-                        fontSize = 12.sp
+                        color = colorScheme.secondaryText,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium
                     )
                 }
             }
@@ -308,11 +475,20 @@ fun PlayerScreen(
     
     val offsetY = with(density) { slideOffset * 1000.dp.toPx() }
     
+    // Enhanced background with subtle gradient
     Box(
         modifier = Modifier
             .fillMaxSize()
             .offset(y = offsetY.dp)
-            .background(backgroundColor)
+            .background(
+                Brush.radialGradient(
+                    colors = listOf(
+                        colorScheme.background.copy(alpha = 0.95f),
+                        colorScheme.background
+                    ),
+                    radius = 800f
+                )
+            )
             .zIndex(10f)
             .pointerInput(Unit) {
                 detectVerticalDragGestures(
@@ -334,9 +510,10 @@ fun PlayerScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(20.dp), // Slightly more padding
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Enhanced header with better contrast
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -353,14 +530,16 @@ fun PlayerScreen(
                     Icon(
                         imageVector = Icons.Filled.KeyboardArrowDown,
                         contentDescription = "Close",
-                        tint = textColor
+                        tint = colorScheme.primaryText,
+                        modifier = Modifier.size(28.dp)
                     )
                 }
                 
                 Text(
                     text = "Now Playing",
-                    color = textColor,
-                    style = MaterialTheme.typography.titleMedium
+                    color = colorScheme.primaryText,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
                 )
                 
                 var showMenu by remember { mutableStateOf(false) }
@@ -372,14 +551,15 @@ fun PlayerScreen(
                         Icon(
                             imageVector = Icons.Filled.MoreVert,
                             contentDescription = "Menu",
-                            tint = textColor
+                            tint = colorScheme.primaryText,
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                     
                     DropdownMenu(
                         expanded = showMenu,
                         onDismissRequest = { showMenu = false },
-                        modifier = Modifier.background(backgroundColor)
+                        modifier = Modifier.background(colorScheme.background)
                     ) {
                         DropdownMenuItem(
                             text = {
@@ -387,11 +567,11 @@ fun PlayerScreen(
                                     Icon(
                                         imageVector = Icons.Outlined.Edit,
                                         contentDescription = "Edit Song",
-                                        tint = textColor,
+                                        tint = colorScheme.primaryText,
                                         modifier = Modifier.size(20.dp)
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Edit Song", color = textColor)
+                                    Text("Edit Song", color = colorScheme.primaryText)
                                 }
                             },
                             onClick = {
@@ -406,17 +586,29 @@ fun PlayerScreen(
                                     Icon(
                                         imageVector = Icons.Filled.Share,
                                         contentDescription = "Share URL",
-                                        tint = textColor,
+                                        tint = if (viewModel.canShareSong()) colorScheme.primaryText else colorScheme.secondaryText,
                                         modifier = Modifier.size(20.dp)
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Share URL", color = textColor)
+                                    Text(
+                                        "Share URL", 
+                                        color = if (viewModel.canShareSong()) colorScheme.primaryText else colorScheme.secondaryText
+                                    )
                                 }
                             },
                             onClick = {
                                 showMenu = false
-                                DeepLinkUtils.shareSong(context, currentPlayingSong)
-                            }
+                                if (viewModel.canShareSong()) {
+                                    DeepLinkUtils.shareSong(context, currentPlayingSong)
+                                } else {
+                                    Toast.makeText(
+                                        context, 
+                                        "Only online songs can be shared", 
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            },
+                            enabled = viewModel.canShareSong()
                         )
                         
                         DropdownMenuItem(
@@ -425,17 +617,29 @@ fun PlayerScreen(
                                     Icon(
                                         imageVector = Icons.Filled.QrCode,
                                         contentDescription = "Share QR Code",
-                                        tint = textColor,
+                                        tint = if (viewModel.canShareSong()) colorScheme.primaryText else colorScheme.secondaryText,
                                         modifier = Modifier.size(20.dp)
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Share QR Code", color = textColor)
+                                    Text(
+                                        "Share QR Code", 
+                                        color = if (viewModel.canShareSong()) colorScheme.primaryText else colorScheme.secondaryText
+                                    )
                                 }
                             },
                             onClick = {
                                 showMenu = false
-                                viewModel.shareCurrentSongViaQR()
-                            }
+                                if (viewModel.canShareSong()) {
+                                    viewModel.shareCurrentSongViaQR()
+                                } else {
+                                    Toast.makeText(
+                                        context, 
+                                        "Only online songs can be shared via QR code", 
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            },
+                            enabled = viewModel.canShareSong()
                         )
                     }
                 }
@@ -444,9 +648,7 @@ fun PlayerScreen(
                     EditSongDialog(
                         song = currentPlayingSong,
                         onDismiss = { showEditDialog = false },
-                        backgroundColor = backgroundColor,
-                        textColor = textColor,
-                        accentColor = accentColor,
+                        colorScheme = colorScheme,
                         viewModel = viewModel
                     )
                 }
@@ -459,10 +661,11 @@ fun PlayerScreen(
                 }
             }
             
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             artworkContent()
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(32.dp))
             
+            // Enhanced song info section
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -471,46 +674,63 @@ fun PlayerScreen(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = currentPlayingSong.title,
-                        color = textColor,
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold
+                        color = colorScheme.primaryText,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 2
                     )
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = currentPlayingSong.artist,
-                        color = textColor.copy(alpha = 0.7f),
-                        fontSize = 16.sp
+                        color = colorScheme.secondaryText,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1
                     )
                 }
                 
-                IconButton(onClick = { viewModel.toggleLike() }) {
+                // Enhanced like button
+                IconButton(
+                    onClick = { viewModel.toggleLike() },
+                    modifier = Modifier.size(48.dp)
+                ) {
                     Icon(
                         imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
                         contentDescription = if (isLiked) "Unlike" else "Like",
-                        tint = if (isLiked) Color.Red else textColor
+                        tint = if (isLiked) Color(0xFFE53E3E) else colorScheme.primaryText,
+                        modifier = Modifier.size(28.dp)
                     )
                 }
             }
             
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(32.dp))
             progressSlider()
             Spacer(modifier = Modifier.weight(1f))
             playerControls()
 
+            // Enhanced secondary controls with better contrast
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 16.dp),
+                    .padding(vertical = 20.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                IconButton(onClick = { viewModel.toggleShuffle() }) {
+                IconButton(
+                    onClick = { viewModel.toggleShuffle() },
+                    modifier = Modifier.size(48.dp)
+                ) {
                     Icon(
                         imageVector = Icons.Filled.Shuffle,
                         contentDescription = "Shuffle",
-                        tint = if (viewModel.isShuffle.value) accentColor else textColor.copy(alpha = 0.5f)
+                        tint = if (viewModel.isShuffle.value) colorScheme.accent else colorScheme.secondaryText,
+                        modifier = Modifier.size(24.dp)
                     )
                 }
                 
-                IconButton(onClick = { viewModel.toggleRepeat() }) {
+                IconButton(
+                    onClick = { viewModel.toggleRepeat() },
+                    modifier = Modifier.size(48.dp)
+                ) {
                     Icon(
                         imageVector = when (viewModel.repeatMode.value) {
                             RepeatMode.NONE -> Icons.Filled.Repeat
@@ -520,7 +740,8 @@ fun PlayerScreen(
                         },
                         contentDescription = "Repeat",
                         tint = if (viewModel.repeatMode.value != RepeatMode.NONE) 
-                            accentColor else textColor.copy(alpha = 0.5f)
+                            colorScheme.accent else colorScheme.secondaryText,
+                        modifier = Modifier.size(24.dp)
                     )
                 }
             }
@@ -542,9 +763,7 @@ private fun formatDuration(miliseconds: Int): String {
 fun EditSongDialog(
     song: Song,
     onDismiss: () -> Unit,
-    backgroundColor: Color,
-    textColor: Color,
-    accentColor: Color,
+    colorScheme: EnhancedColorScheme,
     viewModel: PlayerViewModel
 ) {
     val context = LocalContext.current
@@ -554,10 +773,10 @@ fun EditSongDialog(
     var selectedArtworkUri by remember { mutableStateOf<Uri?>(null) }
     var showPermissionDialog by remember { mutableStateOf(false) }
     
-    val buttonGreen = accentColor
-    val buttonGray = Color(0xFF555555)
-    val borderColor = Color(0xFF444444)
-    val textFieldBgColor = backgroundColor.copy(alpha = 0.7f)
+    val buttonGreen = colorScheme.accent
+    val buttonGray = colorScheme.background.copy(alpha = 0.7f)
+    val borderColor = colorScheme.secondaryText.copy(alpha = 0.3f)
+    val textFieldBgColor = colorScheme.background.copy(alpha = 0.8f)
     
     val pickArtworkLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -609,19 +828,19 @@ fun EditSongDialog(
     ModalBottomSheet(
         onDismissRequest = { onDismiss() },
         sheetState = sheetState,
-        containerColor = backgroundColor,
+        containerColor = colorScheme.background,
         dragHandle = null,
         content = {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(backgroundColor)
+                    .background(colorScheme.background)
                     .padding(horizontal = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
                     text = "Edit Song",
-                    color = textColor,
+                    color = colorScheme.primaryText,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Medium,
                     textAlign = TextAlign.Center,
@@ -670,12 +889,12 @@ fun EditSongDialog(
                                 Icon(
                                     painter = painterResource(id = R.drawable.add),
                                     contentDescription = "Upload Image",
-                                    tint = Color.Gray,
+                                    tint = colorScheme.secondaryText,
                                     modifier = Modifier.size(40.dp)
                                 )
                                 Text(
                                     text = "Upload Photo",
-                                    color = Color.Gray,
+                                    color = colorScheme.secondaryText,
                                     fontSize = 11.sp,
                                     modifier = Modifier.padding(top = 8.dp)
                                 )
@@ -702,7 +921,7 @@ fun EditSongDialog(
                             Icon(
                                 imageVector = Icons.Filled.MusicNote,
                                 contentDescription = "Song Info",
-                                tint = Color.Gray,
+                                tint = colorScheme.secondaryText,
                                 modifier = Modifier.size(40.dp)
                             )
                             
@@ -710,7 +929,7 @@ fun EditSongDialog(
                             val seconds = (song.duration % 60000) / 1000
                             Text(
                                 text = "Duration: ${minutes}:${String.format("%02d", seconds)}",
-                                color = Color.Gray,
+                                color = colorScheme.secondaryText,
                                 fontSize = 11.sp,
                                 modifier = Modifier.padding(top = 8.dp)
                             )
@@ -720,7 +939,7 @@ fun EditSongDialog(
                 
                 Text(
                     text = "Title",
-                    color = textColor,
+                    color = colorScheme.primaryText,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier
@@ -731,20 +950,20 @@ fun EditSongDialog(
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
-                    placeholder = { Text("Title", color = Color.Gray) },
+                    placeholder = { Text("Title", color = colorScheme.secondaryText) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = textColor,
-                        unfocusedTextColor = textColor,
-                        disabledTextColor = textColor,
+                        focusedTextColor = colorScheme.primaryText,
+                        unfocusedTextColor = colorScheme.primaryText,
+                        disabledTextColor = colorScheme.primaryText,
                         focusedContainerColor = textFieldBgColor,
                         unfocusedContainerColor = textFieldBgColor,
                         disabledContainerColor = textFieldBgColor,
-                        cursorColor = textColor,
-                        focusedBorderColor = Color.Transparent,
-                        unfocusedBorderColor = Color.Transparent
+                        cursorColor = colorScheme.accent,
+                        focusedBorderColor = colorScheme.accent,
+                        unfocusedBorderColor = borderColor
                     ),
                     shape = RoundedCornerShape(4.dp),
                     singleLine = true
@@ -752,7 +971,7 @@ fun EditSongDialog(
                 
                 Text(
                     text = "Artist",
-                    color = textColor,
+                    color = colorScheme.primaryText,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier
@@ -763,20 +982,20 @@ fun EditSongDialog(
                 OutlinedTextField(
                     value = artist,
                     onValueChange = { artist = it },
-                    placeholder = { Text("Artist", color = Color.Gray) },
+                    placeholder = { Text("Artist", color = colorScheme.secondaryText) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = textColor,
-                        unfocusedTextColor = textColor,
-                        disabledTextColor = textColor,
+                        focusedTextColor = colorScheme.primaryText,
+                        unfocusedTextColor = colorScheme.primaryText,
+                        disabledTextColor = colorScheme.primaryText,
                         focusedContainerColor = textFieldBgColor,
                         unfocusedContainerColor = textFieldBgColor,
                         disabledContainerColor = textFieldBgColor,
-                        cursorColor = textColor,
-                        focusedBorderColor = Color.Transparent,
-                        unfocusedBorderColor = Color.Transparent
+                        cursorColor = colorScheme.accent,
+                        focusedBorderColor = colorScheme.accent,
+                        unfocusedBorderColor = borderColor
                     ),
                     shape = RoundedCornerShape(4.dp),
                     singleLine = true
@@ -803,7 +1022,7 @@ fun EditSongDialog(
                     ) {
                         Text(
                             text = "Cancel",
-                            color = textColor,
+                            color = colorScheme.primaryText,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium
                         )
@@ -862,7 +1081,7 @@ fun EditSongDialog(
                     ) {
                         Text(
                             text = "Save",
-                            color = Color.White,
+                            color = colorScheme.controlForeground,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium
                         )
@@ -875,15 +1094,17 @@ fun EditSongDialog(
     if (showPermissionDialog) {
         AlertDialog(
             onDismissRequest = { showPermissionDialog = false },
-            title = { Text("Permission Required") },
+            title = { Text("Permission Required", color = colorScheme.primaryText) },
             text = {
-                Text("Storage permission is required to select files. Please grant this permission in app settings.")
+                Text("Storage permission is required to select files. Please grant this permission in app settings.", 
+                     color = colorScheme.secondaryText)
             },
             confirmButton = {
                 TextButton(onClick = { showPermissionDialog = false }) {
-                    Text("OK")
+                    Text("OK", color = colorScheme.accent)
                 }
-            }
+            },
+            containerColor = colorScheme.background
         )
     }
 }

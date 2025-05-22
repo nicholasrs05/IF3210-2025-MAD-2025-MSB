@@ -20,9 +20,10 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.msb.purrytify.viewmodel.AuthViewModel
 import com.msb.purrytify.viewmodel.PlayerViewModel
+import com.msb.purrytify.viewmodel.OnlineSongsViewModel
 import com.msb.purrytify.ui.component.NavigationBarComponent
 import com.msb.purrytify.ui.component.PlayerContainer
-import com.msb.purrytify.qr.ModernQRScannerScreen
+import com.msb.purrytify.ui.screen.ModernQRScannerScreen
 import com.msb.purrytify.ui.screen.EditProfileScreen
 import com.msb.purrytify.ui.screen.HomeScreen
 import com.msb.purrytify.ui.screen.LibraryScreen
@@ -44,7 +45,6 @@ import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
 import com.msb.purrytify.ui.screen.FiftyGlobalScreen
 import com.msb.purrytify.ui.screen.TenCountryScreen
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -185,7 +185,8 @@ fun NavigationComponent(
                                         composable(Screen.Home.route) {
                                             HomeScreen(
                                                 playerViewModel = playerViewModel,
-                                                navController = navController
+                                                navController = navController,
+                                                onScanQRCode = { navController.navigate(Screen.QRScanner.route) },
                                             )
                                         }
                                         composable(Screen.Library.route) {
@@ -205,6 +206,18 @@ fun NavigationComponent(
                                                 authViewModel = authViewModel
                                             )
                                         }
+                                        composable(Screen.QRScanner.route) {
+                                            ModernQRScannerScreen(
+                                                navigateUp = { navController.navigateUp() },
+                                                onQRCodeScanned = { songId ->
+                                                    // Deep link was executed, just navigate back
+                                                    navController.navigate(Screen.Home.route) {
+                                                        popUpTo(Screen.QRScanner.route) { inclusive = true }
+                                                    }
+                                                },
+                                                playerViewModel = playerViewModel
+                                            )
+                                        }
                                         composable(
                                             route = Screen.SongDetail.route,
                                             arguments = listOf(
@@ -217,9 +230,19 @@ fun NavigationComponent(
                                             )
                                         ) { backStackEntry ->
                                             val songId = backStackEntry.arguments?.getString("songId")
+                                            val onlineSongsViewModel: OnlineSongsViewModel = hiltViewModel()
+                                            
                                             LaunchedEffect(songId) {
                                                 if (songId != null) {
-                                                    playerViewModel.playSongById(songId)
+                                                    onlineSongsViewModel.fetchSongById(songId) { song ->
+                                                        if (song != null) {
+                                                            playerViewModel.setPlaylist(listOf(song), 0)
+                                                            playerViewModel.playSong(song)
+                                                            playerViewModel.setLargePlayerVisible(true)
+                                                        } else {
+                                                            Log.e("Navigation", "Song not found with ID: $songId")
+                                                        }
+                                                    }
                                                 } else {
                                                     Log.e("Navigation", "Song ID is null")
                                                 }
@@ -230,7 +253,8 @@ fun NavigationComponent(
                                                 if (isLoggedIn) {
                                                     HomeScreen(
                                                         playerViewModel = playerViewModel,
-                                                        navController = navController
+                                                        navController = navController,
+                                                        onScanQRCode = { navController.navigate(Screen.QRScanner.route) },
                                                     )
                                                 }
                                             }
@@ -256,7 +280,9 @@ fun NavigationComponent(
                                     composable(Screen.Home.route) {
                                         HomeScreen(
                                             playerViewModel = playerViewModel,
-                                            navController = navController
+                                            navController = navController,
+                                            onScanQRCode = { navController.navigate(Screen.QRScanner.route) },
+
                                         )
                                     }
                                     composable(Screen.Library.route) {
@@ -274,11 +300,12 @@ fun NavigationComponent(
                                         ModernQRScannerScreen(
                                             navigateUp = { navController.navigateUp() },
                                             onQRCodeScanned = { songId ->
-                                                playerViewModel.playSongById(songId)
+                                                // Deep link was executed, just navigate back
                                                 navController.navigate(Screen.Home.route) {
                                                     popUpTo(Screen.QRScanner.route) { inclusive = true }
                                                 }
-                                            }
+                                            },
+                                            playerViewModel = playerViewModel
                                         )
                                     }
                                     navigation(
@@ -342,14 +369,25 @@ fun NavigationComponent(
                                         )
                                     ) { backStackEntry ->
                                         val songId = backStackEntry.arguments?.getString("songId")
+                                        val onlineSongsViewModel: OnlineSongsViewModel = hiltViewModel()
+                                        
                                         LaunchedEffect(songId) {
                                             if (songId != null) {
                                                 if (!isLoggedIn) {
                                                     navController.navigate(Screen.Login.route)
                                                 } else {
-                                                    playerViewModel.playSongById(songId)
-                                                    navController.navigate(Screen.Home.route) {
-                                                        popUpTo(Screen.SongDetail.route) { inclusive = true }
+                                                    onlineSongsViewModel.fetchSongById(songId) { song ->
+                                                        if (song != null) {
+                                                            playerViewModel.setPlaylist(listOf(song), 0)
+                                                            playerViewModel.playSong(song)
+                                                            playerViewModel.setLargePlayerVisible(true)
+                                                            navController.navigate(Screen.Home.route) {
+                                                                popUpTo(Screen.SongDetail.route) { inclusive = true }
+                                                            }
+                                                        } else {
+                                                            Log.e("Navigation", "Song not found with ID: $songId")
+                                                            navController.navigate(Screen.Home.route)
+                                                        }
                                                     }
                                                 }
                                             } else {

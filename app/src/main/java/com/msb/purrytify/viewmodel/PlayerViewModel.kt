@@ -13,7 +13,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.msb.purrytify.data.local.entity.Song
-import com.msb.purrytify.data.repository.ApiSongRepository
 import com.msb.purrytify.data.repository.SongRepository
 import com.msb.purrytify.model.ProfileModel
 import com.msb.purrytify.qr.QRSharingService
@@ -31,7 +30,6 @@ import javax.inject.Inject
 class PlayerViewModel @Inject constructor(
     application: Application,
     private val songRepository: SongRepository,
-    private val apiSongRepository: ApiSongRepository,
     private val playerManager: PlayerManager,
     profileModel: ProfileModel,
     private val qrSharingService: QRSharingService
@@ -301,9 +299,18 @@ class PlayerViewModel @Inject constructor(
         playerManager.stopPlayback()
     }
 
+    fun canShareSong(): Boolean {
+        return currentSong.value?.isFromApi == true
+    }
+
     fun shareCurrentSongViaQR() {
         currentSong.value?.let { song ->
-            qrSharingService.shareSongViaQR(song)
+            if (song.isFromApi) {
+                qrSharingService.shareSongViaQR(song)
+            } else {
+                // Show message that only online songs can be shared
+                Log.w("PlayerViewModel", "Cannot share local song: ${song.title}. Only online songs can be shared.")
+            }
         }
     }
 
@@ -344,23 +351,6 @@ class PlayerViewModel @Inject constructor(
                         setLargePlayerVisible(true)
                         return@launch
                     }
-                }
-                
-                val apiSong = apiSongRepository.fetchSongById(songIdStr)
-                if (apiSong != null) {
-                    val localSong = apiSongRepository.convertApiSongToLocalSong(apiSong, userId)
-                    
-                    val insertedId = songRepository.insert(localSong)
-                    val savedSong = songRepository.getSongById(insertedId)
-                    
-                    if (savedSong != null) {
-                        playSong(savedSong)
-                        setLargePlayerVisible(true)
-                    } else {
-                        Log.e("PlayerViewModel", "Failed to save API song")
-                    }
-                } else {
-                    Log.e("PlayerViewModel", "Song not found with ID: $songIdStr")
                 }
             } catch (e: Exception) {
                 Log.e("PlayerViewModel", "Error playing song by ID: ${e.message}")
