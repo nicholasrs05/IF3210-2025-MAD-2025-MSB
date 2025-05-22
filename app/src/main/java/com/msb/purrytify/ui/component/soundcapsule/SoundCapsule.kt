@@ -19,12 +19,13 @@ import androidx.navigation.NavController
 import com.msb.purrytify.data.local.entity.DayStreak
 import com.msb.purrytify.data.local.entity.SoundCapsule
 import com.msb.purrytify.ui.navigation.Screen
-import com.msb.purrytify.viewmodel.SoundCapsuleViewModel
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.platform.LocalContext
+import com.msb.purrytify.utils.DateUtil
 import com.msb.purrytify.utils.FileShareUtil
+import com.msb.purrytify.viewmodel.SoundCapsuleViewModel
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -173,6 +174,8 @@ fun SoundCapsuleCard(
 ) {
     var longestStreak by remember { mutableStateOf<DayStreak?>(null) }
     var isLoadingStreak by remember { mutableStateOf(false) }
+    val streakSong by viewModel.streakSong.collectAsState()
+    val streakArtist by viewModel.streakArtist.collectAsState()
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(soundCapsule.id) {
@@ -193,7 +196,7 @@ fun SoundCapsuleCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "${soundCapsule.month} ${soundCapsule.year}",
+                text = "${DateUtil.getMonthString(soundCapsule.month)} ${soundCapsule.year}",
                 color = Color.White,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold
@@ -227,12 +230,12 @@ fun SoundCapsuleCard(
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 TopArtistSection(
-                    artist = "Artist ID: ${soundCapsule.topArtistId}",
+                    artist = "${streakArtist?.name}",
                     modifier = Modifier.weight(1f),
                     onClick = onTopArtistClick
                 )
                 TopSongSection(
-                    songTitle = "Song ID: ${soundCapsule.topSongId}",
+                    songTitle = "${streakSong?.title}",
                     modifier = Modifier.weight(1f),
                     onClick = onTopSongClick
                 )
@@ -253,9 +256,11 @@ fun SoundCapsuleCard(
                         )
                     }
                 }
-                longestStreak != null -> {
+                longestStreak != null && longestStreak?.streakDays!! >= 2 -> {
                     DayStreaksSection(
                         streak = longestStreak,
+                        song = streakSong,
+                        artist = streakArtist,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }

@@ -1,5 +1,6 @@
 package com.msb.purrytify.ui.screen
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -75,55 +76,89 @@ fun TopArtistScreen(
             )
         }
 
-        if (isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(color = Color(0xFF1DB954))
-            }
-        } else {
-            // Content
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 18.dp)
-            ) {
-                // Date
-                Text(
-                    text = viewModel.getMonthYearString(soundCapsule),
-                    color = Color.White,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Normal,
-                    modifier = Modifier.padding(top = 16.dp)
-                )
-
-                // Title
-                Text(
-                    text = buildAnnotatedString {
-                        append("You listened to ")
-                        withStyle(style = SpanStyle(color = Color(0xFF669BEC))) {
-                            append("${artists.size} artists")
-                        }
-                        append(" this month.")
-                    },
-                    color = Color.White,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-
-                // Artist List
-                artists.forEachIndexed { index, artist ->
-                    ArtistItem(
-                        artist = artist,
-                        rank = index + 1,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(108.dp)
-                    )
+        when {
+            isLoading -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = Color(0xFF1DB954))
                 }
             }
+            artists.isEmpty() -> {
+                EmptyTopArtistState()
+            }
+            else -> {
+                // Content
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 18.dp)
+                ) {
+                    // Date
+                    Text(
+                        text = viewModel.getMonthYearString(soundCapsule),
+                        color = Color.White,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Normal,
+                        modifier = Modifier.padding(top = 16.dp)
+                    )
+
+                    // Title
+                    Text(
+                        text = buildAnnotatedString {
+                            append("You listened to ")
+                            withStyle(style = SpanStyle(color = Color(0xFF669BEC))) {
+                                append("${artists.size} artists")
+                            }
+                            append(" this month.")
+                        },
+                        color = Color.White,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+
+                    // Artist List
+                    artists.forEachIndexed { index, artist ->
+                        ArtistItem(
+                            artist = artist,
+                            rank = index + 1,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(108.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmptyTopArtistState() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "No Artist Data Available",
+                color = Color.White,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Your top artists will appear here",
+                color = Color(0xFFB3B3B3),
+                fontSize = 14.sp
+            )
         }
     }
 }
@@ -142,8 +177,8 @@ private fun ArtistItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 18.dp) // Add some vertical padding
-                .align(Alignment.Center), // Align the Row itself to the center of the Box
+                .padding(vertical = 18.dp)
+                .align(Alignment.Center),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -164,7 +199,7 @@ private fun ArtistItem(
                     color = Color.White,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(start = 16.dp) // Increased padding
+                    modifier = Modifier.padding(start = 16.dp)
                 )
             }
 
@@ -178,7 +213,6 @@ private fun ArtistItem(
                 contentScale = ContentScale.Crop
             )
         }
-
 
         // Bottom Border
         Box(

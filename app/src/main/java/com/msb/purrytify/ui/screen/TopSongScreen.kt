@@ -3,7 +3,6 @@ package com.msb.purrytify.ui.screen
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -77,55 +76,89 @@ fun TopSongScreen(
             )
         }
 
-        if (isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(color = Color(0xFF1DB954))
-            }
-        } else {
-            // Content
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 18.dp)
-            ) {
-                // Date
-                Text(
-                    text = viewModel.getMonthYearString(soundCapsule),
-                    color = Color.White,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Normal,
-                    modifier = Modifier.padding(top = 16.dp)
-                )
-
-                // Title
-                Text(
-                    text = buildAnnotatedString {
-                        append("You played ")
-                        withStyle(style = SpanStyle(color = Color(0xFFF8E747))) {
-                            append("${songs.size} different songs")
-                        }
-                        append(" this month.")
-                    },
-                    color = Color.White,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-
-                // Song List
-                songs.forEachIndexed { index, song ->
-                    SongItem(
-                        song = song,
-                        rank = index + 1,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(108.dp)
-                    )
+        when {
+            isLoading -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = Color(0xFF1DB954))
                 }
             }
+            songs.isEmpty() -> {
+                EmptyTopSongState()
+            }
+            else -> {
+                // Content
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 18.dp)
+                ) {
+                    // Date
+                    Text(
+                        text = viewModel.getMonthYearString(soundCapsule),
+                        color = Color.White,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Normal,
+                        modifier = Modifier.padding(top = 16.dp)
+                    )
+
+                    // Title
+                    Text(
+                        text = buildAnnotatedString {
+                            append("You played ")
+                            withStyle(style = SpanStyle(color = Color(0xFFF8E747))) {
+                                append("${songs.size} different songs")
+                            }
+                            append(" this month.")
+                        },
+                        color = Color.White,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+
+                    // Song List
+                    songs.forEachIndexed { index, song ->
+                        SongItem(
+                            song = song,
+                            rank = index + 1,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(108.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmptyTopSongState() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "No Song Data Available",
+                color = Color.White,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Your top songs will appear here",
+                color = Color(0xFFB3B3B3),
+                fontSize = 14.sp
+            )
         }
     }
 }

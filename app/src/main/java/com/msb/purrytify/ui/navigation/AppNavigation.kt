@@ -272,7 +272,7 @@ fun NavigationComponent(
                                         composable(
                                             route = Screen.TopSongs.route,
                                             arguments = listOf(
-                                                navArgument("soundCapsuleId") { type = NavType.StringType },
+                                                navArgument("soundCapsuleId") { type = NavType.LongType },
                                             )
                                         ) { backStackEntry ->
                                             val soundCapsuleId = backStackEntry.arguments?.getLong("soundCapsuleId") ?: 0L
@@ -284,7 +284,7 @@ fun NavigationComponent(
                                         composable(
                                             route = Screen.TimeListened.route,
                                             arguments = listOf(
-                                                navArgument("soundCapsuleId") { type = NavType.StringType },
+                                                navArgument("soundCapsuleId") { type = NavType.LongType },
                                             )
                                         ) { backStackEntry ->
                                             val soundCapsuleId = backStackEntry.arguments?.getLong("soundCapsuleId") ?: 0L
@@ -442,7 +442,7 @@ fun NavigationComponent(
                                     composable(
                                         route = Screen.TopSongs.route,
                                         arguments = listOf(
-                                            navArgument("soundCapsuleId") { type = NavType.StringType },
+                                            navArgument("soundCapsuleId") { type = NavType.LongType },
                                         )
                                     ) { backStackEntry ->
                                         val soundCapsuleId = backStackEntry.arguments?.getLong("soundCapsuleId") ?: 0L
@@ -454,7 +454,7 @@ fun NavigationComponent(
                                     composable(
                                         route = Screen.TimeListened.route,
                                         arguments = listOf(
-                                            navArgument("soundCapsuleId") { type = NavType.StringType },
+                                            navArgument("soundCapsuleId") { type = NavType.LongType },
                                         )
                                     ) { backStackEntry ->
                                         val soundCapsuleId = backStackEntry.arguments?.getLong("soundCapsuleId") ?: 0L

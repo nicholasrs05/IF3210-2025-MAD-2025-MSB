@@ -9,6 +9,7 @@ import com.msb.purrytify.data.local.entity.DailyListeningTime
 import com.msb.purrytify.data.local.entity.Artist
 import com.msb.purrytify.data.local.entity.Song
 import com.msb.purrytify.data.repository.SoundCapsuleRepository
+import com.msb.purrytify.data.repository.SongRepository
 import com.msb.purrytify.model.ProfileModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -19,6 +20,7 @@ import javax.inject.Inject
 @HiltViewModel
 class SoundCapsuleViewModel @Inject constructor(
     private val repository: SoundCapsuleRepository,
+    private val songRepository: SongRepository,
     private val profileModel: ProfileModel
 ) : ViewModel() {
 
@@ -46,6 +48,12 @@ class SoundCapsuleViewModel @Inject constructor(
 
     private val _userId = MutableStateFlow<Long?>(null)
     val userId: StateFlow<Long?> = _userId.asStateFlow()
+
+    private val _streakSong = MutableStateFlow<Song?>(null)
+    val streakSong: StateFlow<Song?> = _streakSong.asStateFlow()
+
+    private val _streakArtist = MutableStateFlow<Artist?>(null)
+    val streakArtist: StateFlow<Artist?> = _streakArtist.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -122,7 +130,21 @@ class SoundCapsuleViewModel @Inject constructor(
 
     suspend fun getLongestDayStreak(soundCapsuleId: Long): DayStreak? {
         val dayStreaks: List<DayStreak>? = repository.getDayStreaksForCapsule(soundCapsuleId).firstOrNull()
-        return dayStreaks?.maxByOrNull { it.streakDays }
+        val longestStreak = dayStreaks?.maxByOrNull { it.streakDays }
+        
+        if (longestStreak != null) {
+            // Fetch song details from SongRepository
+            val song = songRepository.getSongById(longestStreak.songId)
+            _streakSong.value = song
+            
+            if (song != null) {
+                // Still need to get artist from SoundCapsuleRepository since we don't have it in SongRepository
+                val artist = repository.getArtistById(song.artistId)
+                _streakArtist.value = artist
+            }
+        }
+        
+        return longestStreak
     }
 
     fun createSoundCapsule(soundCapsule: SoundCapsule) {
@@ -166,26 +188,39 @@ class SoundCapsuleViewModel @Inject constructor(
     // New functions for each screen
     fun loadSoundCapsuleDetails(soundCapsuleId: Long) {
         viewModelScope.launch {
-            _isLoading.value = true
-            _error.value = null
-            
             try {
+                _isLoading.value = true
+                _error.value = null
+                
+                Log.d("SoundCapsuleViewModel", "Loading details for sound capsule: $soundCapsuleId")
+                
                 // Load sound capsule
                 val soundCapsule = repository.getSoundCapsuleById(soundCapsuleId)
                 _currentSoundCapsule.value = soundCapsule
+                Log.d("SoundCapsuleViewModel", "Loaded sound capsule: $soundCapsule")
 
                 // Load daily listening times
-                repository.getDailyListeningTimesForCapsule(soundCapsuleId).collect { times ->
-                    _dailyListeningTimes.value = times
-                }
+                val times = repository.getDailyListeningTimesForCapsule(soundCapsuleId).first()
+                _dailyListeningTimes.value = times
+                Log.d("SoundCapsuleViewModel", "Loaded daily listening times: ${times.size} entries")
 
                 // Load top artists and songs
-                _topArtists.value = repository.getTop5Artists(soundCapsuleId)
-                _topSongs.value = repository.getTop5Songs(soundCapsuleId)
+                val artists = repository.getTop5Artists(soundCapsuleId)
+                _topArtists.value = artists
+                Log.d("SoundCapsuleViewModel", "Loaded top artists: ${artists.size} entries")
+
+                val songs = repository.getTop5Songs(soundCapsuleId)
+                Log.d("SoundCapsuleViewModel", "Retrieved top songs: ${songs.size} entries")
+                Log.d("SoundCapsuleViewModel", "Top songs data: $songs")
+                _topSongs.value = songs
+                Log.d("SoundCapsuleViewModel", "Current top songs value: ${_topSongs.value}")
+
             } catch (e: Exception) {
                 _error.value = e.message ?: "An error occurred"
+                Log.e("SoundCapsuleViewModel", "Error loading sound capsule details", e)
             } finally {
                 _isLoading.value = false
+                Log.d("SoundCapsuleViewModel", "Finished loading sound capsule details")
             }
         }
     }
