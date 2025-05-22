@@ -1,5 +1,6 @@
 package com.msb.purrytify.viewmodel
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -11,9 +12,11 @@ import com.msb.purrytify.data.local.entity.Song
 import com.msb.purrytify.data.repository.SoundCapsuleRepository
 import com.msb.purrytify.data.repository.SongRepository
 import com.msb.purrytify.model.ProfileModel
+import com.msb.purrytify.utils.FileDownloadUtil
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
@@ -176,12 +179,76 @@ class SoundCapsuleViewModel @Inject constructor(
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
         
         return buildString {
-            appendLine("Sound Capsule Report - ${capsule.month} ${capsule.year}")
-            appendLine("Generated on: ${capsule.lastUpdated.format(formatter)}")
+            // Header
+            appendLine("Sound Capsule Report")
+            appendLine("Generated at,${capsule.lastUpdated.format(formatter)}")
             appendLine()
-            appendLine("Time Listened: ${capsule.timeListenedMinutes} minutes")
-            appendLine("Top Artist: ${capsule.topArtistId}")
-            appendLine("Top Song: ${capsule.topSongId}")
+            
+            // Basic Information
+            appendLine("Basic Information")
+            appendLine("Month,${capsule.month}")
+            appendLine("Year,${capsule.year}")
+            appendLine("Total Listening Time (minutes),${capsule.timeListenedMinutes}")
+            appendLine()
+            
+            // Top Artists Section
+            appendLine("Top Artists")
+            appendLine("Rank,Artist Name,Play Count")
+            viewModelScope.launch {
+                try {
+                    val artists = repository.getTop5Artists(capsule.id)
+                    artists.forEachIndexed { index, artist ->
+                        appendLine("${index + 1},${artist.name},") // Play count not available in current model
+                    }
+                } catch (e: Exception) {
+                    appendLine("Failed to load artists: ${e.message}")
+                }
+            }
+            appendLine()
+            
+            // Top Songs Section
+            appendLine("Top Songs")
+            appendLine("Rank,Song Title,Artist,Play Count")
+            viewModelScope.launch {
+                try {
+                    val songs = repository.getTop5Songs(capsule.id)
+                    songs.forEachIndexed { index, song ->
+                        val artist = repository.getArtistById(song.artistId)
+                        appendLine("${index + 1},${song.title},${artist?.name ?: "Unknown"},") // Play count not available in current model
+                    }
+                } catch (e: Exception) {
+                    appendLine("Failed to load songs: ${e.message}")
+                }
+            }
+            appendLine()
+            
+            // Daily Listening Times
+            appendLine("Daily Listening History")
+            appendLine("Date,Minutes Listened")
+            viewModelScope.launch {
+                try {
+                    repository.getDailyListeningTimesForCapsule(capsule.id).firstOrNull()?.forEach { daily ->
+                        appendLine("${daily.date},${daily.minutes}")
+                    }
+                } catch (e: Exception) {
+                    appendLine("Failed to load daily listening times: ${e.message}")
+                }
+            }
+            appendLine()
+            
+            // Day Streaks
+            appendLine("Listening Streaks")
+            appendLine("Start Date,End Date,Days,Song")
+            viewModelScope.launch {
+                try {
+                    repository.getDayStreaksForCapsule(capsule.id).firstOrNull()?.forEach { streak ->
+                        val song = songRepository.getSongById(streak.songId)
+                        appendLine("${streak.startDate.format(formatter)},${streak.endDate.format(formatter)},${streak.streakDays},${song?.title ?: "Unknown"}")
+                    }
+                } catch (e: Exception) {
+                    appendLine("Failed to load streaks: ${e.message}")
+                }
+            }
         }
     }
 
@@ -232,5 +299,41 @@ class SoundCapsuleViewModel @Inject constructor(
             "July", "August", "September", "October", "November", "December"
         )
         return "${monthNames[soundCapsule.month - 1]} ${soundCapsule.year}"
+    }
+
+    suspend fun exportAllSoundCapsulestoCSV(): String {
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+        val capsules = _soundCapsulesState.value
+        
+        return buildString {
+            // Header
+            appendLine("All Sound Capsules Report")
+            appendLine("Generated at,${LocalDateTime.now().format(formatter)}")
+            appendLine()
+            
+            // Column Headers
+            appendLine("Month,Year,Total Minutes,Top Artist,Top Song,Last Updated")
+            
+            // Data rows
+            capsules.forEach { capsule ->
+                try {
+                    val topArtist = repository.getArtistById(capsule.topArtistId)?.name ?: "Unknown"
+                    val topSong = songRepository.getSongById(capsule.topSongId)?.title ?: "Unknown"
+                    
+                    appendLine("${capsule.month},${capsule.year},${capsule.timeListenedMinutes}," +
+                            "${topArtist},${topSong},${capsule.lastUpdated.format(formatter)}")
+                } catch (e: Exception) {
+                    appendLine("${capsule.month},${capsule.year},${capsule.timeListenedMinutes},Error loading data,Error loading data,${capsule.lastUpdated.format(formatter)}")
+                }
+            }
+        }
+    }
+
+    fun downloadAllSoundCapsules(context: Context) {
+        viewModelScope.launch {
+            val csvData = exportAllSoundCapsulestoCSV()
+            val fileName = "all_sound_capsules_${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"))}.csv"
+            FileDownloadUtil.downloadCsvFile(context, csvData, fileName)
+        }
     }
 } 

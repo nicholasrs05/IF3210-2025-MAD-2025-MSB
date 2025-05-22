@@ -25,9 +25,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.platform.LocalContext
 import com.msb.purrytify.utils.DateUtil
 import com.msb.purrytify.utils.FileShareUtil
+import com.msb.purrytify.utils.FileDownloadUtil
 import com.msb.purrytify.viewmodel.SoundCapsuleViewModel
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import androidx.lifecycle.viewModelScope
 
 
 @Composable
@@ -36,7 +38,6 @@ fun SoundCapsuleSection(
     modifier: Modifier = Modifier,
     viewModel: SoundCapsuleViewModel = hiltViewModel(),
 ) {
-
     fun shareSoundCapsule(
         capsuleToShare: SoundCapsule?,
         soundCapsuleViewModel: SoundCapsuleViewModel,
@@ -49,6 +50,13 @@ fun SoundCapsuleSection(
             val fileName = "sound_capsule_${capsuleToShare?.month}_${capsuleToShare?.year}_${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))}.csv"
             FileShareUtil.shareCsvFile(context, csvData, fileName)
         }
+    }
+
+    fun downloadAllSoundCapsules(
+        soundCapsuleViewModel: SoundCapsuleViewModel,
+        context: Context
+    ) {
+        soundCapsuleViewModel.downloadAllSoundCapsules(context)
     }
 
     val context = LocalContext.current
@@ -80,7 +88,9 @@ fun SoundCapsuleSection(
                 )
             }
             soundCapsulesState.isNotEmpty() -> {
-                SoundCapsuleTitle()
+                SoundCapsuleTitle(
+                    onDownloadAll = { downloadAllSoundCapsules(viewModel, context) }
+                )
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.fillMaxWidth()
@@ -134,7 +144,9 @@ private fun EmptySoundCapsuleState() {
 }
 
 @Composable
-fun SoundCapsuleTitle() {
+fun SoundCapsuleTitle(
+    onDownloadAll: () -> Unit
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -152,12 +164,14 @@ fun SoundCapsuleTitle() {
                 color = Color.White,
                 fontWeight = FontWeight.Bold
             )
-            Icon(
-                imageVector = Icons.Outlined.Download,
-                contentDescription = "Download",
-                tint = Color.White,
-                modifier = Modifier.size(24.dp)
-            )
+            IconButton(onClick = onDownloadAll) {
+                Icon(
+                    imageVector = Icons.Outlined.Download,
+                    contentDescription = "Download All",
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
         }
     }
 }
