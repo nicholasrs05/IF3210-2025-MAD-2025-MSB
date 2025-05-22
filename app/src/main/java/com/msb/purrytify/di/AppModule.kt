@@ -111,8 +111,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideSoundCapsuleRepository(soundCapsuleDao: SoundCapsuleDao): SoundCapsuleRepository {
-        return SoundCapsuleRepository(soundCapsuleDao)
+    fun provideSoundCapsuleRepository(soundCapsuleDao: SoundCapsuleDao, songDao: SongDao): SoundCapsuleRepository {
+        return SoundCapsuleRepository(soundCapsuleDao, songDao)
     }
 
     @Provides

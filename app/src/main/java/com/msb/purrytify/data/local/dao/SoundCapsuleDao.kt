@@ -10,6 +10,7 @@ import com.msb.purrytify.data.local.converter.DateTimeConverter
 import com.msb.purrytify.data.local.entity.MonthlySongPlayCount
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDateTime
+import java.time.LocalDate
 
 @Dao
 @TypeConverters(DateTimeConverter::class)
@@ -69,7 +70,7 @@ interface SoundCapsuleDao {
     suspend fun getDailyListeningTimeById(id: Long): DailyListeningTime?
 
     @Query("SELECT * FROM daily_listening_times WHERE soundCapsuleId = :soundCapsuleId AND date = :date")
-    suspend fun getDailyListeningTimeByDate(soundCapsuleId: Long, date: LocalDateTime): DailyListeningTime?
+    suspend fun getDailyListeningTimeByDate(soundCapsuleId: Long, date: LocalDate): DailyListeningTime?
 
     @Query("DELETE FROM daily_listening_times WHERE soundCapsuleId = :soundCapsuleId")
     suspend fun deleteDailyListeningTimesForCapsule(soundCapsuleId: Long)
@@ -91,8 +92,8 @@ interface SoundCapsuleDao {
     suspend fun incrementMonthlyPlayCount(songId: Long, soundCapsuleId: Long, timestamp: Long)
 
     // Top 5 queries
-    @Query("SELECT * FROM songs WHERE id = :songId")
-    suspend fun getSongById(songId: Long): Song?
+    @Query("SELECT * FROM artists WHERE id = :artistId")
+    suspend fun getArtistById(artistId: Long): Artist?
 
     @Query("""
         SELECT a.* FROM artists a
@@ -106,9 +107,7 @@ interface SoundCapsuleDao {
     suspend fun getTop5Artists(soundCapsuleId: Long): List<Artist>
 
     @Query("""
-        SELECT s.id, s.title, s.artistName, s.artistId, s.duration, s.filePath, 
-               s.artworkPath, s.isLiked, s.addedAt, s.lastPlayedAt, s.ownerId, 
-               s.isFromApi, s.playCount 
+        SELECT s.*
         FROM songs s
         INNER JOIN monthly_song_play_counts mspc ON s.id = mspc.songId
         WHERE mspc.soundCapsuleId = :soundCapsuleId

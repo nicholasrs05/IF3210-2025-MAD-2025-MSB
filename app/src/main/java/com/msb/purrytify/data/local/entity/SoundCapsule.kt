@@ -5,6 +5,7 @@ import androidx.room.PrimaryKey
 import androidx.room.TypeConverters
 import com.msb.purrytify.data.local.converter.DateTimeConverter
 import java.time.LocalDateTime
+import java.time.LocalDate
 
 @Entity(tableName = "sound_capsules")
 @TypeConverters(DateTimeConverter::class)
@@ -38,7 +39,7 @@ data class DailyListeningTime(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val soundCapsuleId: Long,
-    val date: LocalDateTime,
+    val date: LocalDate,
     val minutes: Int
 )
 
