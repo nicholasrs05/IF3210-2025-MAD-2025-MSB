@@ -44,7 +44,7 @@ class QRSharingService @Inject constructor(
                     putExtra(Intent.EXTRA_STREAM, uri)
                     type = "image/png"
                     putExtra(Intent.EXTRA_SUBJECT, "Lagu terbaru! ${song.title}")
-                    putExtra(Intent.EXTRA_TEXT, "Lihat lagu ii \"${song.title}\" dari ${song.artist} hanya di purrytify!")
+                    putExtra(Intent.EXTRA_TEXT, "Lihat lagu ii \"${song.title}\" dari ${song.artistName} hanya di purrytify!")
                     flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
                     clipData = android.content.ClipData.newUri(context.contentResolver, "QR Code", uri)
                 }

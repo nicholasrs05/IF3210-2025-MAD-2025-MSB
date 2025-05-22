@@ -222,7 +222,7 @@ fun ModernQRScannerScreen(
                                 style = MaterialTheme.typography.bodySmall
                             )
                             Text(
-                                text = "${song.title} - ${song.artist}",
+                                text = "${song.title} - ${song.artistName}",
                                 color = Color.White,
                                 style = MaterialTheme.typography.bodyMedium,
                                 maxLines = 1
