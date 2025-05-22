@@ -360,6 +360,51 @@ class PlayerViewModel @Inject constructor(
         return SongRepository.getDuration(filePath)
     }
 
+    fun getSongMetadataFromStream(inputStream: java.io.InputStream): Pair<String?, String?> {
+        return try {
+            val mediaMetadataRetriever = android.media.MediaMetadataRetriever()
+            // Create a temporary file to store the stream content
+            val tempFile = java.io.File.createTempFile("temp_audio", null, getApplication<Application>().cacheDir)
+            tempFile.outputStream().use { outputStream ->
+                inputStream.copyTo(outputStream)
+            }
+            
+            mediaMetadataRetriever.setDataSource(tempFile.absolutePath)
+            
+            val title = mediaMetadataRetriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_TITLE)
+            val artist = mediaMetadataRetriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_ARTIST)
+            
+            mediaMetadataRetriever.release()
+            tempFile.delete() // Clean up the temporary file
+            Pair(title, artist)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Pair(null, null)
+        }
+    }
+
+    fun getSongDurationFromStream(inputStream: java.io.InputStream): Long {
+        return try {
+            val mediaMetadataRetriever = android.media.MediaMetadataRetriever()
+            // Create a temporary file to store the stream content
+            val tempFile = java.io.File.createTempFile("temp_audio", null, getApplication<Application>().cacheDir)
+            tempFile.outputStream().use { outputStream ->
+                inputStream.copyTo(outputStream)
+            }
+            
+            mediaMetadataRetriever.setDataSource(tempFile.absolutePath)
+            
+            val duration = mediaMetadataRetriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLong() ?: 0L
+            
+            mediaMetadataRetriever.release()
+            tempFile.delete() // Clean up the temporary file
+            duration
+        } catch (e: Exception) {
+            e.printStackTrace()
+            0L
+        }
+    }
+
     fun playSongById(songIdStr: String) {
         viewModelScope.launch {
             try {
