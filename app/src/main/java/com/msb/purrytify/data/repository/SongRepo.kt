@@ -33,6 +33,10 @@ class SongRepository @Inject constructor(private val songDao: SongDao) {
         songDao.updateLastPlayedAt(songId, System.currentTimeMillis())
     }
 
+    suspend fun incrementPlayCount(songId: Long) {
+        songDao.incrementPlayCount(songId)
+    }
+
     fun fetchAllSongs(userId: Long): Flow<List<Song>> {
         return songDao.getAllSongs(userId)
     }

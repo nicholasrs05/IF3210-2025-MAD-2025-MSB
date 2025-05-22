@@ -47,9 +47,15 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.msb.purrytify.ui.navigation.Screen
+import com.msb.purrytify.data.local.entity.SoundCapsule
 import com.msb.purrytify.viewmodel.AuthViewModel
 import com.msb.purrytify.viewmodel.PlayerViewModel
 import com.msb.purrytify.ui.component.NoInternet
+import com.msb.purrytify.viewmodel.SoundCapsuleViewModel
+import com.msb.purrytify.ui.component.soundcapsule.SoundCapsuleSection
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import com.msb.purrytify.utils.FileShareUtil
 
 @Composable
 fun ProfileScreen(
@@ -150,7 +156,6 @@ fun ProfileContent(
             EditButton()
         }
 
-
         Spacer(modifier = Modifier.height(20.dp))
 
         Column(
@@ -169,7 +174,6 @@ fun ProfileContent(
                 style = MaterialTheme.typography.labelMedium,
                 color = Color.Gray
             )
-
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -228,7 +232,7 @@ fun ProfileContent(
                 )
             }
         }
-        
+
         Spacer(modifier = Modifier.height(16.dp))
 
         Row(
@@ -239,8 +243,15 @@ fun ProfileContent(
             ProfileStat(label = "LIKED", count = profile.likedSongsCount)
             ProfileStat(label = "LISTENED", count = profile.listenedSongsCount)
         }
-    }
 
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Sound Capsule Section
+        SoundCapsuleSection(
+            navController = navController,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
 }
 
 @Composable
@@ -290,7 +301,6 @@ fun EditButton() {
         )
     }
 }
-
 
 @Composable
 fun ProfileStat(label: String, count: Int) {

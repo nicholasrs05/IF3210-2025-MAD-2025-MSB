@@ -57,7 +57,7 @@ fun createApiSongDeepLinkString(songId: Long): String {
         }
         
         val deepLink = createSongDeepLinkString(song.id)
-        val shareText = "Check out this song: ${song.title} by ${song.artist}\n$deepLink"
+        val shareText = "Check out this song: ${song.title} by ${song.artistName}\n$deepLink"
 
         val shareIntent = ShareCompat.IntentBuilder(context)
             .setType("text/plain")

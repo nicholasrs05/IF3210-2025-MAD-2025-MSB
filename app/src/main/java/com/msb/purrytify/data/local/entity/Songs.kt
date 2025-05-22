@@ -8,7 +8,8 @@ data class Song(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val title: String,
-    val artist: String,
+    val artistName: String,
+    val artistId: Long,
     val duration: Long,
     val filePath: String,
     val artworkPath: String,
@@ -16,5 +17,6 @@ data class Song(
     val addedAt: Long = System.currentTimeMillis(),
     val lastPlayedAt: Long? = null,
     val ownerId: Long,
-    val isFromApi: Boolean = false
+    val isFromApi: Boolean = false,
+    val playCount: Int = 0
 )

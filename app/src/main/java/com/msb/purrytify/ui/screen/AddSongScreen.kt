@@ -65,10 +65,9 @@ fun AddSongScreen(
     ) { uri ->
         uri?.let {
             try {
-                context.contentResolver.takePersistableUriPermission(
-                    it,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION
-                )
+                // Request persistable permission
+                val takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                context.contentResolver.takePersistableUriPermission(uri, takeFlags)
 
                 selectedAudioUri = it
                 val filePath = FileUtils.getPath(context, it)
@@ -78,7 +77,17 @@ fun AddSongScreen(
                     title = extractedTitle ?: ""
                     artist = extractedArtist ?: ""
                 } else {
-                    Toast.makeText(context, "Could not get file path", Toast.LENGTH_SHORT).show()
+                    // Try to get the file path directly from the URI
+                    val inputStream = context.contentResolver.openInputStream(it)
+                    if (inputStream != null) {
+                        duration = playerViewModel.getSongDurationFromStream(inputStream)
+                        val (extractedTitle, extractedArtist) = playerViewModel.getSongMetadataFromStream(inputStream)
+                        title = extractedTitle ?: ""
+                        artist = extractedArtist ?: ""
+                        inputStream.close()
+                    } else {
+                        Toast.makeText(context, "Could not access audio file", Toast.LENGTH_SHORT).show()
+                    }
                 }
             } catch (e: Exception) {
                 Toast.makeText(context, "Error reading audio file: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -92,10 +101,8 @@ fun AddSongScreen(
     ) { uri ->
         uri?.let {
             try {
-                context.contentResolver.takePersistableUriPermission(
-                    it,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION
-                )
+                // For Android 14+, we don't need to request persistable permissions
+                // as the system handles the access lifecycle
                 selectedArtworkUri = it
             } catch (e: Exception) {
                 Toast.makeText(context, "Error selecting artwork: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -124,7 +131,12 @@ fun AddSongScreen(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
         val isGranted = if (Build.VERSION.SDK_INT >= 33) {
-            permissions[Manifest.permission.READ_MEDIA_IMAGES] == true
+            if (Build.VERSION.SDK_INT >= 34) {
+                // For Android 14+, we don't need to check permissions as the system handles it
+                true
+            } else {
+                permissions[Manifest.permission.READ_MEDIA_IMAGES] == true
+            }
         } else {
             permissions[Manifest.permission.READ_EXTERNAL_STORAGE] == true
         }
@@ -149,7 +161,10 @@ fun AddSongScreen(
     }
 
     fun requestImagePermission() {
-        if (Build.VERSION.SDK_INT >= 33) {
+        if (Build.VERSION.SDK_INT >= 34) {
+            // For Android 14+, directly launch the picker without requesting permissions
+            pickArtworkLauncher.launch("image/*")
+        } else if (Build.VERSION.SDK_INT >= 33) {
             imagePermissionLauncher.launch(arrayOf(
                 Manifest.permission.READ_MEDIA_IMAGES
             ))

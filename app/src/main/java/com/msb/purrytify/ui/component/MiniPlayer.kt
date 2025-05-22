@@ -198,7 +198,7 @@ fun MiniPlayer(
                         )
 
                         Text(
-                            text = currentSong.artist,
+                            text = currentSong.artistName,
                             style = MaterialTheme.typography.bodySmall,
                             color = Color.White.copy(alpha = 0.7f),
                             maxLines = 1,

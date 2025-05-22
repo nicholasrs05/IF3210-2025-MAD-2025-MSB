@@ -10,7 +10,11 @@ import com.msb.purrytify.data.storage.DataStoreManager
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.msb.purrytify.data.local.PurrytifyDatabase
+import com.msb.purrytify.data.local.dao.ArtistDao
 import com.msb.purrytify.data.local.dao.SongDao
+import com.msb.purrytify.data.local.dao.SoundCapsuleDao
+import com.msb.purrytify.data.repository.ArtistRepository
+import com.msb.purrytify.data.repository.SoundCapsuleRepository
 import com.msb.purrytify.data.repository.SongRepository
 import com.msb.purrytify.data.repository.OnlineSongRepository
 import com.msb.purrytify.qr.QRSharingService
@@ -96,9 +100,31 @@ object AppModule {
     }
 
     @Provides
+    fun provideSoundCapsuleDao(database: PurrytifyDatabase): SoundCapsuleDao {
+        return database.soundCapsuleDao()
+    }
+
+    @Provides
+    fun provideArtistDao(database: PurrytifyDatabase): ArtistDao{
+        return database.artistDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideSoundCapsuleRepository(soundCapsuleDao: SoundCapsuleDao, songDao: SongDao): SoundCapsuleRepository {
+        return SoundCapsuleRepository(soundCapsuleDao, songDao)
+    }
+
+    @Provides
     @Singleton
     fun provideSongRepository(songDao: SongDao): SongRepository {
         return SongRepository(songDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideArtistRepository(artistDao: ArtistDao): ArtistRepository {
+        return ArtistRepository(artistDao)
     }
 
     @Provides
@@ -112,12 +138,12 @@ object AppModule {
     fun provideQRSharingService(@ApplicationContext context: Context): QRSharingService {
         return QRSharingService(context)
     }
-    
+
     @Provides
     @Singleton
     fun providePlayerManager(@ApplicationContext context: Context): PlayerManager {
         return PlayerManager(context)
     }
-    
+
     // AudioService is a system service and will be provided through ServiceConnection
 }

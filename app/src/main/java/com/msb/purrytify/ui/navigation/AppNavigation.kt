@@ -48,6 +48,10 @@ import com.msb.purrytify.ui.screen.TenCountryScreen
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.msb.purrytify.data.DummyData
+import com.msb.purrytify.ui.screen.TimeListenedScreen
+import com.msb.purrytify.ui.screen.TopArtistScreen
+import com.msb.purrytify.ui.screen.TopSongScreen
 
 sealed class Screen(
     val route: String,
@@ -85,11 +89,11 @@ sealed class Screen(
     })
 
     data object Login : Screen("login", "Login")
-    
+
     data object QRScanner : Screen("qr_scanner", "QR Scanner")
-    
+
     data object EditProfile : Screen("edit_profile", "Edit Profile")
-    
+
     data object MapLocationPicker : Screen("map_location_picker", "Map Location Picker")
 
     data object FiftyGlobal : Screen("fifty_global", "Fifty Global")
@@ -99,6 +103,24 @@ sealed class Screen(
     data object SongDetail : Screen("song/{songId}", "Song Detail") {
         fun createRoute(songId: String): String {
             return "song/$songId"
+        }
+    }
+
+    data object TopArtists : Screen("top_artists/{soundCapsuleId}", "Top Artists") {
+        fun createRoute(soundCapsuleId: Long): String {
+            return "top_artists/$soundCapsuleId"
+        }
+    }
+
+    data object TopSongs : Screen("top_songs/{soundCapsuleId}", "Top Songs") {
+        fun createRoute(soundCapsuleId: Long): String {
+            return "top_songs/$soundCapsuleId"
+        }
+    }
+
+    data object TimeListened : Screen("time_listened/{soundCapsuleId}", "Time Listened") {
+        fun createRoute(soundCapsuleId: Long): String {
+            return "time_listened/$soundCapsuleId"
         }
     }
 }
@@ -259,6 +281,42 @@ fun NavigationComponent(
                                                 }
                                             }
                                         }
+                                        composable(
+                                            route = Screen.TopArtists.route,
+                                            arguments = listOf(
+                                                navArgument("soundCapsuleId") { type = NavType.LongType },
+                                            )
+                                        ) { backStackEntry ->
+                                            val soundCapsuleId = backStackEntry.arguments?.getLong("soundCapsuleId") ?: 0L
+                                            TopArtistScreen(
+                                                soundCapsuleId = soundCapsuleId,
+                                                onBackClick = { navController.popBackStack() }
+                                            )
+                                        }
+                                        composable(
+                                            route = Screen.TopSongs.route,
+                                            arguments = listOf(
+                                                navArgument("soundCapsuleId") { type = NavType.LongType },
+                                            )
+                                        ) { backStackEntry ->
+                                            val soundCapsuleId = backStackEntry.arguments?.getLong("soundCapsuleId") ?: 0L
+                                            TopSongScreen(
+                                                soundCapsuleId = soundCapsuleId,
+                                                onBackClick = { navController.popBackStack() }
+                                            )
+                                        }
+                                        composable(
+                                            route = Screen.TimeListened.route,
+                                            arguments = listOf(
+                                                navArgument("soundCapsuleId") { type = NavType.LongType },
+                                            )
+                                        ) { backStackEntry ->
+                                            val soundCapsuleId = backStackEntry.arguments?.getLong("soundCapsuleId") ?: 0L
+                                            TimeListenedScreen(
+                                                    soundCapsuleId,
+                                                    onBackClick = { navController.popBackStack() }
+                                                )
+                                        }
                                     }
                                 }
                             }
@@ -290,7 +348,13 @@ fun NavigationComponent(
                                             playerViewModel = playerViewModel,
                                         )
                                     }
-                                    composable(Screen.Profile.route) { ProfileScreen(authViewModel=authViewModel, playerViewModel = playerViewModel, navController = navController) }
+                                    composable(Screen.Profile.route) {
+                                        ProfileScreen(
+                                            authViewModel = authViewModel,
+                                            playerViewModel = playerViewModel,
+                                            navController = navController
+                                        )
+                                    }
                                     composable(Screen.Login.route) {
                                         LoginScreen(
                                             authViewModel = authViewModel
@@ -400,6 +464,42 @@ fun NavigationComponent(
                                         Box(modifier = Modifier.fillMaxSize()) {
                                             CircularProgressIndicator()
                                         }
+                                    }
+                                    composable(
+                                        route = Screen.TopArtists.route,
+                                        arguments = listOf(
+                                            navArgument("soundCapsuleId") { type = NavType.LongType },
+                                        )
+                                    ) { backStackEntry ->
+                                        val soundCapsuleId = backStackEntry.arguments?.getLong("soundCapsuleId") ?: 0L
+                                        TopArtistScreen(
+                                            soundCapsuleId = soundCapsuleId,
+                                            onBackClick = { navController.popBackStack() }
+                                        )
+                                    }
+                                    composable(
+                                        route = Screen.TopSongs.route,
+                                        arguments = listOf(
+                                            navArgument("soundCapsuleId") { type = NavType.LongType },
+                                        )
+                                    ) { backStackEntry ->
+                                        val soundCapsuleId = backStackEntry.arguments?.getLong("soundCapsuleId") ?: 0L
+                                        TopSongScreen(
+                                            soundCapsuleId = soundCapsuleId,
+                                            onBackClick = { navController.popBackStack() }
+                                        )
+                                    }
+                                    composable(
+                                        route = Screen.TimeListened.route,
+                                        arguments = listOf(
+                                            navArgument("soundCapsuleId") { type = NavType.LongType },
+                                        )
+                                    ) { backStackEntry ->
+                                        val soundCapsuleId = backStackEntry.arguments?.getLong("soundCapsuleId") ?: 0L
+                                        TimeListenedScreen(
+                                                    soundCapsuleId,
+                                                    onBackClick = { navController.popBackStack() }
+                                                )
                                     }
                                 }
                             }

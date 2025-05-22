@@ -3,4 +3,5 @@
     <cache-path name="qrcodes" path="qrcodes/"/>
     <cache-path name="profile_photos" path="."/>
     <external-path name="external_files" path="."/>
+    <cache-path name="shared_files" path="." />
 </paths>

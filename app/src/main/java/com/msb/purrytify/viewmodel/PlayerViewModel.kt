@@ -12,8 +12,12 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.msb.purrytify.data.local.entity.Artist
 import com.msb.purrytify.data.local.entity.Song
+import com.msb.purrytify.data.repository.ApiSongRepository
+import com.msb.purrytify.data.repository.ArtistRepository
 import com.msb.purrytify.data.repository.SongRepository
+import com.msb.purrytify.data.repository.SoundCapsuleRepository
 import com.msb.purrytify.model.ProfileModel
 import com.msb.purrytify.qr.QRSharingService
 import com.msb.purrytify.service.AudioService
@@ -32,7 +36,9 @@ class PlayerViewModel @Inject constructor(
     private val songRepository: SongRepository,
     private val playerManager: PlayerManager,
     profileModel: ProfileModel,
-    private val qrSharingService: QRSharingService
+    private val qrSharingService: QRSharingService,
+    private val artistRepository: ArtistRepository,
+    private val soundCapsuleRepository: SoundCapsuleRepository
 ) : AndroidViewModel(application) {
 
     private val _currentSong = mutableStateOf<Song?>(null)
@@ -320,9 +326,27 @@ class PlayerViewModel @Inject constructor(
 
     fun addSong(title: String, artist: String, filePath: String, artworkPath: String, duration: Long) {
         viewModelScope.launch(Dispatchers.IO) {
+            val existingArtist = artistRepository.getArtistByName(artist.lowercase())
+            val artistId = if (existingArtist != null) {
+                if (artworkPath.isNotEmpty()) {
+                    artistRepository.updateArtist(existingArtist.copy(imageUrl = artworkPath))
+                }
+                existingArtist.id
+            } else {
+                artistRepository.insertArtist(
+                    Artist(
+                        name = artist,
+                        imageUrl = if (artworkPath.isNotEmpty()) artworkPath else null
+                    )
+                )
+            }
+
+            Log.d("Add Song", "Duration: $duration")
+
             val song = Song(
                 title = title,
-                artist = artist,
+                artistName = artist,
+                artistId = artistId,
                 filePath = filePath,
                 artworkPath = artworkPath,
                 duration = duration,
@@ -338,6 +362,51 @@ class PlayerViewModel @Inject constructor(
 
     fun getSongDuration(filePath: String): Long {
         return SongRepository.getDuration(filePath)
+    }
+
+    fun getSongMetadataFromStream(inputStream: java.io.InputStream): Pair<String?, String?> {
+        return try {
+            val mediaMetadataRetriever = android.media.MediaMetadataRetriever()
+            // Create a temporary file to store the stream content
+            val tempFile = java.io.File.createTempFile("temp_audio", null, getApplication<Application>().cacheDir)
+            tempFile.outputStream().use { outputStream ->
+                inputStream.copyTo(outputStream)
+            }
+
+            mediaMetadataRetriever.setDataSource(tempFile.absolutePath)
+
+            val title = mediaMetadataRetriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_TITLE)
+            val artist = mediaMetadataRetriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_ARTIST)
+
+            mediaMetadataRetriever.release()
+            tempFile.delete() // Clean up the temporary file
+            Pair(title, artist)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Pair(null, null)
+        }
+    }
+
+    fun getSongDurationFromStream(inputStream: java.io.InputStream): Long {
+        return try {
+            val mediaMetadataRetriever = android.media.MediaMetadataRetriever()
+            // Create a temporary file to store the stream content
+            val tempFile = java.io.File.createTempFile("temp_audio", null, getApplication<Application>().cacheDir)
+            tempFile.outputStream().use { outputStream ->
+                inputStream.copyTo(outputStream)
+            }
+
+            mediaMetadataRetriever.setDataSource(tempFile.absolutePath)
+
+            val duration = mediaMetadataRetriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLong() ?: 0L
+
+            mediaMetadataRetriever.release()
+            tempFile.delete() // Clean up the temporary file
+            duration
+        } catch (e: Exception) {
+            e.printStackTrace()
+            0L
+        }
     }
 
     fun playSongById(songIdStr: String) {
@@ -362,11 +431,17 @@ class PlayerViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 songRepository.getSongById(songId)?.let { existingSong ->
+                    val existingArtistId = existingSong.artistId
+                    val existingArtist = artistRepository.getArtistById(existingArtistId)
+                    existingArtist?.let {
+                        artistRepository.updateArtist(it.copy(name = artist))
+                    }
+
                     val updatedSong = existingSong.copy(
                         title = title,
-                        artist = artist,
                         artworkPath = artworkPath
                     )
+
                     songRepository.update(updatedSong)
                     
                     if (_currentSong.value?.id == songId) {

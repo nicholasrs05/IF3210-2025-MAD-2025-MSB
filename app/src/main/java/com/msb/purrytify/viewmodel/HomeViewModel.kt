@@ -7,6 +7,7 @@ import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.msb.purrytify.data.local.entity.Song
 import com.msb.purrytify.data.repository.SongRepository
+import com.msb.purrytify.data.repository.SoundCapsuleRepository
 import com.msb.purrytify.model.ProfileModel
 import com.msb.purrytify.service.PlayerManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,7 +20,8 @@ import javax.inject.Inject
 class HomeViewModel @Inject constructor(
     private val songRepository: SongRepository,
     private val playerManager: PlayerManager,
-    private val profileModel: ProfileModel
+    private val profileModel: ProfileModel,
+    private val soundCapsuleRepository: SoundCapsuleRepository
 ) : ViewModel() {
     
     private val _isLoading = MutableStateFlow(false)
@@ -36,7 +38,8 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             // Update last played timestamp
             songRepository.updateLastPlayedAt(song.id)
-            
+            soundCapsuleRepository.incrementSongPlayCount(song.id, userId)
+
             // Play the song using PlayerManager
             playerManager.playSong(song)
         }
@@ -55,6 +58,7 @@ class HomeViewModel @Inject constructor(
                 // Update last played timestamp
                 viewModelScope.launch {
                     songRepository.updateLastPlayedAt(selectedSong.id)
+                    soundCapsuleRepository.incrementSongPlayCount(selectedSong.id, userId)
                 }
             } else {
                 // If song not found in playlist (shouldn't happen), just play it directly
@@ -83,6 +87,7 @@ class HomeViewModel @Inject constructor(
                 
                 // Update last played timestamp
                 viewModelScope.launch {
+                    soundCapsuleRepository.incrementSongPlayCount(selectedSong.id, userId)
                     songRepository.updateLastPlayedAt(selectedSong.id)
                 }
             } else {

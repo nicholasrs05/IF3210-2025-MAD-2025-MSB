@@ -58,7 +58,7 @@ fun FiftyGlobalScreen(
     
     val isConnected = networkStatusListener()
     val uiState by viewModel.uiState.collectAsState()
-    
+
     var backgroundColor by remember { mutableStateOf(Color(0xFF121212)) }
     var textColor by remember { mutableStateOf(Color.White) }
     var accentColor by remember { mutableStateOf(Color(0xFF1DB954)) }
@@ -403,7 +403,7 @@ fun NumberedSongItem(
                 color = textColor
             )
             Text(
-                text = song.artist,
+                text = song.artistName,
                 style = MaterialTheme.typography.bodySmall,
                 color = textColor.copy(alpha = 0.7f),
                 maxLines = 1,

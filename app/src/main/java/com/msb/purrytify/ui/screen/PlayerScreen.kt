@@ -77,7 +77,7 @@ object EnhancedColorUtils {
         minContrast: Float = 4.5f
     ): Color {
         val contrastRatio = calculateContrastRatio(foreground, background)
-        
+
         return if (contrastRatio < minContrast) {
             if (background.isLight()) {
                 adjustColorForContrast(foreground, background, targetLuminance = 0.15f)
@@ -110,7 +110,7 @@ object EnhancedColorUtils {
             // Need to darken
             targetLuminance / currentLuminance
         }
-        
+
         return Color(
             red = (color.red * factor).coerceIn(0f, 1f),
             green = (color.green * factor).coerceIn(0f, 1f),
@@ -118,7 +118,7 @@ object EnhancedColorUtils {
             alpha = color.alpha
         )
     }
-    
+
     /**
      * Creates an enhanced color scheme from palette with better contrast
      */
@@ -130,10 +130,10 @@ object EnhancedColorUtils {
         val lightVibrantColor = Color(palette.getLightVibrantColor(Color(0xFF4CAF50).toArgb()))
         val mutedColor = Color(palette.getMutedColor(Color(0xFF666666).toArgb()))
         val darkMutedColor = Color(palette.getDarkMutedColor(Color(0xFF1A1A1A).toArgb()))
-        
+
         // Determine base background - prefer dark muted over dominant for better music player aesthetics
         val baseBackground = if (darkMutedColor.luminance() < 0.3f) darkMutedColor else dominantColor
-        
+
         // Ensure background is sufficiently dark for music player
         val backgroundColor = if (baseBackground.luminance() > 0.2f) {
             Color(
@@ -143,21 +143,21 @@ object EnhancedColorUtils {
                 alpha = 1f
             )
         } else baseBackground
-        
+
         // Choose accent color with better saturation
         val accentColor = when {
             vibrantColor.luminance() > 0.15f && calculateSaturation(vibrantColor) > 0.4f -> vibrantColor
             lightVibrantColor.luminance() > 0.3f -> lightVibrantColor
             else -> Color(0xFF1DB954) // Fallback Spotify green
         }
-        
+
         // Ensure accent has good contrast against background
         val enhancedAccent = ensureContrast(accentColor, backgroundColor, 3.0f)
-        
+
         // Calculate text colors with high contrast
         val primaryText = ensureContrast(Color.White, backgroundColor, 7.0f)
         val secondaryText = ensureContrast(Color.White.copy(alpha = 0.7f), backgroundColor, 4.5f)
-        
+
         return EnhancedColorScheme(
             background = backgroundColor,
             accent = enhancedAccent,
@@ -167,7 +167,7 @@ object EnhancedColorUtils {
             controlForeground = ensureContrast(Color.White, enhancedAccent, 4.5f)
         )
     }
-    
+
     private fun calculateSaturation(color: Color): Float {
         val max = maxOf(color.red, color.green, color.blue)
         val min = minOf(color.red, color.green, color.blue)
@@ -234,7 +234,7 @@ fun PlayerScreen(
             viewModel.resumeCurrentSong()
         }
     }
-    
+
     LaunchedEffect(viewModel.currentSong.value) {
         if (viewModel.currentSong.value == null) {
             localIsDismissing = true
@@ -243,7 +243,7 @@ fun PlayerScreen(
     }
     
     // Enhanced color scheme with better contrast
-    var colorScheme by remember { 
+    var colorScheme by remember {
         mutableStateOf(
             EnhancedColorScheme(
                 background = Color(0xFF0A0A0A),
@@ -298,7 +298,7 @@ fun PlayerScreen(
                     val palette = Palette.from(it)
                         .maximumColorCount(16) // Increased for better color extraction
                         .generate()
-                    
+
                     colorScheme = EnhancedColorUtils.createEnhancedColorScheme(palette)
                 }
             }
@@ -345,7 +345,7 @@ fun PlayerScreen(
                         modifier = Modifier.fillMaxSize()
                     )
                 }
-                
+
                 // Subtle gradient overlay for better text readability
                 Box(
                     modifier = Modifier
@@ -436,7 +436,7 @@ fun PlayerScreen(
                         .fillMaxWidth()
                         .height(32.dp) // Slightly taller for easier interaction
                 )
-                
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -576,7 +576,7 @@ fun PlayerScreen(
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        "Share URL", 
+                                        "Share URL",
                                         color = if (viewModel.canShareSong()) colorScheme.primaryText else colorScheme.secondaryText
                                     )
                                 }
@@ -587,8 +587,8 @@ fun PlayerScreen(
                                     DeepLinkUtils.shareSong(context, currentPlayingSong)
                                 } else {
                                     Toast.makeText(
-                                        context, 
-                                        "Only online songs can be shared", 
+                                        context,
+                                        "Only online songs can be shared",
                                         Toast.LENGTH_LONG
                                     ).show()
                                 }
@@ -607,7 +607,7 @@ fun PlayerScreen(
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        "Share QR Code", 
+                                        "Share QR Code",
                                         color = if (viewModel.canShareSong()) colorScheme.primaryText else colorScheme.secondaryText
                                     )
                                 }
@@ -618,8 +618,8 @@ fun PlayerScreen(
                                     viewModel.shareCurrentSongViaQR()
                                 } else {
                                     Toast.makeText(
-                                        context, 
-                                        "Only online songs can be shared via QR code", 
+                                        context,
+                                        "Only online songs can be shared via QR code",
                                         Toast.LENGTH_LONG
                                     ).show()
                                 }
@@ -666,7 +666,7 @@ fun PlayerScreen(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = currentPlayingSong.artist,
+                        text = currentPlayingSong.artistName,
                         color = colorScheme.secondaryText,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Medium,
@@ -753,7 +753,7 @@ fun EditSongDialog(
     val context = LocalContext.current
 
     var title by remember { mutableStateOf(song.title) }
-    var artist by remember { mutableStateOf(song.artist) }
+    var artist by remember { mutableStateOf(song.artistName) }
     var selectedArtworkUri by remember { mutableStateOf<Uri?>(null) }
     var showPermissionDialog by remember { mutableStateOf(false) }
     
@@ -778,7 +778,7 @@ fun EditSongDialog(
             }
         }
     }
-    
+
     val imagePermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -794,7 +794,7 @@ fun EditSongDialog(
             showPermissionDialog = true
         }
     }
-    
+
     fun requestImagePermission() {
         if (Build.VERSION.SDK_INT >= 33) {
             imagePermissionLauncher.launch(arrayOf(
@@ -830,7 +830,7 @@ fun EditSongDialog(
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(vertical = 16.dp)
                 )
-                
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -885,7 +885,7 @@ fun EditSongDialog(
                             }
                         }
                     }
-                    
+
                     Box(
                         modifier = Modifier
                             .weight(1f)
@@ -920,7 +920,7 @@ fun EditSongDialog(
                         }
                     }
                 }
-                
+
                 Text(
                     text = "Title",
                     color = colorScheme.primaryText,
@@ -952,7 +952,7 @@ fun EditSongDialog(
                     shape = RoundedCornerShape(4.dp),
                     singleLine = true
                 )
-                
+
                 Text(
                     text = "Artist",
                     color = colorScheme.primaryText,
@@ -986,7 +986,7 @@ fun EditSongDialog(
                 )
                 
                 Spacer(modifier = Modifier.height(40.dp))
-                
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1080,7 +1080,7 @@ fun EditSongDialog(
             onDismissRequest = { showPermissionDialog = false },
             title = { Text("Permission Required", color = colorScheme.primaryText) },
             text = {
-                Text("Storage permission is required to select files. Please grant this permission in app settings.", 
+                Text("Storage permission is required to select files. Please grant this permission in app settings.",
                      color = colorScheme.secondaryText)
             },
             confirmButton = {

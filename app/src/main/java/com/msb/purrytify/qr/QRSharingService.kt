@@ -27,12 +27,12 @@ class QRSharingService @Inject constructor(
             Toast.makeText(context, "Only online songs can be shared via QR code", Toast.LENGTH_LONG).show()
             return
         }
-        
+
         try {
             val qrBitmap = QRGenerator.generateQRCodeWithInfo(
                 songId = song.id.toString(),
                 title = song.title,
-                artist = song.artist,
+                artist = song.artistName,
                 qrSize = 512
             )
 
@@ -44,7 +44,7 @@ class QRSharingService @Inject constructor(
                     putExtra(Intent.EXTRA_STREAM, uri)
                     type = "image/png"
                     putExtra(Intent.EXTRA_SUBJECT, "Lagu terbaru! ${song.title}")
-                    putExtra(Intent.EXTRA_TEXT, "Lihat lagu ii \"${song.title}\" dari ${song.artist} hanya di purrytify!")
+                    putExtra(Intent.EXTRA_TEXT, "Lihat lagu ii \"${song.title}\" dari ${song.artistName} hanya di purrytify!")
                     flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
                     clipData = android.content.ClipData.newUri(context.contentResolver, "QR Code", uri)
                 }

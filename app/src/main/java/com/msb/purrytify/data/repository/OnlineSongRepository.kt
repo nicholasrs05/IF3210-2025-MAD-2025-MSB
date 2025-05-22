@@ -78,12 +78,13 @@ class OnlineSongRepository @Inject constructor(
         return Song(
             id = songResponse.id,
             title = songResponse.title,
-            artist = songResponse.artist,
+            artistName = songResponse.artist,
             filePath = songResponse.url,
             artworkPath = songResponse.artwork,
             duration = convertDurationStringToMs(songResponse.duration),
             isLiked = false,
             ownerId = -1,
+            artistId = -1,
             isFromApi = true
         )
     }

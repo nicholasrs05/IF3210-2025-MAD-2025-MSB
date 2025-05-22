@@ -14,12 +14,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import android.util.Log
+import com.msb.purrytify.data.repository.SoundCapsuleRepository
 
 @HiltViewModel
 class LibraryViewModel @Inject constructor(
     private val songRepository: SongRepository,
     private val playerManager: PlayerManager,
-    private val profileModel: ProfileModel
+    private val profileModel: ProfileModel,
+    private val soundCapsuleRepository: SoundCapsuleRepository
 ) : ViewModel() {
     
     private val _isLoading = MutableStateFlow(false)
@@ -57,7 +59,8 @@ class LibraryViewModel @Inject constructor(
     fun playSong(song: Song) {
         viewModelScope.launch {
             songRepository.updateLastPlayedAt(song.id)
-            
+            soundCapsuleRepository.incrementSongPlayCount(song.id, userId)
+
             playerManager.playSong(song)
         }
     }
@@ -74,6 +77,7 @@ class LibraryViewModel @Inject constructor(
             Log.d("LibraryViewModel", "Updating last played timestamp for song ID: ${selectedSong.id}")
             viewModelScope.launch {
                 songRepository.updateLastPlayedAt(selectedSong.id)
+                soundCapsuleRepository.incrementSongPlayCount(selectedSong.id, userId)
             }
         } catch (e: Exception) {
             Log.e("LibraryViewModel", "Error playing library song: ${e.message}", e)

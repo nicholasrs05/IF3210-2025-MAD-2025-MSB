@@ -4,6 +4,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -37,9 +38,20 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import androidx.core.net.toUri
+import com.msb.purrytify.data.tracker.ListeningTimeTracker
+import com.msb.purrytify.data.repository.SoundCapsuleRepository
+import javax.inject.Inject
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 
 @AndroidEntryPoint
 class AudioService : Service() {
+    @Inject
+    lateinit var listeningTimeTracker: ListeningTimeTracker
+
+    @Inject
+    lateinit var soundCapsuleRepository: SoundCapsuleRepository
+
     companion object {
         private const val NOTIFICATION_ID = 1
         private const val CHANNEL_ID = "PurrytifyMusicChannel"
@@ -81,6 +93,22 @@ class AudioService : Service() {
 
     private val _playbackProgress = MutableStateFlow(0f)
     val playbackProgress: StateFlow<Float> = _playbackProgress.asStateFlow()
+
+    private val timeTrackingJob = SupervisorJob()
+    private val timeTrackingScope = CoroutineScope(Dispatchers.Main + timeTrackingJob)
+
+    private val mediaControlReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            when (intent?.action) {
+                ACTION_PLAY -> resumePlayback()
+                ACTION_PAUSE -> pausePlayback()
+                ACTION_TOGGLE_PLAY -> togglePlayPause()
+                ACTION_NEXT -> playNext()
+                ACTION_PREVIOUS -> playPrevious()
+                ACTION_STOP -> stopPlayback()
+            }
+        }
+    }
 
     inner class AudioServiceBinder : Binder() {
         fun getService(): AudioService = this@AudioService
@@ -201,6 +229,7 @@ class AudioService : Service() {
                 releaseMediaPlayer()
                 _isPlaying.value = false
                 updatePlaybackState()
+                stopTimeTracking()
                 true
             }
             
@@ -224,12 +253,14 @@ class AudioService : Service() {
                     updatePlaybackState()
                     startPlaybackTracking()
                     showNotification()
+                    startTimeTracking()
                 } catch (e: Exception) {
                     Log.e("AudioService", "Error starting playback: ${e.message}")
                 }
             }
             
             mediaPlayer?.setOnCompletionListener {
+                stopTimeTracking()
                 playNext()
             }
             
@@ -250,7 +281,7 @@ class AudioService : Service() {
     private fun updateMediaMetadata(song: Song) {
         val metadataBuilder = MediaMetadataCompat.Builder().apply {
             putString(MediaMetadataCompat.METADATA_KEY_TITLE, song.title)
-            putString(MediaMetadataCompat.METADATA_KEY_ARTIST, song.artist)
+            putString(MediaMetadataCompat.METADATA_KEY_ARTIST, song.artistName)
             putLong(MediaMetadataCompat.METADATA_KEY_DURATION, song.duration)
             
             if (song.artworkPath.isNotEmpty()) {
@@ -399,7 +430,7 @@ class AudioService : Service() {
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher_foreground)
             .setContentTitle(song.title)
-            .setContentText(song.artist)
+            .setContentText(song.artistName)
             .setLargeIcon(artwork)
             .setContentIntent(contentIntent)
             .setDeleteIntent(stopIntent)
@@ -440,6 +471,7 @@ class AudioService : Service() {
         _isPlaying.value = false
         updatePlaybackState()
         showNotification()
+        pauseTimeTracking()
     }
 
     fun resumePlayback() {
@@ -447,6 +479,7 @@ class AudioService : Service() {
         _isPlaying.value = true
         updatePlaybackState()
         showNotification()
+        startTimeTracking()
     }
 
     fun playNext() {
@@ -516,7 +549,8 @@ class AudioService : Service() {
         mediaPlayer?.stop()
         _isPlaying.value = false
         updatePlaybackState()
-        
+        stopTimeTracking()
+
         stopForeground(STOP_FOREGROUND_REMOVE)
         
         stopSelf()
@@ -568,6 +602,7 @@ class AudioService : Service() {
     private fun releaseResources() {
         releaseMediaPlayer()
         mediaSession.release()
+        timeTrackingJob.cancel()
     }
 
     fun isCurrentlyPlaying(): Boolean {
@@ -634,5 +669,48 @@ class AudioService : Service() {
     
     fun isShuffleEnabled(): Boolean {
         return shuffleMode
+    }
+
+    // Add new time tracking functions
+    private fun startTimeTracking() {
+        listeningTimeTracker.startTracking()
+        startMinuteUpdates()
+    }
+
+    private fun pauseTimeTracking() {
+        listeningTimeTracker.pauseTracking()
+    }
+
+    private fun stopTimeTracking() {
+        val minutes = listeningTimeTracker.stopTracking()
+        if (minutes > 0) {
+            timeTrackingScope.launch {
+                try {
+                    _currentSong.value?.let { song ->
+                        soundCapsuleRepository.incrementDailyListeningTime(song.ownerId, minutes)
+                    }
+                } catch (e: Exception) {
+                    Log.e("AudioService", "Error updating listening time: ${e.message}")
+                }
+            }
+        }
+    }
+
+    private fun startMinuteUpdates() {
+        timeTrackingScope.launch {
+            while (isActive && _isPlaying.value) {
+                delay(60000) // Wait for 1 minute
+                val minutes = listeningTimeTracker.getAccumulatedMinutes()
+                if (minutes > 0) {
+                    try {
+                        _currentSong.value?.let { song ->
+                            soundCapsuleRepository.incrementDailyListeningTime(song.ownerId, minutes)
+                        }
+                    } catch (e: Exception) {
+                        Log.e("AudioService", "Error updating listening time: ${e.message}")
+                    }
+                }
+            }
+        }
     }
 }
