@@ -54,6 +54,14 @@ fun ShareSongQRDialog(
     song: Song,
     onDismiss: () -> Unit
 ) {
+    // Only show dialog for online songs
+    if (!song.isFromApi) {
+        LaunchedEffect(Unit) {
+            onDismiss()
+        }
+        return
+    }
+    
     val context = LocalContext.current
     var qrBitmap by remember { mutableStateOf<Bitmap?>(null) }
     
@@ -162,8 +170,15 @@ fun ShareSongQRDialog(
 
 /**
  * Share the song QR code using Android's share sheet
+ * Only works for online songs (from API)
  */
 private fun shareSongQRCode(context: Context, song: Song, qrBitmap: Bitmap?) {
+    // Only allow sharing of online songs
+    if (!song.isFromApi) {
+        Toast.makeText(context, "Only online songs can be shared via QR code", Toast.LENGTH_LONG).show()
+        return
+    }
+    
     qrBitmap?.let { bitmap ->
         try {
             val uri = QRCodeGenerator.saveQRCodeForSharing(

@@ -17,62 +17,76 @@ import javax.inject.Singleton
 class OnlineSongRepository @Inject constructor(
     private val apiService: ApiService
 ) {
-    // Cache data to prevent excessive API calls
-    private val globalTopSongsCache = MutableStateFlow<List<SongResponse>>(emptyList())
-    
-    // Add timestamp to track when data was last fetched
-    private var lastFetchTimestamp: Long = 0
-    private val cacheValidityPeriod: Long = 30 * 60 * 1000 // 30 minutes in milliseconds
-    
-    // Fetch global top songs with caching
-    suspend fun getGlobalTopSongs(forceRefresh: Boolean = false): Flow<Resource<List<SongResponse>>> = flow {
+    fun getGlobalTopSongs(): Flow<Resource<List<SongResponse>>> = flow {
         emit(Resource.Loading())
-        
-        val shouldFetch = forceRefresh || 
-                         globalTopSongsCache.value.isEmpty() || 
-                         (System.currentTimeMillis() - lastFetchTimestamp > cacheValidityPeriod)
-        
-        // Return cached data if it's still valid
-        if (!shouldFetch) {
-            emit(Resource.Success(globalTopSongsCache.value))
-            return@flow
-        }
-        
-        // Fetch fresh data from API
         try {
             val response = apiService.getGlobalTopSongs()
             if (response.isSuccessful) {
                 response.body()?.let { songs ->
-                    globalTopSongsCache.value = songs
-                    lastFetchTimestamp = System.currentTimeMillis()
                     emit(Resource.Success(songs))
                 } ?: emit(Resource.Error("Empty response body"))
+            } else {
+                emit(Resource.Error("Error \\${response.code()}: \\${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Log.e("OnlineSongRepository", "Error fetching global top songs: \\${e.message}")
+            emit(Resource.Error("Network error: \\${e.message}"))
+        }
+    }
+
+    fun getCountryTopSongs(countryCode: String): Flow<Resource<List<SongResponse>>> = flow {
+        emit(Resource.Loading())
+        try {
+            val response = apiService.getCountryTopSongs(countryCode)
+            if (response.isSuccessful) {
+                response.body()?.let { songs ->
+                    emit(Resource.Success(songs))
+                } ?: emit(Resource.Error("Empty response body"))
+            } else {
+                emit(Resource.Error("Error \\${response.code()}: \\${response.message()}"))
+            }
+        } catch (e: Exception) {
+            emit(Resource.Error("Network error: \\${e.message}"))
+        }
+    }
+
+    fun getSongById(songId: String): Flow<Resource<SongResponse>> = flow {
+        emit(Resource.Loading())
+        try {
+            val response = apiService.getSongById(songId)
+            Log.d("OnlineSongRepository", "Response on get song by id : \\${response.body()}")
+            if (response.isSuccessful) {
+                response.body()?.let { song ->
+                    emit(Resource.Success(song))
+                } ?: emit(Resource.Error("Song not found"))
             } else {
                 emit(Resource.Error("Error ${response.code()}: ${response.message()}"))
             }
         } catch (e: Exception) {
-            Log.e("OnlineSongRepository", "Error fetching global top songs: ${e.message}")
+            Log.e("OnlineSongRepository", "Error fetching song by ID: ${e.message}")
             emit(Resource.Error("Network error: ${e.message}"))
         }
     }
 
-    // Convert to playable songs (without storing in database)
     fun convertToPlayableSongs(songResponses: List<SongResponse>): List<Song> {
-        // Create entity artist
         return songResponses.map { songResponse ->
-            Song(
-                id = songResponse.id,
-                title = songResponse.title,
-                artistName = songResponse.artist,
-                filePath = songResponse.url,
-                artworkPath = songResponse.artwork,
-                duration = convertDurationStringToMs(songResponse.duration),
-                isLiked = false,
-                ownerId = -1, // Use a special value for online songs
-                artistId = -1,
-                isFromApi = true
-            )
+            convertSingleSongResponse(songResponse)
         }
+    }
+
+    fun convertSingleSongResponse(songResponse: SongResponse): Song {
+        return Song(
+            id = songResponse.id,
+            title = songResponse.title,
+            artistName = songResponse.artist,
+            filePath = songResponse.url,
+            artworkPath = songResponse.artwork,
+            duration = convertDurationStringToMs(songResponse.duration),
+            isLiked = false,
+            ownerId = -1,
+            artistId = -1,
+            isFromApi = true
+        )
     }
 
     private fun convertDurationStringToMs(duration: String): Long {

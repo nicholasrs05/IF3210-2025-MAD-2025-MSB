@@ -6,6 +6,8 @@ import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
 import com.google.zxing.qrcode.QRCodeWriter
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.set
 
 /**
  * Utility class for generating QR codes for song sharing
@@ -32,25 +34,24 @@ object QRGenerator {
         
         // Configure QR code parameters for optimal scanning
         val hints = hashMapOf<EncodeHintType, Any>().apply {
-            put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.H) // High error correction
-            put(EncodeHintType.MARGIN, 2) // Quiet zone margin
+            put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.H)
+            put(EncodeHintType.MARGIN, 2)
             put(EncodeHintType.CHARACTER_SET, "UTF-8")
         }
         
         try {
-            // Generate the QR code bit matrix
             val qrCodeWriter = QRCodeWriter()
             val bitMatrix = qrCodeWriter.encode(deepLink, BarcodeFormat.QR_CODE, size, size, hints)
             
             // Convert to bitmap
             val width = bitMatrix.width
             val height = bitMatrix.height
-            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            val bitmap = createBitmap(width, height)
             
             // Fill bitmap with QR code data
             for (x in 0 until width) {
                 for (y in 0 until height) {
-                    bitmap.setPixel(x, y, if (bitMatrix[x, y]) Color.BLACK else Color.WHITE)
+                    bitmap[x, y] = if (bitMatrix[x, y]) Color.BLACK else Color.WHITE
                 }
             }
             
@@ -80,7 +81,7 @@ object QRGenerator {
         
         // Create a new bitmap with space for text
         val textHeight = 150
-        val combinedBitmap = Bitmap.createBitmap(qrSize, qrSize + textHeight, Bitmap.Config.ARGB_8888)
+        val combinedBitmap = createBitmap(qrSize, qrSize + textHeight)
         
         // Draw the QR code and text onto the new bitmap
         val canvas = android.graphics.Canvas(combinedBitmap)

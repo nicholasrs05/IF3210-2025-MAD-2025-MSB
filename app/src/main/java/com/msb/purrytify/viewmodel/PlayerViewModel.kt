@@ -34,7 +34,6 @@ import javax.inject.Inject
 class PlayerViewModel @Inject constructor(
     application: Application,
     private val songRepository: SongRepository,
-    private val apiSongRepository: ApiSongRepository,
     private val playerManager: PlayerManager,
     profileModel: ProfileModel,
     private val qrSharingService: QRSharingService,
@@ -306,9 +305,18 @@ class PlayerViewModel @Inject constructor(
         playerManager.stopPlayback()
     }
 
+    fun canShareSong(): Boolean {
+        return currentSong.value?.isFromApi == true
+    }
+
     fun shareCurrentSongViaQR() {
         currentSong.value?.let { song ->
-            qrSharingService.shareSongViaQR(song)
+            if (song.isFromApi) {
+                qrSharingService.shareSongViaQR(song)
+            } else {
+                // Show message that only online songs can be shared
+                Log.w("PlayerViewModel", "Cannot share local song: ${song.title}. Only online songs can be shared.")
+            }
         }
     }
 
@@ -318,16 +326,13 @@ class PlayerViewModel @Inject constructor(
 
     fun addSong(title: String, artist: String, filePath: String, artworkPath: String, duration: Long) {
         viewModelScope.launch(Dispatchers.IO) {
-            // First, check if artist exists (case insensitive)
             val existingArtist = artistRepository.getArtistByName(artist.lowercase())
             val artistId = if (existingArtist != null) {
-                // If artist exists, update their image if the new song has an artwork
                 if (artworkPath.isNotEmpty()) {
                     artistRepository.updateArtist(existingArtist.copy(imageUrl = artworkPath))
                 }
                 existingArtist.id
             } else {
-                // Create new artist if doesn't exist
                 artistRepository.insertArtist(
                     Artist(
                         name = artist,
@@ -338,7 +343,6 @@ class PlayerViewModel @Inject constructor(
 
             Log.d("Add Song", "Duration: $duration")
 
-            // Create and insert the song with only artistId
             val song = Song(
                 title = title,
                 artistName = artist,
@@ -368,12 +372,12 @@ class PlayerViewModel @Inject constructor(
             tempFile.outputStream().use { outputStream ->
                 inputStream.copyTo(outputStream)
             }
-            
+
             mediaMetadataRetriever.setDataSource(tempFile.absolutePath)
-            
+
             val title = mediaMetadataRetriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_TITLE)
             val artist = mediaMetadataRetriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_ARTIST)
-            
+
             mediaMetadataRetriever.release()
             tempFile.delete() // Clean up the temporary file
             Pair(title, artist)
@@ -391,11 +395,11 @@ class PlayerViewModel @Inject constructor(
             tempFile.outputStream().use { outputStream ->
                 inputStream.copyTo(outputStream)
             }
-            
+
             mediaMetadataRetriever.setDataSource(tempFile.absolutePath)
-            
+
             val duration = mediaMetadataRetriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLong() ?: 0L
-            
+
             mediaMetadataRetriever.release()
             tempFile.delete() // Clean up the temporary file
             duration
@@ -416,23 +420,6 @@ class PlayerViewModel @Inject constructor(
                         setLargePlayerVisible(true)
                         return@launch
                     }
-                }
-                
-                val apiSong = apiSongRepository.fetchSongById(songIdStr)
-                if (apiSong != null) {
-                    val localSong = apiSongRepository.convertApiSongToLocalSong(apiSong, userId)
-                    
-                    val insertedId = songRepository.insert(localSong)
-                    val savedSong = songRepository.getSongById(insertedId)
-                    
-                    if (savedSong != null) {
-                        playSong(savedSong)
-                        setLargePlayerVisible(true)
-                    } else {
-                        Log.e("PlayerViewModel", "Failed to save API song")
-                    }
-                } else {
-                    Log.e("PlayerViewModel", "Song not found with ID: $songIdStr")
                 }
             } catch (e: Exception) {
                 Log.e("PlayerViewModel", "Error playing song by ID: ${e.message}")

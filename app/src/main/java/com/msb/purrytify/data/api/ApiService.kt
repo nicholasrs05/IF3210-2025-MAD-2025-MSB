@@ -38,9 +38,12 @@ interface ApiService {
     ): Response<UpdateProfileResponse>
 
     /* Song API */
-    @GET("/api/song/{songId}")
+    @GET("/api/songs/{songId}")
     suspend fun getSongById(@Path("songId") songId: String): Response<SongResponse>
     
     @GET("/api/top-songs/global")
     suspend fun getGlobalTopSongs(): Response<List<SongResponse>>
+
+    @GET("api/top-songs/{country_code}")
+    suspend fun getCountryTopSongs(@Path("country_code") countryCode: String): Response<List<SongResponse>>
 }

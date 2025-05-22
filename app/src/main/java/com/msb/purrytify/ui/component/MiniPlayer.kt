@@ -34,12 +34,17 @@ import android.net.Uri
 import androidx.palette.graphics.Palette
 import androidx.core.graphics.ColorUtils
 import android.graphics.BitmapFactory
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.toArgb
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import android.util.Log
+import coil3.ImageLoader
+import coil3.request.SuccessResult
+import android.graphics.Bitmap
+import coil3.BitmapImage
+import coil3.request.allowHardware
 
 @Composable
 fun MiniPlayer(
@@ -71,9 +76,28 @@ fun MiniPlayer(
     LaunchedEffect(currentSong.id, currentSong.artworkPath) {
         try {
             val bitmap = if (currentSong.artworkPath.isNotEmpty()) {
-                val artworkUri = Uri.parse(currentSong.artworkPath)
-                val inputStream = context.contentResolver.openInputStream(artworkUri)
-                inputStream?.use { BitmapFactory.decodeStream(it) }
+                if (currentSong.artworkPath.startsWith("http")) {
+                    var loadedBitmap: Bitmap? = null
+                    val loader = ImageLoader(context)
+                    val request = ImageRequest.Builder(context)
+                        .data(currentSong.artworkPath)
+                        .allowHardware(false)
+                        .build()
+
+                    try {
+                        val result = loader.execute(request)
+                        if (result is SuccessResult) {
+                            loadedBitmap = (result.image as? BitmapImage)?.bitmap
+                        }
+                    } catch (e: Exception) {
+                        Log.e("MiniPlayer", "Error loading artwork from URL: ${e.message}", e)
+                    }
+                    loadedBitmap
+                } else {
+                    val artworkUri = Uri.parse(currentSong.artworkPath)
+                    val inputStream = context.contentResolver.openInputStream(artworkUri)
+                    inputStream?.use { BitmapFactory.decodeStream(it) }
+                }
             } else {
                 BitmapFactory.decodeResource(context.resources, R.drawable.image)
             }
@@ -204,7 +228,6 @@ fun MiniPlayer(
                         }
                     }
                     
-                    // Add share button
                     val context = LocalContext.current
                     IconButton(
                         onClick = { 

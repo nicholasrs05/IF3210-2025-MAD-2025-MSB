@@ -3,6 +3,7 @@ package com.msb.purrytify.utils
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
 import androidx.core.app.ShareCompat
 import androidx.core.net.toUri
 import com.msb.purrytify.data.local.entity.Song
@@ -45,9 +46,16 @@ fun createApiSongDeepLinkString(songId: Long): String {
 }
 
     /**
-     * Shares a local song using its deep link
+     * Shares a song using its deep link
+     * Only allows sharing of online songs (from API)
      */
     fun shareSong(context: Context, song: Song) {
+        // Only allow sharing of online songs
+        if (!song.isFromApi) {
+            Toast.makeText(context, "Only online songs can be shared", Toast.LENGTH_LONG).show()
+            return
+        }
+        
         val deepLink = createSongDeepLinkString(song.id)
         val shareText = "Check out this song: ${song.title} by ${song.artistName}\n$deepLink"
 

@@ -1,5 +1,7 @@
 package com.msb.purrytify.ui.screen
 
+import android.annotation.SuppressLint
+import android.content.res.Configuration
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -10,7 +12,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ErrorOutline
-import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -65,8 +66,7 @@ fun ProfileScreen(
 ) {
     val context = LocalContext.current
     var isConnected by remember { mutableStateOf(true) }
-    val configuration = LocalConfiguration.current
-    val isLandscape = configuration.screenWidthDp > configuration.screenHeightDp
+    var isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
     val scrollState = rememberScrollState()
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -107,9 +107,8 @@ fun ProfileScreen(
                     ProfileContent(
                         profile = (profileUiState as ProfileUiState.Success).profile,
                         logout = { logout() },
-                        onScanQRCode = { navController.navigate(Screen.QRScanner.route) },
-                        navController = navController,
-                        modifier = if (isLandscape) Modifier.verticalScroll(scrollState) else Modifier
+                        modifier = if (isLandscape) Modifier.verticalScroll(scrollState) else Modifier,
+                        navController = navController
                     )
                 }
 
@@ -127,9 +126,8 @@ fun ProfileScreen(
 fun ProfileContent(
     profile: com.msb.purrytify.data.model.Profile,
     logout: () -> Unit,
-    onScanQRCode: () -> Unit,
-    navController: NavController,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    navController: NavController = rememberNavController()
 ) {
     Column(
         modifier = modifier
@@ -236,39 +234,6 @@ fun ProfileContent(
         }
 
         Spacer(modifier = Modifier.height(16.dp))
-
-        // QR Scanner button
-        Button(
-            onClick = onScanQRCode,
-            shape = RoundedCornerShape(45.dp),
-            contentPadding = PaddingValues(horizontal = 16.dp),
-            modifier = Modifier
-                .defaultMinSize(
-                    minWidth = ButtonDefaults.MinWidth,
-                    minHeight = 10.dp
-                )
-                .height(40.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF2E8B57),
-                contentColor = Color.White,
-            )
-        ) {
-            Icon(
-                imageVector = Icons.Default.QrCodeScanner,
-                contentDescription = "Scan QR Code",
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                "Scan QR Code",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color.White,
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -382,27 +347,3 @@ fun ErrorScreen(errorMessage: String) {
         )
     }
 }
-
-@Composable
-fun NoInternet() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF121212)),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = "No internet connection",
-                color = Color.White,
-                fontWeight = FontWeight.SemiBold
-            )
-            Text(
-                text = "Don't worry! You can still play your music!",
-                color = Color.White,
-                fontWeight = FontWeight.Medium
-            )
-        }
-    }
-}
-

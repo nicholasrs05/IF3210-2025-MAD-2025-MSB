@@ -29,22 +29,24 @@ import com.msb.purrytify.R
 import com.msb.purrytify.data.local.entity.Song
 import com.msb.purrytify.viewmodel.HomeViewModel
 import com.msb.purrytify.viewmodel.PlayerViewModel
-import java.io.File
-import android.net.Uri
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.navigation.NavController
 import com.msb.purrytify.ui.navigation.Screen
+import androidx.core.net.toUri
 
 
 @Composable
 fun HomeScreen(
     homeViewModel: HomeViewModel = hiltViewModel(),
     playerViewModel: PlayerViewModel = hiltViewModel(),
-    navController: NavController? = null
+    navController: NavController? = null,
+    onScanQRCode: () -> Unit
 ) {
-    val recentlyPlayedState: androidx.compose.runtime.State<List<Song>> =
+    val recentlyPlayedState: State<List<Song>> =
         homeViewModel.recentlyPlayedSongs.observeAsState(initial = emptyList())
-    val newSongsState: androidx.compose.runtime.State<List<Song>> =
+    val newSongsState: State<List<Song>> =
         homeViewModel.newSongs.observeAsState(initial = emptyList())
 
     val recentlyPlayed: List<Song> = recentlyPlayedState.value
@@ -59,69 +61,97 @@ fun HomeScreen(
         homeViewModel.playNewSongs(newSongs, song)
         playerViewModel.setMiniPlayerVisible(true)
     }
-//
-//    LaunchedEffect(Unit) {
-//        homeViewModel.refreshSongs()
-//    }
-    
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFF121212))
             .padding(8.dp)
     ) {
-
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 80.dp)
+        Column(
+            modifier = Modifier.fillMaxSize()
         ) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 80.dp)
+            ) {
 
-            item {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Online Songs",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.W800,
-                    modifier = Modifier.padding(16.dp)
-                )
-            }
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Online Songs",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.W800
+                        )
 
-            item {
-                OnlineSongsSection(
-                    onFiftyGlobalClick = {
-                        navController?.navigate(Screen.FiftyGlobal.route)
-                    },
-                    onTop10CountryClick = {
-                        navController?.navigate(Screen.Top10Country.route)
+                        Button(
+                            onClick = onScanQRCode,
+                            shape = RoundedCornerShape(45.dp),
+                            contentPadding = PaddingValues(horizontal = 16.dp),
+                            modifier = Modifier
+                                .defaultMinSize(
+                                    minWidth = ButtonDefaults.MinWidth,
+                                    minHeight = 10.dp
+                                )
+                                .height(40.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF2E8B57),
+                                contentColor = Color.White,
+                            )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.QrCodeScanner,
+                                contentDescription = "Scan QR Code",
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                     }
-                )
-            }
+                }
 
-            item {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "New Songs",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.W800,
-                    modifier = Modifier.padding(16.dp)
-                )
-            }
+                item {
+                    OnlineSongsSection(
+                        onFiftyGlobalClick = {
+                            navController?.navigate(Screen.FiftyGlobal.route)
+                        },
+                        onTop10CountryClick = {
+                            navController?.navigate(Screen.Top10Country.route)
+                        }
+                    )
+                }
 
-            item {
-                NewSongsSection(newSongs, onSongClick = onClickedNew)
-            }
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "New Songs",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.W800,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
 
-            item {
-                Text(
-                    text = "Recently Played",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(16.dp)
-                )
-            }
+                item {
+                    NewSongsSection(newSongs, onSongClick = onClickedNew)
+                }
 
-            item {
-                RecentlyPlayedSection(recentlyPlayed, onSongClick = onClickedRecent)
+                item {
+                    Text(
+                        text = "Recently Played",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+
+                item {
+                    RecentlyPlayedSection(recentlyPlayed, onSongClick = onClickedRecent)
+                }
             }
         }
     }
@@ -167,19 +197,23 @@ fun NewSongItem(song: Song, onSongClick: (Song) -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         if (song.artworkPath.isNotEmpty()) {
-            val artworkUri = Uri.parse(song.artworkPath)
+            val artworkUri = song.artworkPath.toUri()
             AsyncImage(
                 model = artworkUri,
                 contentDescription = "Album Artwork",
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.size(90.dp).clip(MaterialTheme.shapes.small)
+                modifier = Modifier
+                    .size(90.dp)
+                    .clip(MaterialTheme.shapes.small)
             )
         } else {
             Image(
                 painter = painterResource(id = R.drawable.image),
                 contentDescription = "Default Album Art",
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.size(90.dp).clip(MaterialTheme.shapes.small)
+                modifier = Modifier
+                    .size(90.dp)
+                    .clip(MaterialTheme.shapes.small)
             )
         }
 
@@ -237,19 +271,23 @@ fun RecentlyPlayedItem(song: Song, onSongClick: (Song) -> Unit) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (song.artworkPath.isNotEmpty()) {
-            val artworkUri = Uri.parse(song.artworkPath)
+            val artworkUri = song.artworkPath.toUri()
             AsyncImage(
                 model = artworkUri,
                 contentDescription = "Album Artwork",
                 contentScale = ContentScale.Fit,
-                modifier = Modifier.size(50.dp).clip(MaterialTheme.shapes.small)
+                modifier = Modifier
+                    .size(50.dp)
+                    .clip(MaterialTheme.shapes.small)
             )
         } else {
             Image(
                 painter = painterResource(id = R.drawable.image),
                 contentDescription = "Default Album Art",
                 contentScale = ContentScale.Fit,
-                modifier = Modifier.size(50.dp).clip(MaterialTheme.shapes.small)
+                modifier = Modifier
+                    .size(50.dp)
+                    .clip(MaterialTheme.shapes.small)
             )
         }
 
@@ -292,7 +330,7 @@ fun OnlineSongsSection(
                 onClick = onFiftyGlobalClick
             )
         }
-        
+
         item {
             OnlineSongItem(
                 imageRes = R.drawable.fiftyglobal, // Using same image for now
@@ -325,9 +363,9 @@ fun OnlineSongItem(
                 .size(90.dp)
                 .clip(MaterialTheme.shapes.small)
         )
-        
+
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         Text(
             text = title,
             style = MaterialTheme.typography.bodyMedium,
@@ -335,7 +373,7 @@ fun OnlineSongItem(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
-        
+
         Text(
             text = description,
             style = MaterialTheme.typography.bodySmall,
