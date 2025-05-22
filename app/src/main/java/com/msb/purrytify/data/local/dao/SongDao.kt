@@ -47,4 +47,10 @@ interface SongDao {
 
     @Query("SELECT * FROM songs WHERE ownerId = :ownerId ORDER BY addedAt DESC LIMIT 10")
     fun getNewSongs(ownerId: Long): Flow<List<Song>>
+
+    @Query("SELECT * FROM songs WHERE onlineSongId IS NOT NULL AND ownerId = :ownerId ORDER BY addedAt DESC")
+    fun getDownloadedSongs(ownerId: Long): Flow<List<Song>>
+
+    @Query("SELECT * FROM songs WHERE onlineSongId = :onlineSongId AND ownerId = :ownerId LIMIT 1")
+    suspend fun getSongByOnlineSongId(onlineSongId: Long, ownerId: Long): Song?
 }

@@ -12,6 +12,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
@@ -39,6 +41,7 @@ import com.msb.purrytify.data.local.entity.Song
 import com.msb.purrytify.ui.component.NoInternet
 import com.msb.purrytify.utils.networkStatusListener
 import com.msb.purrytify.viewmodel.OnlineSongsViewModel
+import com.msb.purrytify.viewmodel.OnlineSongDownloadViewModel
 import com.msb.purrytify.viewmodel.PlayerViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -52,6 +55,7 @@ fun FiftyGlobalScreen(
     onAnimationComplete: () -> Unit = {},
     viewModel: OnlineSongsViewModel = hiltViewModel(),
     playerViewModel: PlayerViewModel = hiltViewModel(),
+    downloadViewModel: OnlineSongDownloadViewModel = hiltViewModel()
 ) {
     var localIsDismissing by remember { mutableStateOf(false) }
     val actualIsDismissing = isDismissing || localIsDismissing
@@ -318,7 +322,9 @@ fun FiftyGlobalScreen(
                                             number = idx + 1,
                                             song = song,
                                             onSongClick = { playSong(song) },
-                                            textColor = textColor
+                                            textColor = textColor,
+                                            downloadViewModel = downloadViewModel,
+                                            viewModel = viewModel
                                         )
                                     }
                                 }
@@ -367,8 +373,19 @@ fun NumberedSongItem(
     number: Int,
     song: Song,
     onSongClick: () -> Unit,
-    textColor: Color
+    textColor: Color,
+    downloadViewModel: OnlineSongDownloadViewModel = hiltViewModel(),
+    viewModel: OnlineSongsViewModel = hiltViewModel()
 ) {
+    val songId = song.id
+    val songResponse = viewModel.getSongById(songId)
+    
+    val downloadState by downloadViewModel.downloadState.collectAsState()
+    val isDownloadable = songResponse != null
+    val thisSongIsDownloading = downloadState is OnlineSongDownloadViewModel.DownloadState.Downloading
+    
+    val isDownloaded by downloadViewModel.isDownloaded(songId).collectAsState(initial = false)
+    
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -397,24 +414,64 @@ fun NumberedSongItem(
             Text(
                 text = song.title,
                 style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Bold,
+                color = textColor,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                color = textColor
+                overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = song.artistName,
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = textColor.copy(alpha = 0.7f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
         }
-        Text(
-            text = formatDuration(song.duration),
-            style = MaterialTheme.typography.bodyMedium,
-            color = textColor.copy(alpha = 0.7f)
-        )
+        
+        if (isDownloadable) {
+            when {
+                isDownloaded -> {
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = "Downloaded",
+                        tint = Color(0xFF1DB954),
+                        modifier = Modifier
+                            .size(28.dp)
+                            .padding(end = 8.dp)
+                    )
+                }
+                thisSongIsDownloading -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .size(28.dp)
+                            .padding(end = 8.dp),
+                        color = Color(0xFF1DB954),
+                        strokeWidth = 2.dp
+                    )
+                }
+                else -> {
+                    IconButton(
+                        onClick = { 
+                            songResponse?.let { downloadViewModel.downloadSong(it) }
+                        },
+                        enabled = !thisSongIsDownloading
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Download,
+                            contentDescription = "Download",
+                            tint = textColor.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+            }
+        }
+        
+        IconButton(onClick = onSongClick) {
+            Icon(
+                imageVector = Icons.Default.PlayArrow,
+                contentDescription = "Play",
+                tint = textColor
+            )
+        }
     }
 }
 

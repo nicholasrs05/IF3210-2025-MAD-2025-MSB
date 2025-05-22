@@ -65,6 +65,14 @@ class SongRepository @Inject constructor(private val songDao: SongDao) {
         return songDao.getListenedSongCount(userId)
     }
 
+    fun fetchDownloadedSongs(userId: Long): Flow<List<Song>> {
+        return songDao.getDownloadedSongs(userId)
+    }
+
+    suspend fun isSongDownloaded(onlineSongId: Long, userId: Long): Boolean {
+        return songDao.getSongByOnlineSongId(onlineSongId, userId) != null
+    }
+
     companion object {
         fun extractMetadata(audioFilePath: String): Pair<String?, String?> {
             val retriever = MediaMetadataRetriever()

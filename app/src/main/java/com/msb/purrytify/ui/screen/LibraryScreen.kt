@@ -73,12 +73,23 @@ fun LibraryScreen(
                     isSelected = selectedTab == 1,
                     onClick = { selectedTab = 1 }
                 )
+                FilterButton(
+                    label = "Downloaded",
+                    isSelected = selectedTab == 2,
+                    onClick = { selectedTab = 2 }
+                )
             }
 
             val allSongs by libraryViewModel.allSongs.observeAsState(initial = emptyList())
             val likedSongs by libraryViewModel.likedSongs.observeAsState(initial = emptyList())
+            val downloadedSongs by libraryViewModel.downloadedSongs.observeAsState(initial = emptyList())
 
-            val songsToDisplay = if (selectedTab == 0) allSongs else likedSongs
+            val songsToDisplay = when (selectedTab) {
+                0 -> allSongs
+                1 -> likedSongs
+                2 -> downloadedSongs
+                else -> allSongs
+            }
 
             if (songsToDisplay.isEmpty()) {
                 Box(
@@ -86,7 +97,7 @@ fun LibraryScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = if (selectedTab == 0) "No songs in your library" else "No liked songs",
+                        text = if (selectedTab == 0) "No songs in your library" else if (selectedTab == 1) "No liked songs" else "No downloaded songs",
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

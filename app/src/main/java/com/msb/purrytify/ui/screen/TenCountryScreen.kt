@@ -53,6 +53,10 @@ import com.msb.purrytify.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import androidx.core.graphics.ColorUtils
+import com.msb.purrytify.viewmodel.OnlineSongDownloadViewModel
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.ui.text.style.TextOverflow
 
 @Composable
 fun TenCountryScreen(
@@ -62,6 +66,7 @@ fun TenCountryScreen(
     onAnimationComplete: () -> Unit = {},
     onlineSongsViewModel: OnlineSongsViewModel = hiltViewModel(),
     playerViewModel: PlayerViewModel = hiltViewModel(),
+    downloadViewModel: OnlineSongDownloadViewModel = hiltViewModel()
 ) {
     val countryCode by onlineSongsViewModel.currentCountryCode.collectAsState()
     val uiState by onlineSongsViewModel.countryUiState.collectAsState()
@@ -359,7 +364,9 @@ fun TenCountryScreen(
                                             number = idx + 1,
                                             song = song,
                                             onSongClick = { playSong(song) },
-                                            textColor = textColor
+                                            textColor = textColor,
+                                            downloadViewModel = downloadViewModel,
+                                            viewModel = onlineSongsViewModel
                                         )
                                     }
                                 }

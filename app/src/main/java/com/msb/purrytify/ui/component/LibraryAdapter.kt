@@ -38,14 +38,44 @@ class LibraryAdapter(
             duration.text = String.format(Locale.getDefault(), "%d:%02d", minutes, seconds)
 
             val context = itemView.context
-            val artworkUri = song.artworkPath.takeIf { it.isNotEmpty() }?.toUri()
+            val artworkPath = song.artworkPath
 
-            if (artworkUri != null) {
-                val request = ImageRequest.Builder(context)
-                    .data(artworkUri)
-                    .target(ImageViewTarget(artwork))
-                    .crossfade(true)
-                    .build()
+            if (artworkPath.isNotEmpty()) {
+                val request = when {
+                    // Ini klo artwork online songs
+                    artworkPath.startsWith("http") -> {
+                        ImageRequest.Builder(context)
+                            .data(artworkPath)
+                            .target(ImageViewTarget(artwork))
+                            .crossfade(true)
+                            .build()
+                    }
+                    // Ini klo artwork lagu biasa
+                    artworkPath.startsWith("content:") -> {
+                        ImageRequest.Builder(context)
+                            .data(artworkPath.toUri())
+                            .target(ImageViewTarget(artwork))
+                            .crossfade(true)
+                            .build()
+                    }
+                    // Ini klo artwork lagu download
+                    artworkPath.startsWith(context.filesDir.absolutePath) -> {
+                        ImageRequest.Builder(context)
+                            .data(File(artworkPath))
+                            .target(ImageViewTarget(artwork))
+                            .crossfade(true)
+                            .build()
+                    }
+                    // Ini artwork default
+                    else -> {
+                        ImageRequest.Builder(context)
+                            .data(File(artworkPath))
+                            .target(ImageViewTarget(artwork))
+                            .crossfade(true)
+                            .build()
+                    }
+                }
+                
                 ImageLoader(context).enqueue(request)
             } else {
                 artwork.setImageResource(R.drawable.image)
