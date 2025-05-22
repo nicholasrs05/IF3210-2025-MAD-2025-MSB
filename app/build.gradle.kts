@@ -47,20 +47,20 @@ android {
 
 dependencies {
     // Edit profile Location
-    implementation("com.google.android.gms:play-services-location:21.3.0")
+    implementation(libs.play.services.location)
 
     // Maps
-    implementation("com.google.android.gms:play-services-maps:18.2.0")
-    implementation("com.google.maps.android:maps-compose:2.14.0")
+    implementation(libs.play.services.maps)
+    implementation(libs.maps.compose)
     
     // QR Code Generation
     implementation(libs.core)
     implementation(libs.zxing.android.embedded)
     
     // Camera and ML Kit
-    implementation("androidx.camera:camera-camera2:1.4.2")
+    implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.lifecycle)
-    implementation("androidx.camera:camera-view:1.4.2")
+    implementation(libs.androidx.camera.view)
     implementation(libs.barcode.scanning)
     
     // Hilt
@@ -73,7 +73,7 @@ dependencies {
     implementation(libs.androidx.work.runtime.ktx)
 
     // Core
-    implementation("androidx.core:core-ktx:1.16.0")
+    implementation(libs.androidx.core.ktx)
 
     // Jetpack Compose
     val composeBom = platform("androidx.compose:compose-bom:2025.05.00")
@@ -81,7 +81,7 @@ dependencies {
     androidTestImplementation(composeBom)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.ui.tooling.preview)
-    implementation("androidx.compose.foundation:foundation")
+    implementation(libs.androidx.foundation)
     debugImplementation(libs.androidx.ui.tooling)
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.test.manifest)
@@ -102,12 +102,12 @@ dependencies {
     implementation(libs.androidx.datastore.preferences.core)
     
     // Retrofit, Moshi, OkHTTP, Coil
-    implementation("com.squareup.moshi:moshi-kotlin:1.15.2")
-    implementation ("com.squareup.retrofit2:retrofit:2.11.0")
-    implementation("com.squareup.retrofit2:converter-moshi:2.11.0")
-    ksp("com.squareup.moshi:moshi-kotlin-codegen:1.15.2")
-    implementation("io.coil-kt.coil3:coil-compose:3.1.0")
-    implementation("io.coil-kt.coil3:coil-network-okhttp:3.1.0")
+    implementation(libs.moshi.kotlin)
+    implementation (libs.retrofit)
+    implementation(libs.converter.moshi)
+    ksp(libs.moshi.kotlin.codegen)
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
 
     // Vico Chart
     implementation("com.patrykandpatrick.vico:compose:1.13.1")
@@ -124,7 +124,7 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
-    implementation("androidx.media:media:1.7.0")
+    implementation(libs.androidx.media)
 
     debugImplementation(libs.leakcanary.android)
 }

@@ -1,4 +1,4 @@
-package com.msb.purrytify.ui.profile
+package com.msb.purrytify.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

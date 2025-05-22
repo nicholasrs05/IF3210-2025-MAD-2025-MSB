@@ -28,6 +28,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.msb.purrytify.R
 import com.msb.purrytify.data.local.entity.Artist
 import com.msb.purrytify.viewmodel.SoundCapsuleViewModel
+import java.util.Locale
 
 @Composable
 fun TopArtistScreen(
@@ -186,7 +187,7 @@ private fun ArtistItem(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 // Rank
                 Text(
-                    text = String.format("%02d", rank),
+                    text = String.format(Locale.getDefault(),"%02d", rank),
                     color = Color(0xFF669BEC),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,

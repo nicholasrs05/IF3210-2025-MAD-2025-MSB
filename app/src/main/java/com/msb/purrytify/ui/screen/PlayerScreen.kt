@@ -285,7 +285,7 @@ fun PlayerScreen(
                     }
                     loadedBitmap
                 } else {
-                    val artworkUri = Uri.parse(currentPlayingSong.artworkPath)
+                    val artworkUri = currentPlayingSong.artworkPath.toUri()
                     val inputStream = context.contentResolver.openInputStream(artworkUri)
                     inputStream?.use { BitmapFactory.decodeStream(it) }
                 }
@@ -858,7 +858,7 @@ fun EditSongDialog(
                                 contentScale = ContentScale.Crop
                             )
                         } else if (song.artworkPath.isNotEmpty()) {
-                            val artworkUri = Uri.parse(song.artworkPath)
+                            val artworkUri = song.artworkPath.toUri()
                             AsyncImage(
                                 model = artworkUri,
                                 contentDescription = "Current Artwork",

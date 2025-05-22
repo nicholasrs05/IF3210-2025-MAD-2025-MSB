@@ -45,6 +45,7 @@ import coil3.request.SuccessResult
 import android.graphics.Bitmap
 import coil3.BitmapImage
 import coil3.request.allowHardware
+import androidx.core.net.toUri
 
 @Composable
 fun MiniPlayer(
@@ -94,7 +95,7 @@ fun MiniPlayer(
                     }
                     loadedBitmap
                 } else {
-                    val artworkUri = Uri.parse(currentSong.artworkPath)
+                    val artworkUri = currentSong.artworkPath.toUri()
                     val inputStream = context.contentResolver.openInputStream(artworkUri)
                     inputStream?.use { BitmapFactory.decodeStream(it) }
                 }
@@ -163,7 +164,7 @@ fun MiniPlayer(
 
                         if (artworkUriString.isNotEmpty()) {
                             val artworkUri = artworkUriString.takeIf { it.isNotEmpty() }?.let {
-                                Uri.parse(it)
+                                it.toUri()
                             }
                             AsyncImage(
                                 model = ImageRequest.Builder(LocalContext.current)
