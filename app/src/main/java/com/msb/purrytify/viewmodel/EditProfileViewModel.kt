@@ -10,7 +10,6 @@ import android.net.Uri
 import android.os.Build
 import android.telephony.TelephonyManager
 import android.util.Log
-import androidx.annotation.RequiresPermission
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -116,42 +115,59 @@ class EditProfileViewModel @Inject constructor(
         }
     }
     
-    @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
     fun detectLocation(context: Context) {
         viewModelScope.launch {
             _uiState.emit(_uiState.value.copy(isLoading = true))
             
-            val fusedLocationClient: FusedLocationProviderClient = 
-                LocationServices.getFusedLocationProviderClient(context)
-                
-            val cancellationToken = object : CancellationToken() {
-                override fun onCanceledRequested(listener: OnTokenCanceledListener) = 
-                    CancellationTokenSource().token
+            try {
+                val fusedLocationClient: FusedLocationProviderClient = 
+                    LocationServices.getFusedLocationProviderClient(context)
                     
-                override fun isCancellationRequested() = false
-            }
-            
-            fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, cancellationToken)
-                .addOnSuccessListener { location: Location? ->
-                    location?.let {
-                        getCountryCodeFromLocation(context, it.latitude, it.longitude)
-                    } ?: run {
+                val cancellationToken = object : CancellationToken() {
+                    override fun onCanceledRequested(listener: OnTokenCanceledListener) = 
+                        CancellationTokenSource().token
+                        
+                    override fun isCancellationRequested() = false
+                }
+                
+                fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, cancellationToken)
+                    .addOnSuccessListener { location: Location? ->
+                        location?.let {
+                            getCountryCodeFromLocation(context, it.latitude, it.longitude)
+                        } ?: run {
+                            viewModelScope.launch {
+                                _uiState.emit(_uiState.value.copy(
+                                    isLoading = false,
+                                    error = "Could not detect location. Please try again or enter country code manually."
+                                ))
+                            }
+                        }
+                    }
+                    .addOnFailureListener { e ->
                         viewModelScope.launch {
+                            val errorMessage = when (e) {
+                                is SecurityException -> "Location permission is required. Please grant permission and try again."
+                                else -> "Location detection failed: ${e.localizedMessage}"
+                            }
                             _uiState.emit(_uiState.value.copy(
                                 isLoading = false,
-                                error = "Could not detect location. Please try again or enter country code manually."
+                                error = errorMessage
                             ))
                         }
                     }
-                }
-                .addOnFailureListener { e ->
-                    viewModelScope.launch {
-                        _uiState.emit(_uiState.value.copy(
-                            isLoading = false,
-                            error = "Location detection failed: ${e.localizedMessage}"
-                        ))
-                    }
-                }
+            } catch (se: SecurityException) {
+                _uiState.emit(_uiState.value.copy(
+                    isLoading = false,
+                    error = "Location permission is required. Please grant permission and try again."
+                ))
+                Log.e("EditProfileViewModel", "SecurityException in detectLocation", se)
+            } catch (e: Exception) {
+                _uiState.emit(_uiState.value.copy(
+                    isLoading = false,
+                    error = "Unexpected error: ${e.localizedMessage}"
+                ))
+                Log.e("EditProfileViewModel", "Exception in detectLocation", e)
+            }
         }
     }
     

@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.msb.purrytify.viewmodel.PlayerViewModel
-import com.msb.purrytify.utils.NetworkStatusListener
+import com.msb.purrytify.utils.networkStatusListener
 import com.msb.purrytify.ui.component.NoInternet
 import com.msb.purrytify.viewmodel.OnlineSongsViewModel
 import com.msb.purrytify.model.ProfileModel
@@ -114,7 +114,7 @@ fun TenCountryScreen(
 
     var localIsDismissing by remember { mutableStateOf(false) }
     val actualIsDismissing = isDismissing || localIsDismissing
-    val isConnected = NetworkStatusListener()
+    val isConnected = networkStatusListener()
 
     val slideOffset by animateFloatAsState(
         targetValue = if (actualIsDismissing) 1f else 0f,

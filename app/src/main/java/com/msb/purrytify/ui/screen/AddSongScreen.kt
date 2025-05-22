@@ -33,6 +33,7 @@ import com.msb.purrytify.utils.FileUtils
 import com.msb.purrytify.viewmodel.LibraryViewModel
 import com.msb.purrytify.viewmodel.HomeViewModel
 import com.msb.purrytify.viewmodel.PlayerViewModel
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 
@@ -308,7 +309,7 @@ fun AddSongScreen(
                                 TimeUnit.MINUTES.toSeconds(minutes)
 
                         Text(
-                            text = "Duration: ${minutes}:${String.format("%02d", seconds)}",
+                            text = "Duration: ${minutes}:${String.format(Locale.getDefault(),"%02d", seconds)}",
                             color = Color.Gray,
                             fontSize = 12.sp,
                             modifier = Modifier

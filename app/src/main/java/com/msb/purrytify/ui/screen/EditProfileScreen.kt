@@ -2,13 +2,16 @@ package com.msb.purrytify.ui.screen
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -64,12 +67,20 @@ fun EditProfileScreen(
         }
     )
     
-    // Location permission launcher
+    // Check current permission state (recomposes on change)
+    val hasLocationPermission = ContextCompat.checkSelfPermission(
+        context,
+        Manifest.permission.ACCESS_FINE_LOCATION
+    ) == PackageManager.PERMISSION_GRANTED
+    
+    // Location permission launcher with proper handling
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { isGranted ->
             if (isGranted) {
-                viewModel.detectLocation(context)
+                safeDetectLocation(viewModel, context)
+            } else {
+                onLocationPermissionDenied(context)
             }
         }
     )
@@ -193,7 +204,19 @@ fun EditProfileScreen(
                 ) {
                     OutlinedButton(
                         onClick = { 
-                            locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                            if (hasLocationPermission) {
+                                safeDetectLocation(viewModel, context)
+                            } else {
+                                if (ActivityCompat.shouldShowRequestPermissionRationale(
+                                        context as androidx.activity.ComponentActivity,
+                                        Manifest.permission.ACCESS_FINE_LOCATION
+                                    )
+                                ) {
+                                    showPermissionDialog = true
+                                } else {
+                                    locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                                }
+                            }
                         },
                         modifier = Modifier
                             .weight(1f)
@@ -415,4 +438,31 @@ fun EditProfileScreen(
             }
         }
     }
+}
+
+/**
+ * Safely call detectLocation with proper error handling
+ */
+private fun safeDetectLocation(viewModel: EditProfileViewModel, context: Context) {
+    try {
+        viewModel.detectLocation(context)
+    } catch (se: SecurityException) {
+        Log.e("EditProfile", "Location permission lost at runtime", se)
+        Toast.makeText(
+            context,
+            "Location permission was revoked. Please grant permission again.",
+            Toast.LENGTH_LONG
+        ).show()
+    }
+}
+
+/**
+ * Handle location permission denial
+ */
+private fun onLocationPermissionDenied(context: Context) {
+    Toast.makeText(
+        context,
+        "Location permission is required to auto-detect your country. You can still enter it manually.",
+        Toast.LENGTH_LONG
+    ).show()
 }

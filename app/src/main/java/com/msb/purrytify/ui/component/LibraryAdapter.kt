@@ -15,6 +15,8 @@ import com.msb.purrytify.R
 import com.msb.purrytify.data.local.entity.Song
 import java.io.File
 import java.util.concurrent.TimeUnit
+import androidx.core.net.toUri
+import java.util.Locale
 
 class LibraryAdapter(
     private val songs: List<Song>,
@@ -33,10 +35,10 @@ class LibraryAdapter(
 
             val minutes = TimeUnit.MILLISECONDS.toMinutes(song.duration)
             val seconds = TimeUnit.MILLISECONDS.toSeconds(song.duration) - TimeUnit.MINUTES.toSeconds(minutes)
-            duration.text = String.format("%d:%02d", minutes, seconds)
+            duration.text = String.format(Locale.getDefault(), "%d:%02d", minutes, seconds)
 
             val context = itemView.context
-            val artworkUri = song.artworkPath.takeIf { it.isNotEmpty() }?.let { Uri.parse(it) }
+            val artworkUri = song.artworkPath.takeIf { it.isNotEmpty() }?.toUri()
 
             if (artworkUri != null) {
                 val request = ImageRequest.Builder(context)

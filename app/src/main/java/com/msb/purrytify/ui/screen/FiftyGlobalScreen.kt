@@ -25,10 +25,8 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -39,11 +37,12 @@ import coil3.compose.AsyncImage
 import com.msb.purrytify.R
 import com.msb.purrytify.data.local.entity.Song
 import com.msb.purrytify.ui.component.NoInternet
-import com.msb.purrytify.utils.NetworkStatusListener
+import com.msb.purrytify.utils.networkStatusListener
 import com.msb.purrytify.viewmodel.OnlineSongsViewModel
 import com.msb.purrytify.viewmodel.PlayerViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.util.Locale
 
 @Composable
 fun FiftyGlobalScreen(
@@ -57,7 +56,7 @@ fun FiftyGlobalScreen(
     var localIsDismissing by remember { mutableStateOf(false) }
     val actualIsDismissing = isDismissing || localIsDismissing
     
-    val isConnected = NetworkStatusListener()
+    val isConnected = networkStatusListener()
     val uiState by viewModel.uiState.collectAsState()
     
     var backgroundColor by remember { mutableStateOf(Color(0xFF121212)) }
@@ -423,5 +422,5 @@ fun formatDuration(durationMs: Long): String {
     val totalSeconds = durationMs / 1000
     val minutes = totalSeconds / 60
     val seconds = totalSeconds % 60
-    return String.format("%d:%02d", minutes, seconds)
+    return String.format(Locale.getDefault(), "%d:%02d", minutes, seconds)
 }
