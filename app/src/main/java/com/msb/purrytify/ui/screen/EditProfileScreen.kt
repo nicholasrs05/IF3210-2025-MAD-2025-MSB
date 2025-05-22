@@ -3,9 +3,7 @@ package com.msb.purrytify.ui.screen
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -22,6 +20,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -166,35 +165,32 @@ fun EditProfileScreen(
                 }
                 
                 Spacer(modifier = Modifier.height(24.dp))
-                
-                OutlinedTextField(
-                    value = state.countryCode,
-                    onValueChange = { newValue ->
-                        Log.d("EditProfileScreen", "TextField onChange: $newValue")
-                        viewModel.onCountryCodeTyped(newValue)
-                    },
-                    label = { Text("Country Code (e.g., ID for Indonesia)") },
-                    singleLine = true,
+
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color.Transparent),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        cursorColor = Color.White,
-                        focusedBorderColor = Color(0xFF00667B),
-                        unfocusedBorderColor = Color.Gray,
-                        focusedLabelColor = Color(0xFF00667B),
-                        unfocusedLabelColor = Color.Gray
+                        .padding(vertical = 8.dp)
+                ) {
+                    Text(
+                        text = "Country Code",
+                        color = Color.Gray,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(bottom = 4.dp)
                     )
-                )
-                
-                Text(
-                    text = "Current country code: ${state.countryCode}",
-                    color = Color.Gray,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
+                    Text(
+                        text = state.countryCode,
+                        color = Color.White,
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                    )
+                    HorizontalDivider(
+                        modifier = Modifier.fillMaxWidth(),
+                        thickness = 1.dp,
+                        color = Color(0xFF00667B)
+                    )
+                }
                 
                 Spacer(modifier = Modifier.height(8.dp))
                 

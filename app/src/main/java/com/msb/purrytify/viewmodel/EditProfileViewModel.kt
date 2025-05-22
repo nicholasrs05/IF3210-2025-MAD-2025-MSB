@@ -1,6 +1,5 @@
 package com.msb.purrytify.viewmodel
 
-import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.location.Address
@@ -75,19 +74,6 @@ class EditProfileViewModel @Inject constructor(
                     )
                 }
             }
-        }
-    }
-    
-    fun onCountryCodeTyped(code: String) {
-        viewModelScope.launch {
-            val newState = _uiState.value.copy(
-                countryCode = code,
-                locationChanged = code != profileModel.currentProfile.value.location,
-                canSave = code != profileModel.currentProfile.value.location || _uiState.value.photoChanged,
-                error = null
-            )
-            _uiState.emit(newState)
-            Log.d("EditProfileViewModel", "Country code updated to: $code, can save: ${newState.canSave}")
         }
     }
     
@@ -188,7 +174,7 @@ class EditProfileViewModel @Inject constructor(
                     useCountryCodeFromTelephony()
                 }
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             useCountryCodeFromTelephony()
         }
     }
@@ -329,7 +315,7 @@ class EditProfileViewModel @Inject constructor(
                             ))
                             
                             profileModel.fetchProfile()
-                            kotlinx.coroutines.delay(1500)
+                            kotlinx.coroutines.delay(500)
                         }
                         is ProfileUpdateResult.Error -> {
                             _uiState.emit(_uiState.value.copy(
