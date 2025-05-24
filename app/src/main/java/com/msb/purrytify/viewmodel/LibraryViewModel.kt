@@ -36,6 +36,8 @@ class LibraryViewModel @Inject constructor(
     
     val likedSongs: LiveData<List<Song>> = songRepository.fetchLikedSongs(userId).asLiveData()
     
+    val downloadedSongs: LiveData<List<Song>> = songRepository.fetchDownloadedSongs(userId).asLiveData()
+    
 //    init {
 //        refreshLibrary()
 //    }
@@ -55,7 +57,7 @@ class LibraryViewModel @Inject constructor(
     fun toggleAddSongSheet(show: Boolean) {
         _showAddSongSheet.value = show
     }
-    
+
     fun playSong(song: Song) {
         viewModelScope.launch {
             songRepository.updateLastPlayedAt(song.id)
@@ -64,11 +66,11 @@ class LibraryViewModel @Inject constructor(
             playerManager.playSong(song)
         }
     }
-    
+
     fun playLibrarySong(songs: List<Song>, selectedSong: Song) {
         Log.d("LibraryViewModel", "playLibrarySong called with ${songs.size} songs")
         Log.d("LibraryViewModel", "Playing song: ${selectedSong.title}, artwork: ${selectedSong.artworkPath}")
-        
+
         try {
             val songIndex = songs.indexOfFirst { it.id == selectedSong.id }
             Log.d("LibraryViewModel", "Setting playlist with starting index: $songIndex")
@@ -88,7 +90,7 @@ class LibraryViewModel @Inject constructor(
             }
         }
     }
-    
+
     fun toggleLike(songId: Long) {
         viewModelScope.launch {
             val song = songRepository.getSongById(songId)

@@ -263,11 +263,11 @@ fun PlayerScreen(
 
     val context = LocalContext.current
 
-    // Enhanced palette extraction with better color processing
     LaunchedEffect(currentPlayingSong.id, currentPlayingSong.artworkPath) {
         try {
             val bitmap = if (currentPlayingSong.artworkPath.isNotEmpty()) {
                 if (currentPlayingSong.artworkPath.startsWith("http")) {
+                    // Ini ekstrak artwork lagu onlen
                     var loadedBitmap: Bitmap? = null
                     val loader = ImageLoader(context)
                     val request = ImageRequest.Builder(context)
@@ -284,10 +284,36 @@ fun PlayerScreen(
                         Log.e("PlayerScreen", "Error loading artwork from URL: ${e.message}", e)
                     }
                     loadedBitmap
+                } else if (currentPlayingSong.artworkPath.startsWith("/")) {
+                    // Ini ekstrak artwork lagu onlen yang di-download
+                    try {
+                        Log.d("PlayerScreen", "Loading file directly: ${currentPlayingSong.artworkPath}")
+                        BitmapFactory.decodeFile(currentPlayingSong.artworkPath)
+                    } catch (e: Exception) {
+                        Log.e("PlayerScreen", "Error loading artwork from file: ${e.message}", e)
+                        null
+                    }
+                } else if (currentPlayingSong.artworkPath.startsWith("content://") || 
+                          currentPlayingSong.artworkPath.startsWith("file://")) {
+                    // Ini ekstrak artwork dari URI
+                    try {
+                        val artworkUri = currentPlayingSong.artworkPath.toUri()
+                        val inputStream = context.contentResolver.openInputStream(artworkUri)
+                        inputStream?.use { BitmapFactory.decodeStream(it) }
+                    } catch (e: Exception) {
+                        Log.e("PlayerScreen", "Error loading local artwork: ${e.message}", e)
+                        null
+                    }
                 } else {
-                    val artworkUri = currentPlayingSong.artworkPath.toUri()
-                    val inputStream = context.contentResolver.openInputStream(artworkUri)
-                    inputStream?.use { BitmapFactory.decodeStream(it) }
+                    // fallback aja si
+                    try {
+                        val artworkUri = currentPlayingSong.artworkPath.toUri()
+                        val inputStream = context.contentResolver.openInputStream(artworkUri)
+                        inputStream?.use { BitmapFactory.decodeStream(it) }
+                    } catch (e: Exception) {
+                        Log.e("PlayerScreen", "Error loading fallback artwork: ${e.message}", e)
+                        null
+                    }
                 }
             } else {
                 BitmapFactory.decodeResource(context.resources, R.drawable.image)
@@ -300,9 +326,11 @@ fun PlayerScreen(
                         .generate()
 
                     colorScheme = EnhancedColorUtils.createEnhancedColorScheme(palette)
+                    Log.d("PlayerScreen", "Palette generated successfully for artwork: ${currentPlayingSong.artworkPath}")
                 }
             }
         } catch (e: Exception) {
+            Log.e("PlayerScreen", "Error in palette extraction: ${e.message}", e)
             e.printStackTrace()
         }
     }

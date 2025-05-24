@@ -322,31 +322,43 @@ class AudioService : Service() {
             if (artworkPath.isEmpty()) {
                 return null
             }
+            
+            when {
+                // Ini klo artwork online songs
+                artworkPath.startsWith("http") -> {
+                    var bitmap: Bitmap? = null
+                    runBlocking {
+                        val loader = ImageLoader(applicationContext)
+                        val request = ImageRequest.Builder(applicationContext)
+                            .data(artworkPath)
+                            .allowHardware(false)
+                            .build()
 
-            if (artworkPath.startsWith("http")) {
-                var bitmap: Bitmap? = null
-                runBlocking {
-                    val loader = ImageLoader(applicationContext)
-                    val request = ImageRequest.Builder(applicationContext)
-                        .data(artworkPath)
-                        .allowHardware(false)
-                        .build()
-
-                    try {
-                        val result = loader.execute(request)
-                        if (result is SuccessResult) {
-                            bitmap = (result.image as? BitmapImage)?.bitmap
+                        try {
+                            val result = loader.execute(request)
+                            if (result is SuccessResult) {
+                                bitmap = (result.image as? BitmapImage)?.bitmap
+                            }
+                        } catch (e: Exception) {
+                            Log.e("AudioService", "Error loading artwork from URL: ${e.message}", e)
                         }
-                    } catch (e: Exception) {
-                        Log.e("AudioService", "Error loading artwork from URL: ${e.message}", e)
                     }
+                    bitmap
                 }
-                return bitmap
-            } else if (artworkPath.startsWith("content:")) {
-                val inputStream = contentResolver.openInputStream(artworkPath.toUri())
-                BitmapFactory.decodeStream(inputStream)
-            } else {
-                BitmapFactory.decodeFile(artworkPath)
+                // Ini klo artwork biasa
+                artworkPath.startsWith("content:") -> {
+                    val inputStream = contentResolver.openInputStream(artworkPath.toUri())
+                    BitmapFactory.decodeStream(inputStream)
+                }
+                // Ini klo artwork lagu yg di-download
+                artworkPath.startsWith(applicationContext.filesDir.absolutePath) -> {
+                    // This handles artwork stored in app-specific storage (filesDir)
+                    BitmapFactory.decodeFile(artworkPath)
+                }
+                // Ini klo default
+                else -> {
+                    BitmapFactory.decodeFile(artworkPath)
+                }
             }
         } catch (e: Exception) {
             Log.e("AudioService", "Error loading artwork: ${e.message}", e)

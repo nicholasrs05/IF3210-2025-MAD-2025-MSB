@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.msb.purrytify.data.local.entity.Song
 import com.msb.purrytify.data.model.Resource
+import com.msb.purrytify.data.model.SongResponse
 import com.msb.purrytify.data.repository.OnlineSongRepository
 import com.msb.purrytify.model.ProfileModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -142,6 +143,43 @@ class OnlineSongsViewModel @Inject constructor(
         } else {
             Pair(song, listOf(song))
         }
+    }
+
+    fun getSongById(id: Long): SongResponse? {
+        return _uiState.value.songs.find { it.id == id }?.let { song ->
+            SongResponse(
+                id = song.id,
+                title = song.title,
+                artist = song.artistName,
+                artwork = song.artworkPath,
+                url = song.filePath,
+                duration = formatDurationToString(song.duration),
+                country = if (_currentCountryCode.value.isBlank()) "GLOBAL" else _currentCountryCode.value,
+                rank = _uiState.value.songs.indexOf(song) + 1,
+                createdAt = "",
+                updatedAt = ""
+            )
+        } ?: _countryUiState.value.songs.find { it.id == id }?.let { song ->
+            SongResponse(
+                id = song.id,
+                title = song.title,
+                artist = song.artistName,
+                artwork = song.artworkPath,
+                url = song.filePath,
+                duration = formatDurationToString(song.duration),
+                country = _currentCountryCode.value,
+                rank = _countryUiState.value.songs.indexOf(song) + 1,
+                createdAt = "",
+                updatedAt = ""
+            )
+        }
+    }
+
+    private fun formatDurationToString(durationMs: Long): String {
+        val totalSeconds = durationMs / 1000
+        val minutes = totalSeconds / 60
+        val seconds = totalSeconds % 60
+        return String.format("%d:%02d", minutes, seconds)
     }
 }
 

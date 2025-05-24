@@ -12,6 +12,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
@@ -21,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -39,6 +42,7 @@ import com.msb.purrytify.data.local.entity.Song
 import com.msb.purrytify.ui.component.NoInternet
 import com.msb.purrytify.utils.networkStatusListener
 import com.msb.purrytify.viewmodel.OnlineSongsViewModel
+import com.msb.purrytify.viewmodel.OnlineSongDownloadViewModel
 import com.msb.purrytify.viewmodel.PlayerViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -52,6 +56,7 @@ fun FiftyGlobalScreen(
     onAnimationComplete: () -> Unit = {},
     viewModel: OnlineSongsViewModel = hiltViewModel(),
     playerViewModel: PlayerViewModel = hiltViewModel(),
+    downloadViewModel: OnlineSongDownloadViewModel = hiltViewModel()
 ) {
     var localIsDismissing by remember { mutableStateOf(false) }
     val actualIsDismissing = isDismissing || localIsDismissing
@@ -91,21 +96,12 @@ fun FiftyGlobalScreen(
 
     LaunchedEffect(Unit) {
         try {
-            val bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.fiftyglobal)
-            withContext(Dispatchers.Default) {
-                val palette = Palette.from(bitmap).generate()
-                val darkColor = palette.getDarkVibrantColor(
-                    palette.getDarkMutedColor(Color(0xFF121212).toArgb())
-                )
-                val vibrantColor = palette.getVibrantColor(
-                    palette.getLightVibrantColor(Color(0xFF1DB954).toArgb())
-                )
-                backgroundColor = Color(darkColor)
-                accentColor = Color(vibrantColor)
-                textColor = if (ColorUtils.calculateLuminance(darkColor) > 0.5)
-                    Color.Black else Color.White
-                gradientColor = Color(darkColor)
-            }
+            val blue = Color(0xFF1E88E5)
+            backgroundColor = blue.copy(alpha = 0.8f)
+            accentColor = Color.White
+            textColor = Color.White
+            gradientColor = blue.copy(alpha = 0.8f)
+            gradientColor2 = Color(0xFF121212)
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -193,12 +189,23 @@ fun FiftyGlobalScreen(
                                 shape = MaterialTheme.shapes.medium,
                                 elevation = CardDefaults.cardElevation(8.dp)
                             ) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.fiftyglobal),
-                                    contentDescription = "Fifty Global Background",
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.fillMaxSize()
-                                )
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(
+                                            brush = SolidColor(Color(0xFF1E88E5)),
+                                            shape = MaterialTheme.shapes.medium
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "Top 50\nGlobal",
+                                        color = Color.White,
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
                             }
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(
@@ -318,7 +325,9 @@ fun FiftyGlobalScreen(
                                             number = idx + 1,
                                             song = song,
                                             onSongClick = { playSong(song) },
-                                            textColor = textColor
+                                            textColor = textColor,
+                                            downloadViewModel = downloadViewModel,
+                                            viewModel = viewModel
                                         )
                                     }
                                 }
@@ -367,8 +376,19 @@ fun NumberedSongItem(
     number: Int,
     song: Song,
     onSongClick: () -> Unit,
-    textColor: Color
+    textColor: Color,
+    downloadViewModel: OnlineSongDownloadViewModel = hiltViewModel(),
+    viewModel: OnlineSongsViewModel = hiltViewModel()
 ) {
+    val songId = song.id
+    val songResponse = viewModel.getSongById(songId)
+    
+    val downloadState by downloadViewModel.downloadState.collectAsState()
+    val isDownloadable = songResponse != null
+    val thisSongIsDownloading = downloadState is OnlineSongDownloadViewModel.DownloadState.Downloading
+    
+    val isDownloaded by downloadViewModel.isDownloaded(songId).collectAsState(initial = false)
+    
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -397,24 +417,64 @@ fun NumberedSongItem(
             Text(
                 text = song.title,
                 style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Bold,
+                color = textColor,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                color = textColor
+                overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = song.artistName,
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = textColor.copy(alpha = 0.7f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
         }
-        Text(
-            text = formatDuration(song.duration),
-            style = MaterialTheme.typography.bodyMedium,
-            color = textColor.copy(alpha = 0.7f)
-        )
+        
+        if (isDownloadable) {
+            when {
+                isDownloaded -> {
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = "Downloaded",
+                        tint = Color(0xFF1DB954),
+                        modifier = Modifier
+                            .size(28.dp)
+                            .padding(end = 8.dp)
+                    )
+                }
+                thisSongIsDownloading -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .size(28.dp)
+                            .padding(end = 8.dp),
+                        color = Color(0xFF1DB954),
+                        strokeWidth = 2.dp
+                    )
+                }
+                else -> {
+                    IconButton(
+                        onClick = { 
+                            songResponse?.let { downloadViewModel.downloadSong(it) }
+                        },
+                        enabled = !thisSongIsDownloading
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Download,
+                            contentDescription = "Download",
+                            tint = textColor.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+            }
+        }
+        
+        IconButton(onClick = onSongClick) {
+            Icon(
+                imageVector = Icons.Default.PlayArrow,
+                contentDescription = "Play",
+                tint = textColor
+            )
+        }
     }
 }
 

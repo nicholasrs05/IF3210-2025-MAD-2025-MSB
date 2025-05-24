@@ -12,7 +12,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -43,7 +45,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -53,6 +54,10 @@ import com.msb.purrytify.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import androidx.core.graphics.ColorUtils
+import com.msb.purrytify.viewmodel.OnlineSongDownloadViewModel
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.ui.text.style.TextOverflow
 
 @Composable
 fun TenCountryScreen(
@@ -62,6 +67,7 @@ fun TenCountryScreen(
     onAnimationComplete: () -> Unit = {},
     onlineSongsViewModel: OnlineSongsViewModel = hiltViewModel(),
     playerViewModel: PlayerViewModel = hiltViewModel(),
+    downloadViewModel: OnlineSongDownloadViewModel = hiltViewModel()
 ) {
     val countryCode by onlineSongsViewModel.currentCountryCode.collectAsState()
     val uiState by onlineSongsViewModel.countryUiState.collectAsState()
@@ -86,21 +92,12 @@ fun TenCountryScreen(
 
     LaunchedEffect(Unit) {
         try {
-            val bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.fiftyglobal)
-            withContext(Dispatchers.Default) {
-                val palette = Palette.from(bitmap).generate()
-                val darkColor = palette.getDarkVibrantColor(
-                    palette.getDarkMutedColor(Color(0xFF121212).toArgb())
-                )
-                val vibrantColor = palette.getVibrantColor(
-                    palette.getLightVibrantColor(Color(0xFF1DB954).toArgb())
-                )
-                backgroundColor = Color(darkColor)
-                accentColor = Color(vibrantColor)
-                textColor = if (ColorUtils.calculateLuminance(darkColor) > 0.5)
-                    Color.Black else Color.White
-                gradientColor = Color(darkColor)
-            }
+            val red = Color(0xFFE53935)
+            backgroundColor = red.copy(alpha = 0.8f)
+            accentColor = Color.White
+            textColor = Color.White
+            gradientColor = red.copy(alpha = 0.8f)
+            gradientColor2 = Color(0xFF121212)
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -209,12 +206,23 @@ fun TenCountryScreen(
                                 shape = MaterialTheme.shapes.medium,
                                 elevation = CardDefaults.cardElevation(8.dp)
                             ) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.fiftyglobal),
-                                    contentDescription = "Top 10 Country Icon",
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.fillMaxSize()
-                                )
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(
+                                            brush = SolidColor(Color(0xFFE53935)),
+                                            shape = MaterialTheme.shapes.medium
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "Top 10\nCountry\n$countryCode",
+                                        color = Color.White,
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
                             }
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(
@@ -359,7 +367,9 @@ fun TenCountryScreen(
                                             number = idx + 1,
                                             song = song,
                                             onSongClick = { playSong(song) },
-                                            textColor = textColor
+                                            textColor = textColor,
+                                            downloadViewModel = downloadViewModel,
+                                            viewModel = onlineSongsViewModel
                                         )
                                     }
                                 }

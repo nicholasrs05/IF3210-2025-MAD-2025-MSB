@@ -96,7 +96,7 @@ object FileUtils {
         return file.absolutePath
     }
 
-    private fun sanitizeFileName(fileName: String): String {
+    fun sanitizeFileName(fileName: String): String {
         return fileName.replace(Regex("[^a-zA-Z0-9._-]"), "_")
     }
     
