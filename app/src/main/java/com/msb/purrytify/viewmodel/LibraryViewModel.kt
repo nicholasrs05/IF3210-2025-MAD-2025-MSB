@@ -57,25 +57,40 @@ class LibraryViewModel @Inject constructor(
     fun toggleAddSongSheet(show: Boolean) {
         _showAddSongSheet.value = show
     }
-    
-    fun playLibrarySong(songs: List<Song>, selectedSong: Song) {
-        try {
-            playerManager.setPlaylist(songs, songs.indexOf(selectedSong))
-            playerManager.playSong(selectedSong)
-        } catch (e: Exception) {
-            Log.e("LibraryViewModel", "Error playing song: ${e.message}")
-        }
-    }
-    
+
     fun playSong(song: Song) {
-        try {
-            playerManager.setPlaylist(listOf(song), 0)
+        viewModelScope.launch {
+            songRepository.updateLastPlayedAt(song.id)
+            soundCapsuleRepository.incrementSongPlayCount(song.id, userId)
+
             playerManager.playSong(song)
-        } catch (e: Exception) {
-            Log.e("LibraryViewModel", "Error playing song: ${e.message}")
         }
     }
-    
+
+    fun playLibrarySong(songs: List<Song>, selectedSong: Song) {
+        Log.d("LibraryViewModel", "playLibrarySong called with ${songs.size} songs")
+        Log.d("LibraryViewModel", "Playing song: ${selectedSong.title}, artwork: ${selectedSong.artworkPath}")
+
+        try {
+            val songIndex = songs.indexOfFirst { it.id == selectedSong.id }
+            Log.d("LibraryViewModel", "Setting playlist with starting index: $songIndex")
+            playerManager.setPlaylist(songs, songIndex)
+
+            Log.d("LibraryViewModel", "Updating last played timestamp for song ID: ${selectedSong.id}")
+            viewModelScope.launch {
+                songRepository.updateLastPlayedAt(selectedSong.id)
+                soundCapsuleRepository.incrementSongPlayCount(selectedSong.id, userId)
+            }
+        } catch (e: Exception) {
+            Log.e("LibraryViewModel", "Error playing library song: ${e.message}", e)
+            try {
+                playSong(selectedSong)
+            } catch (e2: Exception) {
+                Log.e("LibraryViewModel", "Failed fallback attempt: ${e2.message}", e2)
+            }
+        }
+    }
+
     fun toggleLike(songId: Long) {
         viewModelScope.launch {
             val song = songRepository.getSongById(songId)
