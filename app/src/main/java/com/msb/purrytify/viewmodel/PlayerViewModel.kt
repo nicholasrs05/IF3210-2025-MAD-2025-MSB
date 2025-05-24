@@ -23,6 +23,7 @@ import com.msb.purrytify.qr.QRSharingService
 import com.msb.purrytify.service.AudioService
 import com.msb.purrytify.service.PlayerManager
 import com.msb.purrytify.service.RepeatMode
+import com.msb.purrytify.model.AudioDevice
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -38,7 +39,6 @@ class PlayerViewModel @Inject constructor(
     profileModel: ProfileModel,
     private val qrSharingService: QRSharingService,
     private val artistRepository: ArtistRepository,
-    private val soundCapsuleRepository: SoundCapsuleRepository
 ) : AndroidViewModel(application) {
 
     private val _currentSong = mutableStateOf<Song?>(null)
@@ -70,6 +70,15 @@ class PlayerViewModel @Inject constructor(
 
     private var audioService: AudioService? = null
     private var bound = false
+
+    private val _showAudioDeviceSheet = mutableStateOf(false)
+    val showAudioDeviceSheet: State<Boolean> = _showAudioDeviceSheet
+
+    private val _currentAudioDevice = mutableStateOf<AudioDevice?>(null)
+    val currentAudioDevice: State<AudioDevice?> = _currentAudioDevice
+
+    private val _availableAudioDevices = mutableStateOf<List<AudioDevice>>(emptyList())
+    val availableAudioDevices: State<List<AudioDevice>> = _availableAudioDevices
 
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
@@ -159,6 +168,24 @@ class PlayerViewModel @Inject constructor(
                     2 -> RepeatMode.ONE
                     else -> RepeatMode.NONE
                 }
+            }
+        }
+
+        viewModelScope.launch {
+            playerManager.showAudioDeviceSheet.collectLatest { show ->
+                _showAudioDeviceSheet.value = show
+            }
+        }
+
+        viewModelScope.launch {
+            playerManager.currentAudioDevice.collectLatest { device ->
+                _currentAudioDevice.value = device
+            }
+        }
+
+        viewModelScope.launch {
+            playerManager.availableAudioDevices.collectLatest { devices ->
+                _availableAudioDevices.value = devices
             }
         }
     }
@@ -452,6 +479,22 @@ class PlayerViewModel @Inject constructor(
                 e.printStackTrace()
             }
         }
+    }
+
+    fun showAudioDeviceSheet() {
+        playerManager.showAudioDeviceSheet()
+    }
+
+    fun hideAudioDeviceSheet() {
+        playerManager.hideAudioDeviceSheet()
+    }
+
+    fun refreshAudioDevices() {
+        playerManager.refreshAudioDevices()
+    }
+
+    fun selectAudioDevice(device: AudioDevice) {
+        playerManager.selectAudioDevice(device)
     }
 
     override fun onCleared() {

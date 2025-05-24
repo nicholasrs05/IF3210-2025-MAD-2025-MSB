@@ -19,6 +19,7 @@ import com.msb.purrytify.data.repository.SongRepository
 import com.msb.purrytify.data.repository.OnlineSongRepository
 import com.msb.purrytify.qr.QRSharingService
 import com.msb.purrytify.service.PlayerManager
+import com.msb.purrytify.viewmodel.AudioDeviceViewModel
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -144,6 +145,4 @@ object AppModule {
     fun providePlayerManager(@ApplicationContext context: Context): PlayerManager {
         return PlayerManager(context)
     }
-
-    // AudioService is a system service and will be provided through ServiceConnection
 }

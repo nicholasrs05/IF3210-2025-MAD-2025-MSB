@@ -7,6 +7,7 @@ import android.content.ServiceConnection
 import android.os.IBinder
 import android.util.Log
 import com.msb.purrytify.data.local.entity.Song
+import com.msb.purrytify.model.AudioDevice
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -53,6 +54,15 @@ class PlayerManager @Inject constructor(
     private val _repeatMode = MutableStateFlow(0)
     val repeatMode: StateFlow<Int> = _repeatMode.asStateFlow()
 
+    private val _showAudioDeviceSheet = MutableStateFlow(false)
+    val showAudioDeviceSheet: StateFlow<Boolean> = _showAudioDeviceSheet.asStateFlow()
+
+    private val _currentAudioDevice = MutableStateFlow<AudioDevice?>(null)
+    val currentAudioDevice: StateFlow<AudioDevice?> = _currentAudioDevice.asStateFlow()
+
+    private val _availableAudioDevices = MutableStateFlow<List<AudioDevice>>(emptyList())
+    val availableAudioDevices: StateFlow<List<AudioDevice>> = _availableAudioDevices.asStateFlow()
+
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             val binder = service as AudioService.AudioServiceBinder
@@ -96,6 +106,18 @@ class PlayerManager @Inject constructor(
             serviceScope.launch {
                 service.isPlaying.collectLatest { isPlaying ->
                     _isPlaying.value = isPlaying
+                }
+            }
+
+            serviceScope.launch {
+                service.currentAudioDevice.collectLatest { device ->
+                    _currentAudioDevice.value = device
+                }
+            }
+
+            serviceScope.launch {
+                service.availableAudioDevices.collectLatest { devices ->
+                    _availableAudioDevices.value = devices
                 }
             }
         }
@@ -273,4 +295,20 @@ class PlayerManager @Inject constructor(
         }
     }
 
+    fun showAudioDeviceSheet() {
+        _showAudioDeviceSheet.value = true
+        audioService?.updateAvailableDevices()
+    }
+
+    fun hideAudioDeviceSheet() {
+        _showAudioDeviceSheet.value = false
+    }
+
+    fun refreshAudioDevices() {
+        audioService?.updateAvailableDevices()
+    }
+
+    fun selectAudioDevice(device: AudioDevice) {
+        audioService?.selectAudioOutputDevice(device)
+    }
 }
