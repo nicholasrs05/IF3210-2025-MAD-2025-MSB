@@ -324,19 +324,21 @@ fun OnlineSongsSection(
     ) {
         item {
             OnlineSongItem(
-                imageRes = R.drawable.fiftyglobal,
                 title = "Fifty Global",
                 description = "Daily update of world's most played songs",
-                onClick = onFiftyGlobalClick
+                onClick = onFiftyGlobalClick,
+                backgroundColor = Color(0xFF1E88E5), // Blue
+                textOverlay = "Top 50\nGlobal"
             )
         }
 
         item {
             OnlineSongItem(
-                imageRes = R.drawable.fiftyglobal, // Using same image for now
                 title = "Top 10 Country",
                 description = "Best hits from your country",
-                onClick = onTop10CountryClick
+                onClick = onTop10CountryClick,
+                backgroundColor = Color(0xFFE53935), // Red
+                textOverlay = "Top 10\nCountry"
             )
         }
     }
@@ -344,10 +346,11 @@ fun OnlineSongsSection(
 
 @Composable
 fun OnlineSongItem(
-    imageRes: Int,
     title: String,
     description: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    backgroundColor: Color,
+    textOverlay: String
 ) {
     Column(
         modifier = Modifier
@@ -355,14 +358,21 @@ fun OnlineSongItem(
             .clickable { onClick() },
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Image(
-            painter = painterResource(id = imageRes),
-            contentDescription = title,
-            contentScale = ContentScale.Crop,
+        Box(
             modifier = Modifier
                 .size(90.dp)
                 .clip(MaterialTheme.shapes.small)
-        )
+                .background(backgroundColor),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = textOverlay,
+                color = Color.White,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+        }
 
         Spacer(modifier = Modifier.height(8.dp))
 

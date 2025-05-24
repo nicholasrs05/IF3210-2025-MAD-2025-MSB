@@ -78,6 +78,7 @@ fun MiniPlayer(
         try {
             val bitmap = if (currentSong.artworkPath.isNotEmpty()) {
                 if (currentSong.artworkPath.startsWith("http")) {
+                    // Ini ekstrak artwork lagu onlen
                     var loadedBitmap: Bitmap? = null
                     val loader = ImageLoader(context)
                     val request = ImageRequest.Builder(context)
@@ -94,10 +95,36 @@ fun MiniPlayer(
                         Log.e("MiniPlayer", "Error loading artwork from URL: ${e.message}", e)
                     }
                     loadedBitmap
+                } else if (currentSong.artworkPath.startsWith("/")) {
+                    // Ini ekstrak artwork lagu onlen yang di-download
+                    try {
+                        Log.d("MiniPlayer", "Loading file directly: ${currentSong.artworkPath}")
+                        BitmapFactory.decodeFile(currentSong.artworkPath)
+                    } catch (e: Exception) {
+                        Log.e("MiniPlayer", "Error loading artwork from file: ${e.message}", e)
+                        null
+                    }
+                } else if (currentSong.artworkPath.startsWith("content://") || 
+                          currentSong.artworkPath.startsWith("file://")) {
+                    // Ini ekstrak artwork dari URI
+                    try {
+                        val artworkUri = currentSong.artworkPath.toUri()
+                        val inputStream = context.contentResolver.openInputStream(artworkUri)
+                        inputStream?.use { BitmapFactory.decodeStream(it) }
+                    } catch (e: Exception) {
+                        Log.e("MiniPlayer", "Error loading local artwork: ${e.message}", e)
+                        null
+                    }
                 } else {
-                    val artworkUri = currentSong.artworkPath.toUri()
-                    val inputStream = context.contentResolver.openInputStream(artworkUri)
-                    inputStream?.use { BitmapFactory.decodeStream(it) }
+                    // fallback aja si
+                    try {
+                        val artworkUri = currentSong.artworkPath.toUri()
+                        val inputStream = context.contentResolver.openInputStream(artworkUri)
+                        inputStream?.use { BitmapFactory.decodeStream(it) }
+                    } catch (e: Exception) {
+                        Log.e("MiniPlayer", "Error loading fallback artwork: ${e.message}", e)
+                        null
+                    }
                 }
             } else {
                 BitmapFactory.decodeResource(context.resources, R.drawable.image)
@@ -120,6 +147,7 @@ fun MiniPlayer(
                 }
             }
         } catch (e: Exception) {
+            Log.e("MiniPlayer", "Error in palette extraction: ${e.message}", e)
             e.printStackTrace()
         }
     }

@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -95,21 +96,12 @@ fun FiftyGlobalScreen(
 
     LaunchedEffect(Unit) {
         try {
-            val bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.fiftyglobal)
-            withContext(Dispatchers.Default) {
-                val palette = Palette.from(bitmap).generate()
-                val darkColor = palette.getDarkVibrantColor(
-                    palette.getDarkMutedColor(Color(0xFF121212).toArgb())
-                )
-                val vibrantColor = palette.getVibrantColor(
-                    palette.getLightVibrantColor(Color(0xFF1DB954).toArgb())
-                )
-                backgroundColor = Color(darkColor)
-                accentColor = Color(vibrantColor)
-                textColor = if (ColorUtils.calculateLuminance(darkColor) > 0.5)
-                    Color.Black else Color.White
-                gradientColor = Color(darkColor)
-            }
+            val blue = Color(0xFF1E88E5)
+            backgroundColor = blue.copy(alpha = 0.8f)
+            accentColor = Color.White
+            textColor = Color.White
+            gradientColor = blue.copy(alpha = 0.8f)
+            gradientColor2 = Color(0xFF121212)
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -197,12 +189,23 @@ fun FiftyGlobalScreen(
                                 shape = MaterialTheme.shapes.medium,
                                 elevation = CardDefaults.cardElevation(8.dp)
                             ) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.fiftyglobal),
-                                    contentDescription = "Fifty Global Background",
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.fillMaxSize()
-                                )
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(
+                                            brush = SolidColor(Color(0xFF1E88E5)),
+                                            shape = MaterialTheme.shapes.medium
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "Top 50\nGlobal",
+                                        color = Color.White,
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
                             }
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(
