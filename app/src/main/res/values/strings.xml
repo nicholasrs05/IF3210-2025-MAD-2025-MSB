@@ -3,4 +3,5 @@
     <string name="song_title">Song Title</string>
     <string name="song_artist">Artist</string>
     <string name="song_duration">0:00</string>
+    <string name="artwork_image">Artwork Image</string>
 </resources>

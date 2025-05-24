@@ -51,6 +51,7 @@ import com.msb.purrytify.qr.QRScannerScreen as RealQRScannerScreen
 import com.msb.purrytify.viewmodel.PlayerViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.core.net.toUri
 
 /**
  * A screen that shows a QR code scanner that creates deep link intents
@@ -115,7 +116,7 @@ fun ModernQRScannerScreen(
                     val songIdLong = songId.toLongOrNull()
                     if (songIdLong != null) {
                         processingMessage = "Creating deep link for song ID: $songId"
-                        val deepLinkUri = Uri.parse("purrytify://song/$songId")
+                        val deepLinkUri = "purrytify://song/$songId".toUri()
                         val intent = Intent(Intent.ACTION_VIEW, deepLinkUri).apply {
                             setPackage(context.packageName)
                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

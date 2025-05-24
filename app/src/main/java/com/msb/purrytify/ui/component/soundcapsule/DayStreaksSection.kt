@@ -20,10 +20,10 @@ import java.time.LocalDateTime
 
 @Composable
 fun DayStreaksSection(
+    modifier: Modifier = Modifier,
     streak: DayStreak? = null,
     song: Song? = null,
-    artist: Artist? = null,
-    modifier: Modifier = Modifier
+    artist: Artist? = null
 ) {
     Column(
         modifier = modifier

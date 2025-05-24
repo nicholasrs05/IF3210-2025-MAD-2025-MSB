@@ -177,7 +177,7 @@ class AudioService : Service() {
             setShowBadge(false)
         }
 
-        notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannel(channel)
     }
 
@@ -343,7 +343,7 @@ class AudioService : Service() {
                 }
                 return bitmap
             } else if (artworkPath.startsWith("content:")) {
-                val inputStream = contentResolver.openInputStream(Uri.parse(artworkPath))
+                val inputStream = contentResolver.openInputStream(artworkPath.toUri())
                 BitmapFactory.decodeStream(inputStream)
             } else {
                 BitmapFactory.decodeFile(artworkPath)

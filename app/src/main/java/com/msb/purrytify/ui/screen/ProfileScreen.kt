@@ -1,6 +1,5 @@
 package com.msb.purrytify.ui.screen
 
-import android.annotation.SuppressLint
 import android.content.res.Configuration
 import android.util.Log
 import androidx.compose.foundation.background
@@ -34,8 +33,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
-import com.msb.purrytify.ui.profile.ProfileUiState
-import com.msb.purrytify.ui.profile.ProfileViewModel
+import com.msb.purrytify.viewmodel.ProfileUiState
+import com.msb.purrytify.viewmodel.ProfileViewModel
 import androidx.compose.runtime.*
 import com.msb.purrytify.utils.NetworkMonitor
 import kotlinx.coroutines.flow.collectLatest
@@ -47,15 +46,10 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.msb.purrytify.ui.navigation.Screen
-import com.msb.purrytify.data.local.entity.SoundCapsule
 import com.msb.purrytify.viewmodel.AuthViewModel
 import com.msb.purrytify.viewmodel.PlayerViewModel
 import com.msb.purrytify.ui.component.NoInternet
-import com.msb.purrytify.viewmodel.SoundCapsuleViewModel
 import com.msb.purrytify.ui.component.soundcapsule.SoundCapsuleSection
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import com.msb.purrytify.utils.FileShareUtil
 
 @Composable
 fun ProfileScreen(
@@ -153,7 +147,6 @@ fun ProfileContent(
                     .background(Color.Gray),
                 contentScale = ContentScale.Crop
             )
-            EditButton()
         }
 
         Spacer(modifier = Modifier.height(20.dp))
@@ -272,33 +265,6 @@ fun RectangleGradient() {
                 )
             )
     ) {
-    }
-}
-
-@Composable
-fun EditButton() {
-    Button(
-        onClick = {},
-        shape = RoundedCornerShape(4.dp),
-        contentPadding = PaddingValues(0.dp),
-        modifier = Modifier
-            .defaultMinSize(
-                minWidth = 10.dp,
-                minHeight = 10.dp
-            )
-            .size(28.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color.White,
-        )
-    ) {
-        Icon(
-            imageVector = Icons.Outlined.Edit,
-            contentDescription = "Edit",
-            tint = Color.Black,
-            modifier = Modifier
-                .size(32.dp)
-                .padding(all = 4.dp)
-        )
     }
 }
 

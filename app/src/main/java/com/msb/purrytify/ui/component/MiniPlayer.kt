@@ -45,8 +45,8 @@ import coil3.request.SuccessResult
 import android.graphics.Bitmap
 import coil3.BitmapImage
 import coil3.request.allowHardware
-import androidx.core.net.toUri
 import com.msb.purrytify.model.AudioDeviceType
+import androidx.core.net.toUri
 
 @Composable
 fun MiniPlayer(
@@ -176,7 +176,7 @@ fun MiniPlayer(
 
                         if (artworkUriString.isNotEmpty()) {
                             val artworkUri = artworkUriString.takeIf { it.isNotEmpty() }?.let {
-                                Uri.parse(it)
+                                it.toUri()
                             }
                             AsyncImage(
                                 model = ImageRequest.Builder(LocalContext.current)

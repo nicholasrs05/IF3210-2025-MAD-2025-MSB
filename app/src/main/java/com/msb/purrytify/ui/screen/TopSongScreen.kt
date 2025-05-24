@@ -29,6 +29,7 @@ import com.msb.purrytify.R
 import com.msb.purrytify.data.local.entity.Song
 import com.msb.purrytify.data.local.entity.SoundCapsule
 import com.msb.purrytify.viewmodel.SoundCapsuleViewModel
+import java.util.Locale
 
 @Composable
 fun TopSongScreen(
@@ -192,7 +193,7 @@ private fun SongItem(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = String.format("%02d", rank),
+                        text = String.format(Locale.getDefault(), "%02d", rank),
                         color = Color(0xFFF8E747),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold

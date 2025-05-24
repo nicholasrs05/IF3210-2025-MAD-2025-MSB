@@ -24,13 +24,17 @@ import com.msb.purrytify.utils.networkStatusListener
 import com.msb.purrytify.utils.NotificationPermissionHelper
 import com.msb.purrytify.viewmodel.PlayerViewModel
 import android.content.pm.PackageManager
+import android.os.Build
+import androidx.annotation.RequiresApi
+import com.msb.purrytify.utils.NotificationPermissionHelper.hasNotificationPermission
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        if (!NotificationPermissionHelper.hasNotificationPermission(this)) {
+        if (!hasNotificationPermission(this)) {
             NotificationPermissionHelper.requestNotificationPermission(this)
         }
         

@@ -20,7 +20,7 @@ import javax.inject.Inject
 class HomeViewModel @Inject constructor(
     private val songRepository: SongRepository,
     private val playerManager: PlayerManager,
-    private val profileModel: ProfileModel,
+    profileModel: ProfileModel,
     private val soundCapsuleRepository: SoundCapsuleRepository
 ) : ViewModel() {
     

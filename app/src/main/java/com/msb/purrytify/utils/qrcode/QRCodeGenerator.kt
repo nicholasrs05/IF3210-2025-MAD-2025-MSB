@@ -18,6 +18,8 @@ import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.set
 
 /**
  * Utility class for generating QR codes for song sharing
@@ -49,11 +51,11 @@ object QRCodeGenerator {
             // Convert to bitmap
             val width = bitMatrix.width
             val height = bitMatrix.height
-            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            val bitmap = createBitmap(width, height)
             
             for (x in 0 until width) {
                 for (y in 0 until height) {
-                    bitmap.setPixel(x, y, if (bitMatrix[x, y]) Color.BLACK else Color.WHITE)
+                    bitmap[x, y] = if (bitMatrix[x, y]) Color.BLACK else Color.WHITE
                 }
             }
             
@@ -78,7 +80,7 @@ object QRCodeGenerator {
         
         // Add space for text below QR code
         val textHeight = 150
-        val finalBitmap = Bitmap.createBitmap(qrSize, qrSize + textHeight, Bitmap.Config.ARGB_8888)
+        val finalBitmap = createBitmap(qrSize, qrSize + textHeight)
         val canvas = Canvas(finalBitmap)
         
         // Draw white background
