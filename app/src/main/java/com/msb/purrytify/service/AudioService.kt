@@ -9,9 +9,12 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.media.AudioDeviceInfo
+import android.media.AudioManager
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Binder
+import android.os.Build
 import android.os.IBinder
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
@@ -40,6 +43,8 @@ import kotlinx.coroutines.runBlocking
 import androidx.core.net.toUri
 import com.msb.purrytify.data.tracker.ListeningTimeTracker
 import com.msb.purrytify.data.repository.SoundCapsuleRepository
+import com.msb.purrytify.model.AudioDevice
+import com.msb.purrytify.model.AudioDeviceType
 import javax.inject.Inject
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -51,6 +56,8 @@ class AudioService : Service() {
 
     @Inject
     lateinit var soundCapsuleRepository: SoundCapsuleRepository
+
+    private lateinit var audioManager: AudioManager
 
     companion object {
         private const val NOTIFICATION_ID = 1
@@ -97,6 +104,14 @@ class AudioService : Service() {
     private val timeTrackingJob = SupervisorJob()
     private val timeTrackingScope = CoroutineScope(Dispatchers.Main + timeTrackingJob)
 
+    @Inject
+    lateinit var audioDeviceManager: AudioDeviceManager
+
+    val availableAudioDevices: StateFlow<List<AudioDevice>>
+        get() = audioDeviceManager.availableDevices
+    val currentAudioDevice: StateFlow<AudioDevice?>
+        get() = audioDeviceManager.currentDevice
+
     private val mediaControlReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             when (intent?.action) {
@@ -117,6 +132,8 @@ class AudioService : Service() {
     override fun onCreate() {
         super.onCreate()
         Log.d("AudioService", "Creating audio service")
+
+        audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
         createNotificationChannel()
 
@@ -145,6 +162,7 @@ class AudioService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        audioDeviceManager.cleanup()
         releaseResources()
         serviceJob.cancel()
     }
@@ -223,7 +241,7 @@ class AudioService : Service() {
 
             mediaPlayer = MediaPlayer()
             mediaPlayerPrepared = false
-            
+
             mediaPlayer?.setOnErrorListener { mp, what, extra ->
                 Log.e("AudioService", "MediaPlayer error: $what, $extra")
                 releaseMediaPlayer()
@@ -232,7 +250,7 @@ class AudioService : Service() {
                 stopTimeTracking()
                 true
             }
-            
+
             try {
                 if (song.filePath.startsWith("content:")) {
                     mediaPlayer?.setDataSource(applicationContext, song.filePath.toUri())
@@ -244,7 +262,7 @@ class AudioService : Service() {
                 releaseMediaPlayer()
                 return
             }
-            
+
             mediaPlayer?.setOnPreparedListener {
                 try {
                     mediaPlayerPrepared = true
@@ -258,19 +276,19 @@ class AudioService : Service() {
                     Log.e("AudioService", "Error starting playback: ${e.message}")
                 }
             }
-            
+
             mediaPlayer?.setOnCompletionListener {
                 stopTimeTracking()
                 playNext()
             }
-            
+
             try {
                 mediaPlayer?.prepareAsync()
             } catch (e: Exception) {
                 Log.e("AudioService", "Error preparing media player: ${e.message}")
                 releaseMediaPlayer()
             }
-            
+
             updateMediaMetadata(song)
         } catch (e: Exception) {
             Log.e("AudioService", "Error playing song: ${e.message}")
@@ -283,7 +301,7 @@ class AudioService : Service() {
             putString(MediaMetadataCompat.METADATA_KEY_TITLE, song.title)
             putString(MediaMetadataCompat.METADATA_KEY_ARTIST, song.artistName)
             putLong(MediaMetadataCompat.METADATA_KEY_DURATION, song.duration)
-            
+
             if (song.artworkPath.isNotEmpty()) {
                 try {
                     val artwork = loadArtwork(song.artworkPath)
@@ -295,7 +313,7 @@ class AudioService : Service() {
                 }
             }
         }
-        
+
         mediaSession.setMetadata(metadataBuilder.build())
     }
 
@@ -355,7 +373,7 @@ class AudioService : Service() {
         } else {
             PlaybackStateCompat.STATE_PAUSED
         }
-        
+
         val stateBuilder = PlaybackStateCompat.Builder().apply {
             setActions(
                 PlaybackStateCompat.ACTION_PLAY or
@@ -368,7 +386,7 @@ class AudioService : Service() {
             )
             setState(state, currentPosition, 1.0f)
         }
-        
+
         mediaSession.setPlaybackState(stateBuilder.build())
     }
 
@@ -389,38 +407,38 @@ class AudioService : Service() {
     private fun showNotification() {
         val song = _currentSong.value ?: return
         Log.d("AudioService", "Showing notification for song: ${song.title}, artwork path: ${song.artworkPath}")
-        
+
         val contentIntent = PendingIntent.getActivity(
             this,
             REQ_CONTENT,
             Intent(this, MainActivity::class.java),
             PendingIntent.FLAG_IMMUTABLE
         )
-        
+
         val playPauseIntent = MediaControlReceiver.createPendingIntent(
             this,
             if (_isPlaying.value) ACTION_PAUSE else ACTION_PLAY,
             REQ_PLAY_PAUSE
         )
-        
+
         val nextIntent = MediaControlReceiver.createPendingIntent(
             this,
             ACTION_NEXT,
             REQ_NEXT
         )
-        
+
         val prevIntent = MediaControlReceiver.createPendingIntent(
             this,
             ACTION_PREVIOUS,
             REQ_PREV
         )
-        
+
         val stopIntent = MediaControlReceiver.createPendingIntent(
             this,
             ACTION_STOP,
             REQ_STOP
         )
-        
+
         var artwork: Bitmap? = null
         try {
             if (song.artworkPath.isNotEmpty()) {
@@ -429,16 +447,16 @@ class AudioService : Service() {
         } catch (e: Exception) {
             Log.e("AudioService", "Error loading artwork: ${e.message}", e)
         }
-        
+
         if (artwork == null) {
             Log.d("AudioService", "Using default artwork for notification")
             artwork = BitmapFactory.decodeResource(resources, R.drawable.image)
         }
-        
+
         val mediaStyle = MediaStyle()
             .setMediaSession(mediaSession.sessionToken)
             .setShowActionsInCompactView(0, 1, 2) // Display prev, play/pause, next in compact view
-        
+
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher_foreground)
             .setContentTitle(song.title)
@@ -460,12 +478,12 @@ class AudioService : Service() {
             .addAction(R.drawable.ic_close, "Close", stopIntent)
             .setOngoing(_isPlaying.value)
             .build()
-        
+
         if (_isPlaying.value) {
             startForeground(NOTIFICATION_ID, notification)
         } else {
             notificationManager.notify(NOTIFICATION_ID, notification)
-            
+
             stopForeground(STOP_FOREGROUND_DETACH)
         }
     }
@@ -496,12 +514,12 @@ class AudioService : Service() {
 
     fun playNext() {
         if (playlist.isEmpty() || currentSongIndex == -1) return
-        
+
         if (repeatMode == 2) {
             _currentSong.value?.let { prepareAndPlay(it) }
             return
         }
-        
+
         val nextIndex = if (currentSongIndex < playlist.size - 1) {
             currentSongIndex + 1
         } else {
@@ -512,13 +530,13 @@ class AudioService : Service() {
                 _currentSong.value = null
                 _isPlaying.value = false
                 updatePlaybackState()
-                
+
                 stopForeground(STOP_FOREGROUND_REMOVE)
 
                 return
             }
         }
-        
+
         currentSongIndex = nextIndex
         _currentSong.value = playlist[nextIndex]
         prepareAndPlay(playlist[nextIndex])
@@ -526,17 +544,17 @@ class AudioService : Service() {
 
     fun playPrevious() {
         if (playlist.isEmpty() || currentSongIndex == -1) return
-        
+
         if ((mediaPlayer?.currentPosition ?: 0) > 3000) {
             mediaPlayer?.seekTo(0)
             return
         }
-        
+
         if (repeatMode == 2) {
             _currentSong.value?.let { prepareAndPlay(it) }
             return
         }
-        
+
         val prevIndex = if (currentSongIndex > 0) {
             currentSongIndex - 1
         } else {
@@ -546,7 +564,7 @@ class AudioService : Service() {
                 0
             }
         }
-        
+
         currentSongIndex = prevIndex
         _currentSong.value = playlist[prevIndex]
         prepareAndPlay(playlist[prevIndex])
@@ -564,7 +582,7 @@ class AudioService : Service() {
         stopTimeTracking()
 
         stopForeground(STOP_FOREGROUND_REMOVE)
-        
+
         stopSelf()
     }
 
@@ -623,19 +641,19 @@ class AudioService : Service() {
 
     fun shuffle() {
         if (playlist.isEmpty()) return
-        
+
         if (!shuffleMode) {
             shuffleMode = true
             originalPlaylist = playlist.toList()
-            
+
             val currentSong = if (currentSongIndex >= 0) playlist[currentSongIndex] else null
             val remainingSongs = playlist.toMutableList()
             if (currentSong != null) {
                 remainingSongs.remove(currentSong)
             }
-            
+
             remainingSongs.shuffle()
-            
+
             if (currentSong != null) {
                 playlist = if (currentSongIndex >= 0) {
                     remainingSongs.toMutableList().apply {
@@ -649,36 +667,36 @@ class AudioService : Service() {
             }
         } else {
             shuffleMode = false
-            
+
             val currentSong = if (currentSongIndex >= 0) playlist[currentSongIndex] else null
             playlist = originalPlaylist
-            
+
             if (currentSong != null) {
                 currentSongIndex = playlist.indexOfFirst { it.id == currentSong.id }
             }
         }
     }
-    
+
     fun setRepeatMode(mode: Int) {
         repeatMode = mode
     }
-    
+
     fun noRepeat() {
         repeatMode = 0
     }
-    
+
     fun repeatAll() {
         repeatMode = 1
     }
-    
+
     fun repeatOne() {
         repeatMode = 2
     }
-    
+
     fun getRepeatMode(): Int {
         return repeatMode
     }
-    
+
     fun isShuffleEnabled(): Boolean {
         return shuffleMode
     }
@@ -724,5 +742,45 @@ class AudioService : Service() {
                 }
             }
         }
+    }
+
+    fun selectAudioOutputDevice(selectedDeviceModel: AudioDevice) {
+        Log.d("AudioService", "selectAudioOutputDevice called with: ${selectedDeviceModel.name}")
+
+        audioDeviceManager.handleAudioSelectionRequest(selectedDeviceModel)
+
+        if (mediaPlayer != null && mediaPlayerPrepared) {
+            val targetDeviceInfo: AudioDeviceInfo? = audioManager
+                .getDevices(AudioManager.GET_DEVICES_OUTPUTS)
+                .find { it.id == selectedDeviceModel.id }
+
+            if (targetDeviceInfo != null) {
+                Log.d("AudioService", "API ${Build.VERSION.SDK_INT}: Attempting to set preferred device to ID ${targetDeviceInfo.id} (${targetDeviceInfo.productName}) Type: ${targetDeviceInfo.type}")
+                val success = mediaPlayer?.setPreferredDevice(targetDeviceInfo)
+                if (success == true) {
+                    Log.i("AudioService", "Successfully set preferred device to ${targetDeviceInfo.productName}.")
+                } else {
+                    Log.w("AudioService", "Failed to set preferred device, or system may not honor it. Current preferred: ${mediaPlayer?.preferredDevice}, Routed: ${mediaPlayer?.routedDevice}")
+                }
+            } else {
+                Log.w("AudioService", "Could not find AudioDeviceInfo for model ID: ${selectedDeviceModel.id} (${selectedDeviceModel.name}). Cannot set preferred device.")
+                if (selectedDeviceModel.type == AudioDeviceType.PHONE_SPEAKER) {
+                    val speakerDeviceFallback = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
+                        .find { it.type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER }
+                    if (speakerDeviceFallback != null) {
+                        mediaPlayer?.setPreferredDevice(speakerDeviceFallback)
+                        Log.i("AudioService", "Fallback: set preferred device to first available built-in speaker.")
+                    }
+                }
+            }
+        } else {
+            Log.w("AudioService", "MediaPlayer not ready, cannot set preferred device.")
+        }
+
+        audioDeviceManager.updateAvailableDevices()
+    }
+
+    fun updateAvailableDevices() {
+        audioDeviceManager.updateAvailableDevices()
     }
 }

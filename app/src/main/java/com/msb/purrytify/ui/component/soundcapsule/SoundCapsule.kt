@@ -250,6 +250,7 @@ fun SoundCapsuleCard(
                 )
                 TopSongSection(
                     songTitle = "${streakSong?.title}",
+                    songImageUrl = streakSong?.artworkPath,
                     modifier = Modifier.weight(1f),
                     onClick = onTopSongClick
                 )

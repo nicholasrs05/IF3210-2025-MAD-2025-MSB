@@ -269,33 +269,6 @@ fun RectangleGradient() {
 }
 
 @Composable
-fun EditButton() {
-    Button(
-        onClick = {},
-        shape = RoundedCornerShape(4.dp),
-        contentPadding = PaddingValues(0.dp),
-        modifier = Modifier
-            .defaultMinSize(
-                minWidth = 10.dp,
-                minHeight = 10.dp
-            )
-            .size(28.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color.White,
-        )
-    ) {
-        Icon(
-            imageVector = Icons.Outlined.Edit,
-            contentDescription = "Edit",
-            tint = Color.Black,
-            modifier = Modifier
-                .size(32.dp)
-                .padding(all = 4.dp)
-        )
-    }
-}
-
-@Composable
 fun ProfileStat(label: String, count: Int) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(80.dp)) {
         Text(

@@ -27,11 +27,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.rememberAsyncImagePainter
 import com.msb.purrytify.R
 
 @Composable
 fun TopSongSection(
     songTitle: String,
+    songImageUrl: String?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -66,7 +68,11 @@ fun TopSongSection(
         )
         Spacer(modifier = Modifier.height(8.dp))
         Image(
-            painter = painterResource(id = R.drawable.image),
+            painter = if (songImageUrl != null) {
+                rememberAsyncImagePainter(songImageUrl)
+            } else {
+                painterResource(id = R.drawable.image)
+            },
             contentDescription = "Song album cover",
             modifier = Modifier
                 .size(80.dp)

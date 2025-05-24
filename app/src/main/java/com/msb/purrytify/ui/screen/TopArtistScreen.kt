@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.compose.rememberAsyncImagePainter
 import com.msb.purrytify.R
 import com.msb.purrytify.data.local.entity.Artist
 import com.msb.purrytify.viewmodel.SoundCapsuleViewModel
@@ -206,7 +207,11 @@ private fun ArtistItem(
 
             // Artist Image
             Image(
-                painter = painterResource(id = R.drawable.image),
+                painter = if (artist.imageUrl != null) {
+                    rememberAsyncImagePainter(artist.imageUrl)
+                } else {
+                    painterResource(id = R.drawable.image)
+                },
                 contentDescription = "Artist image",
                 modifier = Modifier
                     .size(72.dp)

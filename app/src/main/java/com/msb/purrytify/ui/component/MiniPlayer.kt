@@ -45,6 +45,7 @@ import coil3.request.SuccessResult
 import android.graphics.Bitmap
 import coil3.BitmapImage
 import coil3.request.allowHardware
+import com.msb.purrytify.model.AudioDeviceType
 import androidx.core.net.toUri
 
 @Composable
@@ -60,6 +61,8 @@ fun MiniPlayer(
 
     val currentPosition by playerViewModel.currentPosition
     val duration by playerViewModel.duration
+    val showAudioDeviceSheet by playerViewModel.showAudioDeviceSheet
+    val currentAudioDevice by playerViewModel.currentAudioDevice
 
     LaunchedEffect(isPlaying) {
         while (isPlaying) {
@@ -150,6 +153,15 @@ fun MiniPlayer(
             Log.e("MiniPlayer", "Error in palette extraction: ${e.message}", e)
             e.printStackTrace()
         }
+    }
+
+    if (showAudioDeviceSheet) {
+        AudioDeviceSheet(
+            onDismiss = { playerViewModel.hideAudioDeviceSheet() },
+            onDeviceSelected = { device ->
+                playerViewModel.selectAudioDevice(device)
+            }
+        )
     }
 
     Box(modifier = Modifier.fillMaxWidth()) {
@@ -269,6 +281,27 @@ fun MiniPlayer(
                             contentDescription = "Share",
                             tint = Color.White,
                             modifier = Modifier.size(18.dp)
+                        )
+                    }
+
+                    IconButton(
+                        onClick = { playerViewModel.showAudioDeviceSheet() },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(
+                                id = when {
+                                    currentAudioDevice?.type == AudioDeviceType.BLUETOOTH_DEVICE ||
+                                    currentAudioDevice?.type == AudioDeviceType.USB_HEADSET ->
+                                        R.drawable.ic_bluetooth_speaker
+                                    currentAudioDevice?.type == AudioDeviceType.WIRED_HEADSET ->
+                                        R.drawable.ic_headset
+                                    else -> R.drawable.ic_speaker
+                                }
+                            ),
+                            contentDescription = "Select Audio Output",
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
 
