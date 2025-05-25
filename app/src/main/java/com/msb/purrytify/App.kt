@@ -11,9 +11,12 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequest
 import androidx.work.WorkManager
 import androidx.work.WorkRequest
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.ExistingPeriodicWorkPolicy
 import java.util.concurrent.TimeUnit
 import com.msb.purrytify.service.RefreshTokenService
 import com.msb.purrytify.receiver.AudioDeviceReceiver
+import com.msb.purrytify.worker.RecommendationWorker
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 
@@ -28,6 +31,7 @@ class Purritify : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         scheduleRefreshTokenWork()
+        scheduleRecommendationWork()
 
         // Register audio device receiver
         val filter = IntentFilter().apply {
@@ -50,6 +54,25 @@ class Purritify : Application(), Configuration.Provider {
             .build()
 
         WorkManager.getInstance(applicationContext).enqueue(refreshTokenRequest)
+    }
+    
+    private fun scheduleRecommendationWork() {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .setRequiresBatteryNotLow(true)
+            .build()
+        
+        val recommendationRequest = PeriodicWorkRequestBuilder<RecommendationWorker>(
+            5, TimeUnit.MINUTES
+        )
+            .setConstraints(constraints)
+            .build()
+        
+        WorkManager.getInstance(applicationContext).enqueueUniquePeriodicWork(
+            RecommendationWorker.WORK_NAME,
+            ExistingPeriodicWorkPolicy.KEEP,
+            recommendationRequest
+        )
     }
 
     override val workManagerConfiguration: Configuration

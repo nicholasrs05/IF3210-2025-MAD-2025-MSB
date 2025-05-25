@@ -80,9 +80,9 @@ object EnhancedColorUtils {
 
         return if (contrastRatio < minContrast) {
             if (background.isLight()) {
-                adjustColorForContrast(foreground, background, targetLuminance = 0.15f)
+                adjustColorForContrast(foreground, targetLuminance = 0.15f)
             } else {
-                adjustColorForContrast(foreground, background, targetLuminance = 0.85f)
+                adjustColorForContrast(foreground, targetLuminance = 0.85f)
             }
         } else {
             foreground
@@ -99,15 +99,12 @@ object EnhancedColorUtils {
 
     private fun adjustColorForContrast(
         color: Color,
-        background: Color,
         targetLuminance: Float
     ): Color {
         val currentLuminance = color.luminance()
         val factor = if (targetLuminance > currentLuminance) {
-            // Need to lighten
             1.0f + (targetLuminance - currentLuminance) * 2
         } else {
-            // Need to darken
             targetLuminance / currentLuminance
         }
 
@@ -119,22 +116,13 @@ object EnhancedColorUtils {
         )
     }
 
-    /**
-     * Creates an enhanced color scheme from palette with better contrast
-     */
     fun createEnhancedColorScheme(palette: Palette): EnhancedColorScheme {
         // Extract base colors
         val dominantColor = Color(palette.getDominantColor(Color(0xFF121212).toArgb()))
         val vibrantColor = Color(palette.getVibrantColor(Color(0xFF1DB954).toArgb()))
-        val darkVibrantColor = Color(palette.getDarkVibrantColor(Color(0xFF0D7534).toArgb()))
         val lightVibrantColor = Color(palette.getLightVibrantColor(Color(0xFF4CAF50).toArgb()))
-        val mutedColor = Color(palette.getMutedColor(Color(0xFF666666).toArgb()))
         val darkMutedColor = Color(palette.getDarkMutedColor(Color(0xFF1A1A1A).toArgb()))
-
-        // Determine base background - prefer dark muted over dominant for better music player aesthetics
         val baseBackground = if (darkMutedColor.luminance() < 0.3f) darkMutedColor else dominantColor
-
-        // Ensure background is sufficiently dark for music player
         val backgroundColor = if (baseBackground.luminance() > 0.2f) {
             Color(
                 red = baseBackground.red * 0.3f,
@@ -144,17 +132,13 @@ object EnhancedColorUtils {
             )
         } else baseBackground
 
-        // Choose accent color with better saturation
         val accentColor = when {
             vibrantColor.luminance() > 0.15f && calculateSaturation(vibrantColor) > 0.4f -> vibrantColor
             lightVibrantColor.luminance() > 0.3f -> lightVibrantColor
-            else -> Color(0xFF1DB954) // Fallback Spotify green
+            else -> Color(0xFF1DB954)
         }
 
-        // Ensure accent has good contrast against background
         val enhancedAccent = ensureContrast(accentColor, backgroundColor, 3.0f)
-
-        // Calculate text colors with high contrast
         val primaryText = ensureContrast(Color.White, backgroundColor, 7.0f)
         val secondaryText = ensureContrast(Color.White.copy(alpha = 0.7f), backgroundColor, 4.5f)
 
@@ -347,15 +331,13 @@ fun PlayerScreen(
         @Composable {
             Box(
                 modifier = Modifier
-                    .size(320.dp) // Slightly larger for better visual impact
-                    .clip(RoundedCornerShape(12.dp)) // More rounded corners
+                    .size(320.dp)
+                    .clip(RoundedCornerShape(12.dp))
             ) {
                 val artworkUriString = currentPlayingSong.artworkPath
 
                 if (artworkUriString.isNotEmpty()) {
-                    val artworkUri = artworkUriString.takeIf { it.isNotEmpty() }?.let {
-                        it.toUri()
-                    }
+                    val artworkUri = artworkUriString.takeIf { it.isNotEmpty() }?.toUri()
                     AsyncImage(
                         model = ImageRequest.Builder(LocalContext.current)
                             .data(artworkUri)
