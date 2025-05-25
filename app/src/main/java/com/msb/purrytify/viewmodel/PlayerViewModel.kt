@@ -86,6 +86,9 @@ class PlayerViewModel @Inject constructor(
     private val _playbackError = mutableStateOf<String?>(null)
     val playbackError: State<String?> = _playbackError
 
+    private val _isFromQRScan = mutableStateOf(false)
+    val isFromQRScan: State<Boolean> = _isFromQRScan
+
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             val binder = service as AudioService.AudioServiceBinder
@@ -567,6 +570,24 @@ class PlayerViewModel @Inject constructor(
     fun clearPlaybackError() {
         _playbackError.value = null
         audioService?.clearPlaybackError()
+    }
+
+    fun playSongFromQR(song: Song) {
+        viewModelScope.launch {
+            // Check if file is accessible before attempting to play
+            if (!song.isFromApi && !FileUtils.isFileAccessible(getApplication(), song.filePath)) {
+                _playbackError.value = "Song file not found or moved. Cannot play this song."
+                return@launch
+            }
+            
+            _isFromQRScan.value = true
+            checkLikedStatus(song.id)
+            playerManager.playSong(song)
+        }
+    }
+
+    fun clearQRScanFlag() {
+        _isFromQRScan.value = false
     }
 
     override fun onCleared() {

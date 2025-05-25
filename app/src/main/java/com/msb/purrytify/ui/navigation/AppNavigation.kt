@@ -231,9 +231,10 @@ fun NavigationComponent(
                                             ModernQRScannerScreen(
                                                 navigateUp = { navController.navigateUp() },
                                                 onQRCodeScanned = { songId ->
-                                                    // Deep link was executed, just navigate back
+                                                    // Navigate back to home with smooth transition
                                                     navController.navigate(Screen.Home.route) {
                                                         popUpTo(Screen.QRScanner.route) { inclusive = true }
+                                                        launchSingleTop = true
                                                     }
                                                 },
                                                 playerViewModel = playerViewModel
@@ -363,9 +364,10 @@ fun NavigationComponent(
                                         ModernQRScannerScreen(
                                             navigateUp = { navController.navigateUp() },
                                             onQRCodeScanned = { songId ->
-                                                // Deep link was executed, just navigate back
+                                                // Navigate back to home with smooth transition
                                                 navController.navigate(Screen.Home.route) {
                                                     popUpTo(Screen.QRScanner.route) { inclusive = true }
+                                                    launchSingleTop = true
                                                 }
                                             },
                                             playerViewModel = playerViewModel
