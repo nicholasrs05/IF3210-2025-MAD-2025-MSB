@@ -3,6 +3,7 @@ package com.msb.purrytify.ui.screen
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.pm.ActivityInfo
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack

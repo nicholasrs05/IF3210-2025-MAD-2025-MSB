@@ -2,16 +2,23 @@ package com.msb.purrytify.ui.navigation
 
 import android.util.Log
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
@@ -34,8 +41,6 @@ import androidx.compose.ui.unit.dp
 import com.msb.purrytify.R
 import androidx.compose.ui.res.painterResource
 import com.msb.purrytify.ui.theme.AppTheme
-import androidx.compose.material3.Surface
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -139,32 +144,49 @@ fun NavigationComponent(
             val isLoggedIn = uiState.isLoggedIn
             val isLoggedInCheckDone = uiState.isLoggedInCheckDone
 
-
             val startDestination =
                 if (isLoggedInCheckDone && isLoggedIn) Screen.Home.route else Screen.Login.route
 
+            // Handle navigation restoration errors
+            var navigationError by remember { mutableStateOf<String?>(null) }
+
             LaunchedEffect(isLoggedIn, isLoggedInCheckDone) {
                 if (isLoggedInCheckDone) {
-                    val currentBackStackEntry = navController.currentBackStackEntry
-                    val currentActualRoute = currentBackStackEntry?.destination?.route
-                    if (isLoggedIn && currentActualRoute == Screen.Login.route) {
-                        navController.navigate(Screen.Home.route) {
-                            popUpTo(Screen.Login.route) { inclusive = true }
-                            launchSingleTop = true
-                        }
-                    } else if (!isLoggedIn && currentActualRoute != Screen.Login.route) {
-                        if (currentActualRoute != null) {
-                            navController.navigate(Screen.Login.route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    inclusive = true
-                                }
+                    try {
+                        val currentBackStackEntry = navController.currentBackStackEntry
+                        val currentActualRoute = currentBackStackEntry?.destination?.route
+                        if (isLoggedIn && currentActualRoute == Screen.Login.route) {
+                            navController.navigate(Screen.Home.route) {
+                                popUpTo(Screen.Login.route) { inclusive = true }
                                 launchSingleTop = true
                             }
-                        } else {
-                            Log.d(
-                                "NavigationEffect",
-                                "Skipping navigation to Login: currentActualRoute is null."
-                            )
+                        } else if (!isLoggedIn && currentActualRoute != Screen.Login.route) {
+                            if (currentActualRoute != null) {
+                                navController.navigate(Screen.Login.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        inclusive = true
+                                    }
+                                    launchSingleTop = true
+                                }
+                            } else {
+                                Log.d(
+                                    "NavigationEffect",
+                                    "Skipping navigation to Login: currentActualRoute is null."
+                                )
+                            }
+                        }
+                    } catch (e: IllegalStateException) {
+                        Log.e("Navigation", "Navigation state restoration failed", e)
+                        navigationError = "Navigation error occurred. Restarting..."
+                        // Force navigation to start destination
+                        try {
+                            navController.navigate(startDestination) {
+                                popUpTo(0) { inclusive = true }
+                                launchSingleTop = true
+                            }
+                            navigationError = null
+                        } catch (e2: Exception) {
+                            Log.e("Navigation", "Failed to recover from navigation error", e2)
                         }
                     }
                 } else {
@@ -173,15 +195,24 @@ fun NavigationComponent(
                         "Skipping navigation: NavController graph not ready yet."
                     )
                 }
-
             }
 
             val navBackStackEntryForUI by navController.currentBackStackEntryAsState()
             val currentRouteForUI = navBackStackEntryForUI?.destination?.route
 
-            if (!isLoggedInCheckDone) {
+            if (!isLoggedInCheckDone || navigationError != null) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        CircularProgressIndicator()
+                        navigationError?.let { error ->
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = error,
+                                color = Color.White,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
                 }
             } else {
                 PlayerContainer(
@@ -316,6 +347,101 @@ fun NavigationComponent(
                                                     soundCapsuleId,
                                                     onBackClick = { navController.popBackStack() }
                                                 )
+                                        }
+                                        navigation(
+                                            route = "editProfileGraph",
+                                            startDestination = Screen.EditProfile.route
+                                        ) {
+                                            composable(Screen.EditProfile.route) {
+                                                EditProfileScreen(
+                                                    navController = navController
+                                                )
+                                            }
+                                            composable(Screen.MapLocationPicker.route) {
+                                                MapLocationPickerScreen(
+                                                    navController = navController
+                                                )
+                                            }
+                                        }
+                                        composable(Screen.FiftyGlobal.route) {
+                                            var isDismissing by remember { mutableStateOf(false) }
+
+                                            OnlineSongsScreen(
+                                                screenType = OnlineSongsScreenType.GLOBAL,
+                                                onDismiss = {
+                                                    navController.navigateUp()
+                                                },
+                                                onDismissWithAnimation = {
+                                                    isDismissing = true
+                                                },
+                                                isDismissing = isDismissing,
+                                                onAnimationComplete = {
+                                                    isDismissing = false
+                                                },
+                                                playerViewModel = playerViewModel
+                                            )
+                                        }
+                                        composable(Screen.Top10Country.route) {
+                                            var isDismissing by remember { mutableStateOf(false) }
+
+                                            OnlineSongsScreen(
+                                                screenType = OnlineSongsScreenType.COUNTRY,
+                                                onDismiss = {
+                                                    navController.navigateUp()
+                                                },
+                                                onDismissWithAnimation = {
+                                                    isDismissing = true
+                                                },
+                                                isDismissing = isDismissing,
+                                                onAnimationComplete = {
+                                                    isDismissing = false
+                                                },
+                                                playerViewModel = playerViewModel
+                                            )
+                                        }
+                                        composable(
+                                            route = Screen.SongDetail.route,
+                                            arguments = listOf(
+                                                navArgument("songId") { type = NavType.StringType }
+                                            ),
+                                            deepLinks = listOf(
+                                                navDeepLink {
+                                                    uriPattern = "purrytify://song/{songId}"
+                                                }
+                                            )
+                                        ) { backStackEntry ->
+                                            val songId = backStackEntry.arguments?.getString("songId")
+                                            val onlineSongsViewModel: OnlineSongsViewModel = hiltViewModel()
+                                            
+                                            LaunchedEffect(songId) {
+                                                if (songId != null) {
+                                                    if (!isLoggedIn) {
+                                                        navController.navigate(Screen.Login.route)
+                                                    } else {
+                                                        onlineSongsViewModel.fetchSongById(songId) { song ->
+                                                            if (song != null) {
+                                                                playerViewModel.setPlaylist(listOf(song), 0)
+                                                                playerViewModel.playSong(song)
+                                                                playerViewModel.setLargePlayerVisible(true)
+                                                                navController.navigate(Screen.Home.route) {
+                                                                    popUpTo(Screen.SongDetail.route) { inclusive = true }
+                                                                }
+                                                            } else {
+                                                                Log.e("Navigation", "Song not found with ID: $songId")
+                                                                navController.navigate(Screen.Home.route)
+                                                            }
+                                                        }
+                                                    }
+                                                } else {
+                                                    Log.e("Navigation", "Song ID is null")
+                                                    navController.navigate(Screen.Home.route)
+                                                }
+                                            }
+
+                                            // Show minimal UI while loading or redirect
+                                            Box(modifier = Modifier.fillMaxSize()) {
+                                                CircularProgressIndicator()
+                                            }
                                         }
                                     }
                                 }

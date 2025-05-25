@@ -196,7 +196,7 @@ fun ProfileContent(
                 // First row of buttons
                 Row {
                     Button(
-                        onClick = { navController.navigate(Screen.EditProfile.route) },
+                        onClick = { navController.navigate("editProfileGraph") },
                         shape = RoundedCornerShape(45.dp),
                         contentPadding = PaddingValues(0.dp),
                         modifier = Modifier

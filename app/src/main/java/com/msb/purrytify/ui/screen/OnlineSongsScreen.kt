@@ -6,9 +6,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Download
@@ -262,89 +263,7 @@ fun OnlineSongsScreen(
         }
     }
     
-    val songListContent = remember(uiState.isLoading, uiState.error, uiState.songs.size) {
-        @Composable {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color(0xFF121212))
-                    .padding(horizontal = 16.dp)
-            ) {
-                when {
-                    uiState.isLoading -> {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator(color = accentColor)
-                        }
-                    }
-                    uiState.error != null -> {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(
-                                    text = "Error loading songs",
-                                    color = textColor,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                                Text(
-                                    text = uiState.error ?: "Unknown error",
-                                    color = textColor,
-                                    fontWeight = FontWeight.Medium
-                                )
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Button(
-                                    onClick = { 
-                                        when (screenType) {
-                                            OnlineSongsScreenType.GLOBAL -> viewModel.fetchGlobalTopSongs()
-                                            OnlineSongsScreenType.COUNTRY -> viewModel.fetchCountryTopSongs()
-                                        }
-                                    },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = accentColor
-                                    )
-                                ) {
-                                    Text("Retry")
-                                }
-                            }
-                        }
-                    }
-                    uiState.songs.isEmpty() -> {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "No songs available",
-                                color = textColor,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                    }
-                    else -> {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(bottom = 80.dp)
-                        ) {
-                            itemsIndexed(uiState.songs) { idx, song ->
-                                NumberedSongItem(
-                                    number = idx + 1,
-                                    song = song,
-                                    onSongClick = { playSong(song) },
-                                    textColor = textColor,
-                                    downloadViewModel = downloadViewModel,
-                                    viewModel = viewModel
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+
     
     val offlineContent = remember {
         @Composable {
@@ -420,11 +339,99 @@ fun OnlineSongsScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(top = 50.dp),
+                        .padding(top = 50.dp)
+                        .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     headerContent()
-                    songListContent()
+                    
+                    // Song list content without LazyColumn since we're using verticalScroll
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color(0xFF121212))
+                            .padding(horizontal = 16.dp)
+                    ) {
+                        when {
+                            uiState.isLoading -> {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(400.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator(color = accentColor)
+                                }
+                            }
+                            uiState.error != null -> {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(400.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(
+                                            text = "Error loading songs",
+                                            color = textColor,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                        Text(
+                                            text = uiState.error ?: "Unknown error",
+                                            color = textColor,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        Button(
+                                            onClick = { 
+                                                when (screenType) {
+                                                    OnlineSongsScreenType.GLOBAL -> viewModel.fetchGlobalTopSongs()
+                                                    OnlineSongsScreenType.COUNTRY -> viewModel.fetchCountryTopSongs()
+                                                }
+                                            },
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = accentColor
+                                            )
+                                        ) {
+                                            Text("Retry")
+                                        }
+                                    }
+                                }
+                            }
+                            uiState.songs.isEmpty() -> {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(400.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "No songs available",
+                                        color = textColor,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            }
+                            else -> {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    uiState.songs.forEachIndexed { idx, song ->
+                                        NumberedSongItem(
+                                            number = idx + 1,
+                                            song = song,
+                                            onSongClick = { playSong(song) },
+                                            textColor = textColor,
+                                            downloadViewModel = downloadViewModel,
+                                            viewModel = viewModel
+                                        )
+                                    }
+                                    // Add bottom padding for mini player
+                                    Spacer(modifier = Modifier.height(100.dp))
+                                }
+                            }
+                        }
+                    }
                 }
             }
         } else {
