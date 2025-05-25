@@ -27,11 +27,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.rememberAsyncImagePainter
 import com.msb.purrytify.R
 
 @Composable
 fun TopArtistSection(
     artist: String,
+    artWorkPath: String?,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
@@ -66,8 +68,11 @@ fun TopArtistSection(
         )
         Spacer(modifier = Modifier.height(8.dp))
         Image(
-            painter = painterResource(id = R.drawable.image),
-            contentDescription = "Artist album cover",
+            painter = if (artWorkPath != null && !artWorkPath.isEmpty() ) {
+                rememberAsyncImagePainter(artWorkPath)
+            } else {
+                painterResource(id = R.drawable.image)
+            },            contentDescription = "Artist album cover",
             modifier = Modifier
                 .size(80.dp)
                 .clip(CircleShape),

@@ -245,6 +245,7 @@ fun SoundCapsuleCard(
             ) {
                 TopArtistSection(
                     artist = "${streakArtist?.name}",
+                    artWorkPath = streakArtist?.imageUrl,
                     modifier = Modifier.weight(1f),
                     onClick = onTopArtistClick
                 )
