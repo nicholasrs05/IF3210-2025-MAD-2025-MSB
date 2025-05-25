@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -35,12 +36,15 @@ import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.navigation.NavController
 import com.msb.purrytify.ui.navigation.Screen
 import androidx.core.net.toUri
+import com.msb.purrytify.ui.component.recommendation.RecommendationSection
+import com.msb.purrytify.viewmodel.RecommendationViewModel
 
 
 @Composable
 fun HomeScreen(
     homeViewModel: HomeViewModel = hiltViewModel(),
     playerViewModel: PlayerViewModel = hiltViewModel(),
+    recommendationViewModel: RecommendationViewModel = hiltViewModel(),
     navController: NavController? = null,
     onScanQRCode: () -> Unit
 ) {
@@ -48,9 +52,12 @@ fun HomeScreen(
         homeViewModel.recentlyPlayedSongs.observeAsState(initial = emptyList())
     val newSongsState: State<List<Song>> =
         homeViewModel.newSongs.observeAsState(initial = emptyList())
-
     val recentlyPlayed: List<Song> = recentlyPlayedState.value
     val newSongs: List<Song> = newSongsState.value
+    val recommendedSongs by recommendationViewModel.recommendedSongs.collectAsState()
+    LaunchedEffect(Unit) {
+        recommendationViewModel.loadTrendingSongs()
+    }
 
     val onClickedRecent: (Song) -> Unit = { song ->
         homeViewModel.playRecentSongs(recentlyPlayed, song)
@@ -59,6 +66,11 @@ fun HomeScreen(
 
     val onClickedNew: (Song) -> Unit = { song ->
         homeViewModel.playNewSongs(newSongs, song)
+        playerViewModel.setMiniPlayerVisible(true)
+    }
+    
+    val onClickedRecommended: (Song) -> Unit = { song ->
+        homeViewModel.playSong(song)
         playerViewModel.setMiniPlayerVisible(true)
     }
 
@@ -86,7 +98,7 @@ fun HomeScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Online Songs",
+                            text = "Charts",
                             fontSize = 24.sp,
                             fontWeight = FontWeight.W800
                         )
@@ -123,6 +135,15 @@ fun HomeScreen(
                         onTop10CountryClick = {
                             navController?.navigate(Screen.Top10Country.route)
                         }
+                    )
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    RecommendationSection(
+                        title = "Recommended for You",
+                        songs = recommendedSongs,
+                        onSongClick = onClickedRecommended
                     )
                 }
 

@@ -301,6 +301,7 @@ class AudioService : Service() {
 
             serviceScope.launch {
                 songRepository.updateLastPlayedAt(song.id)
+                songRepository.incrementPlayCount(song.id)
                 soundCapsuleRepository.incrementSongPlayCount(song.id, userId)
             }
             updateMediaMetadata(song)
