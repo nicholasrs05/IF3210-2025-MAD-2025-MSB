@@ -49,7 +49,7 @@ fun ShareSongQRDialog(
     song: Song,
     onDismiss: () -> Unit
 ) {
-    if (!song.isFromApi) {
+    if (!song.isFromApi && song.onlineSongId == null) {
         LaunchedEffect(Unit) {
             onDismiss()
         }
@@ -61,8 +61,10 @@ fun ShareSongQRDialog(
     
     LaunchedEffect(song.id) {
         withContext(Dispatchers.IO) {
+            // Use the original online song ID for downloaded songs, or the song ID for online songs
+            val songIdToShare = song.onlineSongId ?: song.id
             qrBitmap = QRCodeGenerator.generateQRCodeWithInfo(
-                songId = song.id.toString(),
+                songId = songIdToShare.toString(),
                 songTitle = song.title,
                 artist = song.artistName,
                 qrSize = 600
@@ -163,17 +165,19 @@ fun ShareSongQRDialog(
 
 
 private fun shareSongQRCode(context: Context, song: Song, qrBitmap: Bitmap?) {
-    if (!song.isFromApi) {
-        Toast.makeText(context, "Only online songs can be shared via QR code", Toast.LENGTH_LONG).show()
+    if (!song.isFromApi && song.onlineSongId == null) {
+        Toast.makeText(context, "Only online and downloaded songs can be shared via QR code", Toast.LENGTH_LONG).show()
         return
     }
     
     qrBitmap?.let { bitmap ->
         try {
+            // Use the original online song ID for downloaded songs, or the song ID for online songs
+            val songIdToShare = song.onlineSongId ?: song.id
             val uri = QRCodeGenerator.saveQRCodeForSharing(
                 context = context,
                 bitmap = bitmap,
-                songId = song.id.toString()
+                songId = songIdToShare.toString()
             )
             
             // Create share intent

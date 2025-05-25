@@ -625,7 +625,7 @@ fun PlayerScreen(
                                 } else {
                                     Toast.makeText(
                                         context,
-                                        "Only online songs can be shared",
+                                        "Only online and downloaded songs can be shared",
                                         Toast.LENGTH_LONG
                                     ).show()
                                 }
@@ -656,7 +656,7 @@ fun PlayerScreen(
                                 } else {
                                     Toast.makeText(
                                         context,
-                                        "Only online songs can be shared via QR code",
+                                        "Only online and downloaded songs can be shared via QR code",
                                         Toast.LENGTH_LONG
                                     ).show()
                                 }

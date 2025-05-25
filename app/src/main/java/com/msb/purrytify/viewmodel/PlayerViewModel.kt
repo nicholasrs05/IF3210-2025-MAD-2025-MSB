@@ -378,7 +378,10 @@ class PlayerViewModel @Inject constructor(
     }
 
     fun canShareSong(): Boolean {
-        return currentSong.value?.isFromApi == true
+        val song = currentSong.value ?: return false
+        // Allow sharing of online songs (isFromApi = true) and downloaded songs (onlineSongId != null)
+        // But not offline songs (isFromApi = false AND onlineSongId = null)
+        return song.isFromApi || song.onlineSongId != null
     }
 
     fun canEditSong(): Boolean {
@@ -393,11 +396,11 @@ class PlayerViewModel @Inject constructor(
 
     fun shareCurrentSongViaQR() {
         currentSong.value?.let { song ->
-            if (song.isFromApi) {
+            if (song.isFromApi || song.onlineSongId != null) {
                 qrSharingService.shareSongViaQR(song)
             } else {
-                // Show message that only online songs can be shared
-                Log.w("PlayerViewModel", "Cannot share local song: ${song.title}. Only online songs can be shared.")
+                // Show message that only online and downloaded songs can be shared
+                Log.w("PlayerViewModel", "Cannot share local song: ${song.title}. Only online and downloaded songs can be shared.")
             }
         }
     }

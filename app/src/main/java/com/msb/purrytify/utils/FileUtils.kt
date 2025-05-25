@@ -12,9 +12,7 @@ import androidx.core.net.toUri
 
 object FileUtils {
     fun getPath(context: Context, uri: Uri): String? {
-        // Handle Document Provider
         if (DocumentsContract.isDocumentUri(context, uri)) {
-            // ExternalStorageProvider
             if (isExternalStorageDocument(uri)) {
                 val docId = DocumentsContract.getDocumentId(uri)
                 val split = docId.split(":")
@@ -24,7 +22,6 @@ object FileUtils {
                     return "${context.getExternalFilesDir(null)}/${split[1]}"
                 }
             } 
-            // MediaProvider
             else if (isMediaDocument(uri)) {
                 val docId = DocumentsContract.getDocumentId(uri)
                 val split = docId.split(":")
