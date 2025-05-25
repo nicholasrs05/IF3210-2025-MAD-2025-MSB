@@ -28,8 +28,8 @@ data class DayStreak(
     val id: Long = 0,
     val soundCapsuleId: Long,
     val songId: Long,
-    val startDate: LocalDateTime,
-    val endDate: LocalDateTime,
+    val startDate: LocalDate,
+    val endDate: LocalDate,
     val streakDays: Int
 )
 
@@ -52,4 +52,22 @@ data class MonthlySongPlayCount(
     val soundCapsuleId: Long,
     val playCount: Int = 0,
     val lastUpdated: LocalDateTime = LocalDateTime.now()
+)
+
+// Data class to combine Song with play count information
+data class SongWithPlayCount(
+    val id: Long,
+    val title: String,
+    val artistName: String,
+    val artistId: Long,
+    val duration: Long,
+    val filePath: String,
+    val artworkPath: String,
+    val isLiked: Boolean,
+    val addedAt: Long,
+    val lastPlayedAt: Long?,
+    val ownerId: Long,
+    val isFromApi: Boolean,
+    val onlineSongId: Long?,
+    val playCount: Int
 )

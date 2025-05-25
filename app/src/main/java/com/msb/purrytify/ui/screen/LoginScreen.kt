@@ -5,6 +5,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -19,11 +21,16 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
@@ -39,6 +46,8 @@ fun LoginScreen(
 ) {
     val state = authViewModel.uiState.collectAsState()
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
+    val passwordFocusRequester = remember { FocusRequester() }
 
     LaunchedEffect(state.value.loginError) {
         if (!state.value.loginError.isNullOrEmpty()) {
@@ -144,6 +153,15 @@ fun LoginScreen(
                                 fontSize = 12.sp
                             )
                         },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Email,
+                            imeAction = ImeAction.Next
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onNext = {
+                                passwordFocusRequester.requestFocus()
+                            }
+                        ),
                         isError = state.value.emailError != null,
                         supportingText = {
                             if (state.value.emailError != null) {
@@ -179,7 +197,8 @@ fun LoginScreen(
                         value = state.value.password,
                         onValueChange = { authViewModel.setPassword(it) },
                         modifier = Modifier
-                            .fillMaxWidth(),
+                            .fillMaxWidth()
+                            .focusRequester(passwordFocusRequester),
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = Color(0xFF535353),
                             unfocusedContainerColor = Color(0xFF535353)
@@ -193,6 +212,16 @@ fun LoginScreen(
                             )
                         },
                         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
+                                focusManager.clearFocus()
+                                authViewModel.loginWithValidation()
+                            }
+                        ),
                         trailingIcon = {
                             val image = if (passwordVisible)
                                 Icons.Filled.Visibility

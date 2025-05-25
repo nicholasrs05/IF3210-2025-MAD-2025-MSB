@@ -60,7 +60,6 @@ fun ProfileScreen(
 ) {
     val context = LocalContext.current
     var isConnected by remember { mutableStateOf(true) }
-    var isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
     val scrollState = rememberScrollState()
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -97,11 +96,10 @@ fun ProfileScreen(
                 }
 
                 is ProfileUiState.Success -> {
-                    RectangleGradient()
                     ProfileContent(
                         profile = (profileUiState as ProfileUiState.Success).profile,
                         logout = { logout() },
-                        modifier = if (isLandscape) Modifier.verticalScroll(scrollState) else Modifier,
+                        modifier = Modifier.verticalScroll(scrollState),
                         navController = navController
                     )
                 }
@@ -126,124 +124,156 @@ fun ProfileContent(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background(Color(0xFF101010))
     ) {
-        Spacer(modifier = Modifier.height(52.dp))
-
+        // Gradient section (50% of screen height)
         Box(
-            contentAlignment = Alignment.BottomEnd,
             modifier = Modifier
-                .wrapContentWidth()
-                .width(120.dp)
-                .height(120.dp)
+                .fillMaxWidth()
+                .fillMaxHeight(0.5f)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0xFF00667B),
+                            Color(0xFF002F38),
+                            Color(0xFF101010)
+                        ),
+                        startY = 0f,
+                        endY = Float.POSITIVE_INFINITY
+                    )
+                )
         ) {
-            AsyncImage(
-                model = profile.profilePhotoUrl,
-                contentDescription = "Profile Photo",
+            Column(
                 modifier = Modifier
-                    .size(120.dp)
-                    .clip(CircleShape)
-                    .background(Color.Gray),
-                contentScale = ContentScale.Crop
-            )
+                    .fillMaxSize()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Spacer(modifier = Modifier.height(32.dp))
+                // Profile photo
+                Box(
+                    contentAlignment = Alignment.BottomEnd,
+                    modifier = Modifier
+                        .wrapContentWidth()
+                        .width(120.dp)
+                        .height(120.dp)
+                ) {
+                    AsyncImage(
+                        model = profile.profilePhotoUrl,
+                        contentDescription = "Profile Photo",
+                        modifier = Modifier
+                            .size(120.dp)
+                            .clip(CircleShape)
+                            .background(Color.Gray),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // User info
+                Column(
+                    Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        text = profile.username,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.White
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = profile.location,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.Gray
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // First row of buttons
+                Row {
+                    Button(
+                        onClick = { navController.navigate(Screen.EditProfile.route) },
+                        shape = RoundedCornerShape(45.dp),
+                        contentPadding = PaddingValues(0.dp),
+                        modifier = Modifier
+                            .defaultMinSize(
+                                minWidth = ButtonDefaults.MinWidth,
+                                minHeight = 10.dp
+                            )
+                            .width(105.dp)
+                            .height(32.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF3E3f3f),
+                            contentColor = Color.White,
+                        )
+                    ) {
+                        Text(
+                            "Edit Profile",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.White,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Button(
+                        onClick = { logout() },
+                        shape = RoundedCornerShape(45.dp),
+                        contentPadding = PaddingValues(0.dp),
+                        modifier = Modifier
+                            .defaultMinSize(
+                                minWidth = ButtonDefaults.MinWidth,
+                                minHeight = 10.dp
+                            )
+                            .width(105.dp)
+                            .height(32.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF3E3f3f),
+                            contentColor = Color.White,
+                        )
+                    ) {
+                        Text(
+                            "Logout",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.White,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Stats row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    ProfileStat(label = "SONGS", count = profile.addedSongsCount)
+                    ProfileStat(label = "LIKED", count = profile.likedSongsCount)
+                    ProfileStat(label = "LISTENED", count = profile.listenedSongsCount)
+                }
+            }
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
-
+        // Sound Capsule Section (outside gradient, on dark background)
         Column(
-            Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = profile.username,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color.White
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = profile.location,
-                style = MaterialTheme.typography.labelMedium,
-                color = Color.Gray
+            SoundCapsuleSection(
+                navController = navController,
+                modifier = Modifier.fillMaxWidth()
             )
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // First row of buttons
-        Row {
-            Button(
-                onClick = { navController.navigate(Screen.EditProfile.route) },
-                shape = RoundedCornerShape(45.dp),
-                contentPadding = PaddingValues(0.dp),
-                modifier = Modifier
-                    .defaultMinSize(
-                        minWidth = ButtonDefaults.MinWidth,
-                        minHeight = 10.dp
-                    )
-                    .width(105.dp)
-                    .height(32.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF3E3f3f),
-                    contentColor = Color.White,
-                )
-            ) {
-                Text(
-                    "Edit Profile",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.White,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Button(
-                onClick = { logout() },
-                shape = RoundedCornerShape(45.dp),
-                contentPadding = PaddingValues(0.dp),
-                modifier = Modifier
-                    .defaultMinSize(
-                        minWidth = ButtonDefaults.MinWidth,
-                        minHeight = 10.dp
-                    )
-                    .width(105.dp)
-                    .height(32.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF3E3f3f),
-                    contentColor = Color.White,
-                )
-            ) {
-                Text(
-                    "Logout",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.White,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            ProfileStat(label = "SONGS", count = profile.addedSongsCount)
-            ProfileStat(label = "LIKED", count = profile.likedSongsCount)
-            ProfileStat(label = "LISTENED", count = profile.listenedSongsCount)
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Sound Capsule Section
-        SoundCapsuleSection(
-            navController = navController,
-            modifier = Modifier.fillMaxWidth()
-        )
     }
 }
 
@@ -251,8 +281,7 @@ fun ProfileContent(
 fun RectangleGradient() {
     Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .fillMaxHeight(0.5f)
+            .fillMaxSize()
             .background(
                 brush = Brush.verticalGradient(
                     colors = listOf(

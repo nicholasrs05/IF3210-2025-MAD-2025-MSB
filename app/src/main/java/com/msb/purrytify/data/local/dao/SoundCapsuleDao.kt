@@ -8,6 +8,7 @@ import com.msb.purrytify.data.local.entity.Song
 import com.msb.purrytify.data.local.entity.Artist
 import com.msb.purrytify.data.local.converter.DateTimeConverter
 import com.msb.purrytify.data.local.entity.MonthlySongPlayCount
+import com.msb.purrytify.data.local.entity.SongWithPlayCount
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDateTime
 import java.time.LocalDate
@@ -47,8 +48,8 @@ interface SoundCapsuleDao {
     @Query("SELECT * FROM day_streaks WHERE id = :id")
     suspend fun getDayStreakById(id: Long): DayStreak?
 
-    @Query("SELECT * FROM day_streaks WHERE soundCapsuleId = :soundCapsuleId AND startDate <= :date AND endDate >= :date")
-    suspend fun getDayStreakByDate(soundCapsuleId: Long, date: LocalDateTime): DayStreak?
+    @Query("SELECT * FROM day_streaks WHERE soundCapsuleId = :soundCapsuleId AND songId = :songId")
+    suspend fun getDayStreakBySoundCapsuleAndSong(soundCapsuleId: Long, songId: Long): DayStreak?
 
     @Query("DELETE FROM day_streaks WHERE soundCapsuleId = :soundCapsuleId")
     suspend fun deleteDayStreaksForCapsule(soundCapsuleId: Long)
@@ -115,4 +116,34 @@ interface SoundCapsuleDao {
         LIMIT 5
     """)
     suspend fun getTop5Songs(soundCapsuleId: Long): List<Song>
+
+    @Query("""
+        SELECT s.id, s.title, s.artistName, s.artistId, s.duration, s.filePath, s.artworkPath, 
+               s.isLiked, s.addedAt, s.lastPlayedAt, s.ownerId, s.isFromApi, s.onlineSongId, 
+               mspc.playCount
+        FROM songs s
+        INNER JOIN monthly_song_play_counts mspc ON s.id = mspc.songId
+        WHERE mspc.soundCapsuleId = :soundCapsuleId
+        ORDER BY mspc.playCount DESC
+        LIMIT 5
+    """)
+    suspend fun getTop5SongsWithPlayCount(soundCapsuleId: Long): List<SongWithPlayCount>
+
+    // Count total unique songs and artists for a sound capsule
+    @Query("""
+        SELECT COUNT(DISTINCT s.id)
+        FROM songs s
+        INNER JOIN monthly_song_play_counts mspc ON s.id = mspc.songId
+        WHERE mspc.soundCapsuleId = :soundCapsuleId
+    """)
+    suspend fun getTotalSongCount(soundCapsuleId: Long): Int
+
+    @Query("""
+        SELECT COUNT(DISTINCT a.id)
+        FROM artists a
+        INNER JOIN songs s ON a.id = s.artistId
+        INNER JOIN monthly_song_play_counts mspc ON s.id = mspc.songId
+        WHERE mspc.soundCapsuleId = :soundCapsuleId
+    """)
+    suspend fun getTotalArtistCount(soundCapsuleId: Long): Int
 } 

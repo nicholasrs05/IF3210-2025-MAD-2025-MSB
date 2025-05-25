@@ -20,8 +20,7 @@ import com.msb.purrytify.data.local.entity.DayStreak
 import com.msb.purrytify.data.local.entity.SoundCapsule
 import com.msb.purrytify.ui.navigation.Screen
 import kotlinx.coroutines.launch
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+
 import androidx.compose.ui.platform.LocalContext
 import com.msb.purrytify.utils.DateUtil
 import com.msb.purrytify.utils.FileShareUtil
@@ -91,11 +90,11 @@ fun SoundCapsuleSection(
                 SoundCapsuleTitle(
                     onDownloadAll = { downloadAllSoundCapsules(viewModel, context) }
                 )
-                LazyColumn(
+                Column(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    items(soundCapsulesState) { capsule ->
+                    soundCapsulesState.forEach { capsule ->
                         SoundCapsuleCard(
                             soundCapsule = capsule,
                             viewModel = viewModel,
@@ -106,6 +105,7 @@ fun SoundCapsuleSection(
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
+                    Spacer(modifier = Modifier.height(60.dp))
                 }
             }
             else -> {
@@ -245,6 +245,7 @@ fun SoundCapsuleCard(
             ) {
                 TopArtistSection(
                     artist = "${streakArtist?.name}",
+                    artWorkPath = streakArtist?.imageUrl,
                     modifier = Modifier.weight(1f),
                     onClick = onTopArtistClick
                 )

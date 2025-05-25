@@ -43,18 +43,12 @@ import com.msb.purrytify.utils.qrcode.QRCodeGenerator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/**
- * Dialog for sharing a song via QR code
- *
- * @param song The song to share
- * @param onDismiss Callback when the dialog is dismissed
- */
+
 @Composable
 fun ShareSongQRDialog(
     song: Song,
     onDismiss: () -> Unit
 ) {
-    // Only show dialog for online songs
     if (!song.isFromApi) {
         LaunchedEffect(Unit) {
             onDismiss()
@@ -65,7 +59,6 @@ fun ShareSongQRDialog(
     val context = LocalContext.current
     var qrBitmap by remember { mutableStateOf<Bitmap?>(null) }
     
-    // Generate QR code when the dialog is shown
     LaunchedEffect(song.id) {
         withContext(Dispatchers.IO) {
             qrBitmap = QRCodeGenerator.generateQRCodeWithInfo(
@@ -168,12 +161,8 @@ fun ShareSongQRDialog(
     }
 }
 
-/**
- * Share the song QR code using Android's share sheet
- * Only works for online songs (from API)
- */
+
 private fun shareSongQRCode(context: Context, song: Song, qrBitmap: Bitmap?) {
-    // Only allow sharing of online songs
     if (!song.isFromApi) {
         Toast.makeText(context, "Only online songs can be shared via QR code", Toast.LENGTH_LONG).show()
         return

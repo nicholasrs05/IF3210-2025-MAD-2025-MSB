@@ -107,21 +107,23 @@ fun LibraryScreen(
                     factory = { ctx: Context ->
                         RecyclerView(ctx).apply {
                             layoutManager = LinearLayoutManager(ctx)
-                            adapter = LibraryAdapter(songsToDisplay) { clickedSong ->
-                                val songIndex = songsToDisplay.indexOfFirst { it.id == clickedSong.id }
-                                if (songIndex >= 0) {
-                                    Log.d("LibraryScreen", "Playing song at index: $songIndex")
-                                    libraryViewModel.playLibrarySong(songsToDisplay, clickedSong)
-                                } else {
-                                    Log.d("LibraryScreen", "Playing song directly: ${clickedSong.title}")
-                                    libraryViewModel.playSong(clickedSong)
-                                }
-                                playerViewModel.setMiniPlayerVisible(true)
-                            }
                             layoutParams = RecyclerView.LayoutParams(
                                 RecyclerView.LayoutParams.MATCH_PARENT,
                                 RecyclerView.LayoutParams.MATCH_PARENT
                             )
+                        }
+                    },
+                    update = { recyclerView ->
+                        recyclerView.adapter = LibraryAdapter(songsToDisplay) { clickedSong ->
+                            val songIndex = songsToDisplay.indexOfFirst { it.id == clickedSong.id }
+                            if (songIndex >= 0) {
+                                Log.d("LibraryScreen", "Playing song at index: $songIndex")
+                                libraryViewModel.playLibrarySong(songsToDisplay, clickedSong)
+                            } else {
+                                Log.d("LibraryScreen", "Playing song directly: ${clickedSong.title}")
+                                libraryViewModel.playSong(clickedSong)
+                            }
+                            playerViewModel.setMiniPlayerVisible(true)
                         }
                     },
                     modifier = Modifier.fillMaxSize()

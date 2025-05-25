@@ -244,7 +244,6 @@ class PlayerViewModel @Inject constructor(
 
     fun playSong(song: Song) {
         viewModelScope.launch {
-            songRepository.updateLastPlayedAt(song.id)
             checkLikedStatus(song.id)
             playerManager.playSong(song)
         }
@@ -355,7 +354,9 @@ class PlayerViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             val existingArtist = artistRepository.getArtistByName(artist.lowercase())
             val artistId = if (existingArtist != null) {
-                if (artworkPath.isNotEmpty()) {
+
+                // Random probability (50%) to update artist artwork when adding a new song
+                if (artworkPath.isNotEmpty() && kotlin.random.Random.nextBoolean()) {
                     artistRepository.updateArtist(existingArtist.copy(imageUrl = artworkPath))
                 }
                 existingArtist.id

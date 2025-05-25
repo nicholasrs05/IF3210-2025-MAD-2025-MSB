@@ -27,6 +27,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.rememberAsyncImagePainter
 import com.msb.purrytify.R
 import com.msb.purrytify.data.local.entity.Song
+import com.msb.purrytify.data.local.entity.SongWithPlayCount
 import com.msb.purrytify.data.local.entity.SoundCapsule
 import com.msb.purrytify.viewmodel.SoundCapsuleViewModel
 import java.util.Locale
@@ -38,7 +39,8 @@ fun TopSongScreen(
     viewModel: SoundCapsuleViewModel = hiltViewModel()
 ) {
     val soundCapsule by viewModel.currentSoundCapsule.collectAsStateWithLifecycle()
-    val songs by viewModel.topSongs.collectAsStateWithLifecycle()
+    val songs by viewModel.topSongsWithPlayCount.collectAsStateWithLifecycle()
+    val totalSongCount by viewModel.totalSongCount.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
 
     LaunchedEffect(soundCapsuleId) {
@@ -111,7 +113,7 @@ fun TopSongScreen(
                         text = buildAnnotatedString {
                             append("You played ")
                             withStyle(style = SpanStyle(color = Color(0xFFF8E747))) {
-                                append("${songs.size} different songs")
+                                append("${totalSongCount} different songs")
                             }
                             append(" this month.")
                         },
@@ -167,7 +169,7 @@ private fun EmptyTopSongState() {
 
 @Composable
 private fun SongItem(
-    song: Song,
+    song: SongWithPlayCount,
     rank: Int,
     modifier: Modifier = Modifier
 ) {

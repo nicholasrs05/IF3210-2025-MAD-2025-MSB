@@ -12,7 +12,6 @@ import android.graphics.BitmapFactory
 import android.media.AudioDeviceInfo
 import android.media.AudioManager
 import android.media.MediaPlayer
-import android.net.Uri
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
@@ -41,10 +40,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import androidx.core.net.toUri
+import com.msb.purrytify.data.repository.SongRepository
 import com.msb.purrytify.data.tracker.ListeningTimeTracker
 import com.msb.purrytify.data.repository.SoundCapsuleRepository
 import com.msb.purrytify.model.AudioDevice
 import com.msb.purrytify.model.AudioDeviceType
+import com.msb.purrytify.model.ProfileModel
 import javax.inject.Inject
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -56,6 +57,12 @@ class AudioService : Service() {
 
     @Inject
     lateinit var soundCapsuleRepository: SoundCapsuleRepository
+
+    @Inject
+    lateinit var songRepository: SongRepository
+
+    @Inject
+    lateinit var profileModel: ProfileModel
 
     private lateinit var audioManager: AudioManager
 
@@ -76,6 +83,9 @@ class AudioService : Service() {
         private const val REQ_STOP = 4
         private const val REQ_CONTENT = 5
     }
+
+    private val userId: Long
+        get() = profileModel.currentProfile.value.id
 
     private var mediaPlayer: MediaPlayer? = null
     private lateinit var mediaSession: MediaSessionCompat
@@ -289,6 +299,11 @@ class AudioService : Service() {
                 releaseMediaPlayer()
             }
 
+            serviceScope.launch {
+                songRepository.updateLastPlayedAt(song.id)
+                songRepository.incrementPlayCount(song.id)
+                soundCapsuleRepository.incrementSongPlayCount(song.id, userId)
+            }
             updateMediaMetadata(song)
         } catch (e: Exception) {
             Log.e("AudioService", "Error playing song: ${e.message}")
