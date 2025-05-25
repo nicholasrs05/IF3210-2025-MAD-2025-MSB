@@ -6,6 +6,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -24,13 +25,25 @@ import com.msb.purrytify.ui.theme.AppTheme
 import com.msb.purrytify.viewmodel.LibraryViewModel
 import com.msb.purrytify.viewmodel.PlayerViewModel
 import android.util.Log
+import android.widget.Toast
 
 @Composable
 fun LibraryScreen(
     libraryViewModel: LibraryViewModel = hiltViewModel(),
     playerViewModel: PlayerViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val showAddSongSheet by libraryViewModel.showAddSongSheet.collectAsState()
+    val playbackError by libraryViewModel.playbackError.collectAsState()
+    
+    // Show error messages when playback errors occur
+    LaunchedEffect(playbackError) {
+        playbackError?.let { error ->
+            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+            libraryViewModel.clearPlaybackError()
+        }
+    }
+    
     if (showAddSongSheet) {
         AddSongScreen(
             showBottomSheet = true,

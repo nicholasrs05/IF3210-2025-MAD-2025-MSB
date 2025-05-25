@@ -1,13 +1,15 @@
 package com.msb.purrytify.viewmodel
 
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.msb.purrytify.data.local.entity.Song
 import com.msb.purrytify.data.repository.SongRepository
 import com.msb.purrytify.model.ProfileModel
 import com.msb.purrytify.service.PlayerManager
+import com.msb.purrytify.utils.FileUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,16 +20,20 @@ import com.msb.purrytify.data.repository.SoundCapsuleRepository
 
 @HiltViewModel
 class LibraryViewModel @Inject constructor(
+    application: Application,
     private val songRepository: SongRepository,
     private val playerManager: PlayerManager,
     profileModel: ProfileModel,
-) : ViewModel() {
+) : AndroidViewModel(application) {
     
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
     
     private val _showAddSongSheet = MutableStateFlow(false)
     val showAddSongSheet: StateFlow<Boolean> = _showAddSongSheet
+    
+    private val _playbackError = MutableStateFlow<String?>(null)
+    val playbackError: StateFlow<String?> = _playbackError
     
     private val userId = profileModel.currentProfile.value.id
     
@@ -59,6 +65,12 @@ class LibraryViewModel @Inject constructor(
 
     fun playSong(song: Song) {
         viewModelScope.launch {
+            // Check if file is accessible before attempting to play
+            if (!song.isFromApi && !FileUtils.isFileAccessible(getApplication(), song.filePath)) {
+                _playbackError.value = "Song file not found or moved. Cannot play this song."
+                return@launch
+            }
+            
             playerManager.playSong(song)
         }
     }
@@ -68,18 +80,44 @@ class LibraryViewModel @Inject constructor(
         Log.d("LibraryViewModel", "Playing song: ${selectedSong.title}, artwork: ${selectedSong.artworkPath}")
 
         try {
-            val songIndex = songs.indexOfFirst { it.id == selectedSong.id }
+            // Filter out inaccessible local songs
+            val accessibleSongs = songs.filter { song ->
+                if (song.isFromApi) {
+                    true
+                } else {
+                    val isAccessible = FileUtils.isFileAccessible(getApplication(), song.filePath)
+                    if (!isAccessible) {
+                        Log.w("LibraryViewModel", "Skipping inaccessible song: ${song.title}")
+                    }
+                    isAccessible
+                }
+            }
+            
+            if (accessibleSongs.isEmpty()) {
+                _playbackError.value = "No accessible songs found in the playlist."
+                return
+            }
+            
+            // Check if selected song is accessible
+            if (!selectedSong.isFromApi && !FileUtils.isFileAccessible(getApplication(), selectedSong.filePath)) {
+                _playbackError.value = "Selected song file not found or moved. Cannot play this song."
+                return
+            }
+            
+            val songIndex = accessibleSongs.indexOfFirst { it.id == selectedSong.id }
             Log.d("LibraryViewModel", "Setting playlist with starting index: $songIndex")
-            playerManager.setPlaylist(songs, songIndex)
+            
+            if (songIndex >= 0) {
+                playerManager.setPlaylist(accessibleSongs, songIndex)
+            } else {
+                // If song not found in accessible playlist, just play it directly
+                playSong(selectedSong)
+            }
 
             Log.d("LibraryViewModel", "Updating last played timestamp for song ID: ${selectedSong.id}")
         } catch (e: Exception) {
             Log.e("LibraryViewModel", "Error playing library song: ${e.message}", e)
-            try {
-                playSong(selectedSong)
-            } catch (e2: Exception) {
-                Log.e("LibraryViewModel", "Failed fallback attempt: ${e2.message}", e2)
-            }
+            _playbackError.value = "Error playing song: ${e.message}"
         }
     }
 
@@ -90,5 +128,9 @@ class LibraryViewModel @Inject constructor(
                 songRepository.updateLikeStatus(songId, !it.isLiked)
             }
         }
+    }
+    
+    fun clearPlaybackError() {
+        _playbackError.value = null
     }
 }
