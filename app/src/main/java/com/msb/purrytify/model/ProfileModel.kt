@@ -37,7 +37,8 @@ class ProfileModel @Inject constructor(
 
     private suspend fun fetchProfileInternal() {
         _fetchProfileResult.value = ProfileResult.Loading
-        _currentProfile.value = Profile()
+
+        // _currentProfile.value = Profile()
         try {
             val response = apiService.getProfile()
             Log.d("ProfileModel", "Response: $response")

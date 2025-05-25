@@ -18,6 +18,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.msb.purrytify.data.local.entity.DayStreak
 import com.msb.purrytify.data.local.entity.SoundCapsule
+import com.msb.purrytify.data.local.entity.Artist
+import com.msb.purrytify.data.local.entity.Song
 import com.msb.purrytify.ui.navigation.Screen
 import kotlinx.coroutines.launch
 
@@ -188,14 +190,21 @@ fun SoundCapsuleCard(
 ) {
     var longestStreak by remember { mutableStateOf<DayStreak?>(null) }
     var isLoadingStreak by remember { mutableStateOf(false) }
-    val streakSong by viewModel.streakSong.collectAsState()
-    val streakArtist by viewModel.streakArtist.collectAsState()
+    var topArtist by remember { mutableStateOf<Artist?>(null) }
+    var topSong by remember { mutableStateOf<Song?>(null) }
+    var streakSong by remember { mutableStateOf<Song?>(null) }
+    var streakArtist by remember { mutableStateOf<Artist?>(null) }
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(soundCapsule.id) {
         isLoadingStreak = true
         coroutineScope.launch {
+            // Load all data for this specific capsule
             longestStreak = viewModel.getLongestDayStreak(soundCapsule.id)
+            topArtist = viewModel.getTopArtistForCapsule(soundCapsule.id)
+            topSong = viewModel.getTopSongForCapsule(soundCapsule.id)
+            streakSong = viewModel.getStreakSongForCapsule(soundCapsule.id)
+            streakArtist = viewModel.getStreakArtistForCapsule(soundCapsule.id)
             isLoadingStreak = false
         }
     }
@@ -244,14 +253,14 @@ fun SoundCapsuleCard(
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 TopArtistSection(
-                    artist = "${streakArtist?.name}",
-                    artWorkPath = streakArtist?.imageUrl,
+                    artist = topArtist?.name ?: "No artist",
+                    artWorkPath = topArtist?.imageUrl,
                     modifier = Modifier.weight(1f),
                     onClick = onTopArtistClick
                 )
                 TopSongSection(
-                    songTitle = "${streakSong?.title}",
-                    songImageUrl = streakSong?.artworkPath,
+                    songTitle = topSong?.title ?: "No song",
+                    songImageUrl = topSong?.artworkPath,
                     modifier = Modifier.weight(1f),
                     onClick = onTopSongClick
                 )

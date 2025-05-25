@@ -299,4 +299,22 @@ class SoundCapsuleRepository @Inject constructor(
     suspend fun getArtistById(artistId: Long): Artist? {
         return soundCapsuleDao.getArtistById(artistId)
     }
+
+    suspend fun getTopArtistForCapsule(soundCapsuleId: Long): Artist? {
+        val soundCapsule = soundCapsuleDao.getSoundCapsuleById(soundCapsuleId)
+        return if (soundCapsule != null && soundCapsule.topArtistId != 0L) {
+            soundCapsuleDao.getArtistById(soundCapsule.topArtistId)
+        } else {
+            null
+        }
+    }
+
+    suspend fun getTopSongForCapsule(soundCapsuleId: Long): Song? {
+        val soundCapsule = soundCapsuleDao.getSoundCapsuleById(soundCapsuleId)
+        return if (soundCapsule != null && soundCapsule.topSongId != 0L) {
+            songDao.getSongById(soundCapsule.topSongId)
+        } else {
+            null
+        }
+    }
 } 
