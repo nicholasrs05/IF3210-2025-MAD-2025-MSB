@@ -122,25 +122,36 @@ fun ProfileContent(
     navController: NavController = rememberNavController()
 ) {
     Column(
-        modifier = modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color(0xFF101010))
     ) {
-        // Gradient background at the top with profile info
+        // Gradient section (50% of screen height)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(300.dp)
+                .fillMaxHeight(0.5f)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0xFF00667B),
+                            Color(0xFF002F38),
+                            Color(0xFF101010)
+                        ),
+                        startY = 0f,
+                        endY = Float.POSITIVE_INFINITY
+                    )
+                )
         ) {
-            RectangleGradient()
-            
-            // Profile photo and user info overlaid on gradient
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                verticalArrangement = Arrangement.SpaceEvenly
             ) {
+                Spacer(modifier = Modifier.height(32.dp))
+                // Profile photo
                 Box(
                     contentAlignment = Alignment.BottomEnd,
                     modifier = Modifier
@@ -161,6 +172,7 @@ fun ProfileContent(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
+                // User info
                 Column(
                     Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -178,90 +190,89 @@ fun ProfileContent(
                         color = Color.Gray
                     )
                 }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // First row of buttons
+                Row {
+                    Button(
+                        onClick = { navController.navigate(Screen.EditProfile.route) },
+                        shape = RoundedCornerShape(45.dp),
+                        contentPadding = PaddingValues(0.dp),
+                        modifier = Modifier
+                            .defaultMinSize(
+                                minWidth = ButtonDefaults.MinWidth,
+                                minHeight = 10.dp
+                            )
+                            .width(105.dp)
+                            .height(32.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF3E3f3f),
+                            contentColor = Color.White,
+                        )
+                    ) {
+                        Text(
+                            "Edit Profile",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.White,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Button(
+                        onClick = { logout() },
+                        shape = RoundedCornerShape(45.dp),
+                        contentPadding = PaddingValues(0.dp),
+                        modifier = Modifier
+                            .defaultMinSize(
+                                minWidth = ButtonDefaults.MinWidth,
+                                minHeight = 10.dp
+                            )
+                            .width(105.dp)
+                            .height(32.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF3E3f3f),
+                            contentColor = Color.White,
+                        )
+                    ) {
+                        Text(
+                            "Logout",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.White,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Stats row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    ProfileStat(label = "SONGS", count = profile.addedSongsCount)
+                    ProfileStat(label = "LIKED", count = profile.likedSongsCount)
+                    ProfileStat(label = "LISTENED", count = profile.listenedSongsCount)
+                }
             }
         }
 
-        // Content below the gradient
+        // Sound Capsule Section (outside gradient, on dark background)
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
-        // First row of buttons
-        Row {
-            Button(
-                onClick = { navController.navigate(Screen.EditProfile.route) },
-                shape = RoundedCornerShape(45.dp),
-                contentPadding = PaddingValues(0.dp),
-                modifier = Modifier
-                    .defaultMinSize(
-                        minWidth = ButtonDefaults.MinWidth,
-                        minHeight = 10.dp
-                    )
-                    .width(105.dp)
-                    .height(32.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF3E3f3f),
-                    contentColor = Color.White,
-                )
-            ) {
-                Text(
-                    "Edit Profile",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.White,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Button(
-                onClick = { logout() },
-                shape = RoundedCornerShape(45.dp),
-                contentPadding = PaddingValues(0.dp),
-                modifier = Modifier
-                    .defaultMinSize(
-                        minWidth = ButtonDefaults.MinWidth,
-                        minHeight = 10.dp
-                    )
-                    .width(105.dp)
-                    .height(32.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF3E3f3f),
-                    contentColor = Color.White,
-                )
-            ) {
-                Text(
-                    "Logout",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.White,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            ProfileStat(label = "SONGS", count = profile.addedSongsCount)
-            ProfileStat(label = "LIKED", count = profile.likedSongsCount)
-            ProfileStat(label = "LISTENED", count = profile.listenedSongsCount)
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Sound Capsule Section
-        SoundCapsuleSection(
-            navController = navController,
-            modifier = Modifier.fillMaxWidth()
-        )
+            SoundCapsuleSection(
+                navController = navController,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }
