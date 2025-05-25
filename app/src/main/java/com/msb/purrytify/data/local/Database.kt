@@ -5,6 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.msb.purrytify.data.local.converter.DateTimeConverter
 import com.msb.purrytify.data.local.dao.ArtistDao
 import com.msb.purrytify.data.local.dao.SongDao
@@ -45,7 +46,7 @@ abstract class PurrytifyDatabase : RoomDatabase() {
                     PurrytifyDatabase::class.java,
                     "purrytify_db"
                 )
-                    .fallbackToDestructiveMigration()
+                    .fallbackToDestructiveMigration(false)
                     .build()
                 INSTANCE = instance
                 instance
