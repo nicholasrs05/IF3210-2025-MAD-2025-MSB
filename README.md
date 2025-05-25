@@ -25,6 +25,9 @@ Purrytify merupakan sebuah aplikasi android native yang dikembangkan dengan baha
 9. Notification untuk menampilkan lagu yang sedang diputar sekaligus player control
 10. Top songs untuk melihat top 50 lagu global dan top 10 lagu di negara lokasi pengguna
 11. Download online songs untuk mengunduh lagu-lagu yang ada pada top songs 
+12. Share Songs using DeepLink & QR untuk membagikan lagu ke pengguna lain
+13. Edit profile untuk mengubah identitas pengguna
+14. Rekomendasi lagu berdasarkan lagu yang disukai pengguna
 
 ## Daftar Library
 
@@ -74,11 +77,11 @@ Purrytify merupakan sebuah aplikasi android native yang dikembangkan dengan baha
 
 ## Pembagian Kerja
 
-| NIM      | Nama                    | Pekerjaan                                                                                         |
-|----------|-------------------------|---------------------------------------------------------------------------------------------------|
-| 13522122 | Maulvi Ziadinda Maulana | UI Login, UI Home, UI Profile, Authentication Logic, Worker Service, Song with Owner Feature      |
+| NIM      | Nama                    | Pekerjaan                                                                                                                                                  |
+|----------|-------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 13522122 | Maulvi Ziadinda Maulana | UI Login, UI Home, UI Profile, Authentication Logic, Worker Service, Song with Owner Feature                                                               |
 | 13522144 | Nicholas Reymond Sihite | UI Library, UI Navigation Bar, Audio Service, Player Manager, UI Mini Player, Network Sensing (logic + UI), Notification, Top Songs, Download Online Songs |
-| 13522153 | Muhammad Fauzan Azhim   | UI Player, Add Songs, Player View Model, RoomDatabase, Edit songs                                 |
+| 13522153 | Muhammad Fauzan Azhim   | UI Player, Add Songs, Player View Model, RoomDatabase, Edit songs, Share Songs using DeepLink, Share Songs using QR, Edit Profile, Recommendation          |
 
 ## Durasi Persiapan dan Pengerjaan
 
