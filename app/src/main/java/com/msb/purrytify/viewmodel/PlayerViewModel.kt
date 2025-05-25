@@ -24,11 +24,14 @@ import com.msb.purrytify.service.AudioService
 import com.msb.purrytify.service.PlayerManager
 import com.msb.purrytify.service.RepeatMode
 import com.msb.purrytify.model.AudioDevice
+import com.msb.purrytify.data.local.dao.SongDao
+import com.msb.purrytify.utils.FileUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -79,6 +82,9 @@ class PlayerViewModel @Inject constructor(
 
     private val _availableAudioDevices = mutableStateOf<List<AudioDevice>>(emptyList())
     val availableAudioDevices: State<List<AudioDevice>> = _availableAudioDevices
+
+    private val _playbackError = mutableStateOf<String?>(null)
+    val playbackError: State<String?> = _playbackError
 
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
@@ -223,6 +229,12 @@ class PlayerViewModel @Inject constructor(
                     }
                 }
             }
+            
+            viewModelScope.launch {
+                service.playbackError.collectLatest { error ->
+                    _playbackError.value = error
+                }
+            }
         }
     }
 
@@ -244,6 +256,12 @@ class PlayerViewModel @Inject constructor(
 
     fun playSong(song: Song) {
         viewModelScope.launch {
+            // Check if file is accessible before attempting to play
+            if (!song.isFromApi && !FileUtils.isFileAccessible(getApplication(), song.filePath)) {
+                _playbackError.value = "Song file not found or moved. Cannot play this song."
+                return@launch
+            }
+            
             checkLikedStatus(song.id)
             playerManager.playSong(song)
         }
@@ -251,7 +269,35 @@ class PlayerViewModel @Inject constructor(
 
     fun setPlaylist(songs: List<Song>, startIndex: Int = 0) {
         if (songs.isEmpty()) return
-        playerManager.setPlaylist(songs, startIndex)
+        
+        // Filter out inaccessible local songs
+        val accessibleSongs = songs.filter { song ->
+            if (song.isFromApi) {
+                // Online songs are always considered accessible (network issues handled separately)
+                true
+            } else {
+                // Check local songs for file accessibility
+                val isAccessible = FileUtils.isFileAccessible(getApplication(), song.filePath)
+                if (!isAccessible) {
+                    Log.w("PlayerViewModel", "Skipping inaccessible song: ${song.title}")
+                }
+                isAccessible
+            }
+        }
+        
+        if (accessibleSongs.isEmpty()) {
+            _playbackError.value = "No accessible songs found in the playlist."
+            return
+        }
+        
+        if (accessibleSongs.size < songs.size) {
+            _playbackError.value = "Some songs were skipped because their files are missing or moved."
+        }
+        
+        // Adjust start index if necessary
+        val adjustedStartIndex = if (startIndex < accessibleSongs.size) startIndex else 0
+        
+        playerManager.setPlaylist(accessibleSongs, adjustedStartIndex)
     }
 
     fun togglePlayPause() {
@@ -332,16 +378,29 @@ class PlayerViewModel @Inject constructor(
     }
 
     fun canShareSong(): Boolean {
-        return currentSong.value?.isFromApi == true
+        val song = currentSong.value ?: return false
+        // Allow sharing of online songs (isFromApi = true) and downloaded songs (onlineSongId != null)
+        // But not offline songs (isFromApi = false AND onlineSongId = null)
+        return song.isFromApi || song.onlineSongId != null
+    }
+
+    fun canEditSong(): Boolean {
+        val song = currentSong.value ?: return false
+        // Only allow editing of local songs (not from API and not downloaded from online)
+        if (song.isFromApi || song.onlineSongId != null) {
+            return false
+        }
+        // Check if the file still exists
+        return FileUtils.isFileAccessible(getApplication(), song.filePath)
     }
 
     fun shareCurrentSongViaQR() {
         currentSong.value?.let { song ->
-            if (song.isFromApi) {
+            if (song.isFromApi || song.onlineSongId != null) {
                 qrSharingService.shareSongViaQR(song)
             } else {
-                // Show message that only online songs can be shared
-                Log.w("PlayerViewModel", "Cannot share local song: ${song.title}. Only online songs can be shared.")
+                // Show message that only online and downloaded songs can be shared
+                Log.w("PlayerViewModel", "Cannot share local song: ${song.title}. Only online and downloaded songs can be shared.")
             }
         }
     }
@@ -444,6 +503,12 @@ class PlayerViewModel @Inject constructor(
                 if (songId != null) {
                     val song = songRepository.getSongById(songId)
                     if (song != null) {
+                        // Check if file is accessible before attempting to play
+                        if (!song.isFromApi && !FileUtils.isFileAccessible(getApplication(), song.filePath)) {
+                            _playbackError.value = "Song file not found or moved. Cannot play this song."
+                            return@launch
+                        }
+                        
                         playSong(song)
                         setLargePlayerVisible(true)
                         return@launch
@@ -451,6 +516,7 @@ class PlayerViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 Log.e("PlayerViewModel", "Error playing song by ID: ${e.message}")
+                _playbackError.value = "Error playing song: ${e.message}"
             }
         }
     }
@@ -496,6 +562,11 @@ class PlayerViewModel @Inject constructor(
 
     fun selectAudioDevice(device: AudioDevice) {
         playerManager.selectAudioDevice(device)
+    }
+
+    fun clearPlaybackError() {
+        _playbackError.value = null
+        audioService?.clearPlaybackError()
     }
 
     override fun onCleared() {

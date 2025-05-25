@@ -12,6 +12,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -38,6 +39,7 @@ import com.msb.purrytify.ui.navigation.Screen
 import androidx.core.net.toUri
 import com.msb.purrytify.ui.component.recommendation.RecommendationSection
 import com.msb.purrytify.viewmodel.RecommendationViewModel
+import android.widget.Toast
 
 
 @Composable
@@ -48,6 +50,7 @@ fun HomeScreen(
     navController: NavController? = null,
     onScanQRCode: () -> Unit
 ) {
+    val context = LocalContext.current
     val recentlyPlayedState: State<List<Song>> =
         homeViewModel.recentlyPlayedSongs.observeAsState(initial = emptyList())
     val newSongsState: State<List<Song>> =
@@ -55,6 +58,16 @@ fun HomeScreen(
     val recentlyPlayed: List<Song> = recentlyPlayedState.value
     val newSongs: List<Song> = newSongsState.value
     val recommendedSongs by recommendationViewModel.recommendedSongs.collectAsState()
+    val playbackError by homeViewModel.playbackError.collectAsState()
+    
+    // Show error messages when playback errors occur
+    LaunchedEffect(playbackError) {
+        playbackError?.let { error ->
+            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+            homeViewModel.clearPlaybackError()
+        }
+    }
+    
     LaunchedEffect(Unit) {
         recommendationViewModel.loadTrendingSongs()
     }

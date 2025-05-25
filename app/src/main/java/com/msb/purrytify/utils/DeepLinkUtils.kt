@@ -47,16 +47,18 @@ fun createApiSongDeepLinkString(songId: Long): String {
 
     /**
      * Shares a song using its deep link
-     * Only allows sharing of online songs (from API)
+     * Only allows sharing of online songs (from API) and downloaded songs (with onlineSongId)
      */
     fun shareSong(context: Context, song: Song) {
-        // Only allow sharing of online songs
-        if (!song.isFromApi) {
-            Toast.makeText(context, "Only online songs can be shared", Toast.LENGTH_LONG).show()
+        // Only allow sharing of online songs and downloaded songs
+        if (!song.isFromApi && song.onlineSongId == null) {
+            Toast.makeText(context, "Only online and downloaded songs can be shared", Toast.LENGTH_LONG).show()
             return
         }
         
-        val deepLink = createSongDeepLinkString(song.id)
+        // Use the original online song ID for downloaded songs, or the song ID for online songs
+        val songIdToShare = song.onlineSongId ?: song.id
+        val deepLink = createSongDeepLinkString(songIdToShare)
         val shareText = "Check out this song: ${song.title} by ${song.artistName}\n$deepLink"
 
         val shareIntent = ShareCompat.IntentBuilder(context)

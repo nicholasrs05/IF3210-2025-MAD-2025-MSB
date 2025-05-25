@@ -226,6 +226,22 @@ fun PlayerScreen(
         }
     }
     
+    val isPlaying by viewModel.isPlaying
+    val isLiked by viewModel.isLiked
+    val currentPosition by viewModel.currentPosition
+    val duration by viewModel.duration
+    val playbackError by viewModel.playbackError
+
+    val context = LocalContext.current
+
+    LaunchedEffect(playbackError) {
+        playbackError?.let { error ->
+            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+            // Clear the error after showing it
+            viewModel.clearPlaybackError()
+        }
+    }
+    
     // Enhanced color scheme with better contrast
     var colorScheme by remember {
         mutableStateOf(
@@ -239,13 +255,6 @@ fun PlayerScreen(
             )
         )
     }
-    
-    val isPlaying by viewModel.isPlaying
-    val isLiked by viewModel.isLiked
-    val currentPosition by viewModel.currentPosition
-    val duration by viewModel.duration
-
-    val context = LocalContext.current
 
     LaunchedEffect(currentPlayingSong.id, currentPlayingSong.artworkPath) {
         try {
@@ -562,17 +571,35 @@ fun PlayerScreen(
                                     Icon(
                                         imageVector = Icons.Outlined.Edit,
                                         contentDescription = "Edit Song",
-                                        tint = colorScheme.primaryText,
+                                        tint = if (viewModel.canEditSong()) colorScheme.primaryText else colorScheme.secondaryText,
                                         modifier = Modifier.size(20.dp)
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Edit Song", color = colorScheme.primaryText)
+                                    Text(
+                                        "Edit Song", 
+                                        color = if (viewModel.canEditSong()) colorScheme.primaryText else colorScheme.secondaryText
+                                    )
                                 }
                             },
                             onClick = {
                                 showMenu = false
-                                showEditDialog = true
-                            }
+                                if (viewModel.canEditSong()) {
+                                    showEditDialog = true
+                                } else {
+                                    val song = currentPlayingSong
+                                    val message = when {
+                                        song.isFromApi -> "Online songs cannot be edited"
+                                        song.onlineSongId != null -> "Downloaded songs cannot be edited"
+                                        else -> "Song file not found or moved. Cannot edit this song."
+                                    }
+                                    Toast.makeText(
+                                        context,
+                                        message,
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            },
+                            enabled = viewModel.canEditSong()
                         )
                         
                         DropdownMenuItem(
@@ -598,7 +625,7 @@ fun PlayerScreen(
                                 } else {
                                     Toast.makeText(
                                         context,
-                                        "Only online songs can be shared",
+                                        "Only online and downloaded songs can be shared",
                                         Toast.LENGTH_LONG
                                     ).show()
                                 }
@@ -629,7 +656,7 @@ fun PlayerScreen(
                                 } else {
                                     Toast.makeText(
                                         context,
-                                        "Only online songs can be shared via QR code",
+                                        "Only online and downloaded songs can be shared via QR code",
                                         Toast.LENGTH_LONG
                                     ).show()
                                 }
@@ -1035,6 +1062,22 @@ fun EditSongDialog(
                             } else {
                                 coroutineScope.launch {
                                     try {
+                                        // Double-check if the song can still be edited before saving
+                                        if (!viewModel.canEditSong()) {
+                                            val message = when {
+                                                song.isFromApi -> "Online songs cannot be edited"
+                                                song.onlineSongId != null -> "Downloaded songs cannot be edited"
+                                                else -> "Song file not found or moved. Cannot edit this song."
+                                            }
+                                            Toast.makeText(
+                                                context,
+                                                message,
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                            onDismiss()
+                                            return@launch
+                                        }
+
                                         val artworkFilePath = selectedArtworkUri?.toString() ?: song.artworkPath
                                         
                                         viewModel.updateSong(
