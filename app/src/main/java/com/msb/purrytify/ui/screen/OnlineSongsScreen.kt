@@ -40,6 +40,7 @@ import com.msb.purrytify.utils.networkStatusListener
 import com.msb.purrytify.viewmodel.OnlineSongDownloadViewModel
 import com.msb.purrytify.viewmodel.OnlineSongsViewModel
 import com.msb.purrytify.viewmodel.PlayerViewModel
+import androidx.compose.ui.platform.LocalDensity
 
 enum class OnlineSongsScreenType {
     GLOBAL,
@@ -102,6 +103,8 @@ fun OnlineSongsScreen(
     var accentColor by remember { mutableStateOf(Color(0xFF1DB954)) }
     var gradientColor by remember { mutableStateOf(Color(0xFF121212)) }
     var gradientColor2 by remember { mutableStateOf(Color(0xFF232A4D)) }
+    
+    val density = LocalDensity.current
 
     val slideOffset by animateFloatAsState(
         targetValue = if (actualIsDismissing) 1f else 0f,
@@ -158,6 +161,227 @@ fun OnlineSongsScreen(
         playerViewModel.setLargePlayerVisible(true)
     }
 
+    val offsetY = with(density) { slideOffset * 1000.dp.toPx() }
+    
+    val headerContent = remember(titleText, descriptionText, totalDurationString, uiState.songs.size) {
+        @Composable {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(gradientColor, Color(0xFF121212)),
+                            startY = 0f,
+                            endY = 600f
+                        )
+                    )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 0.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Card(
+                        modifier = Modifier
+                            .size(200.dp)
+                            .align(Alignment.CenterHorizontally),
+                        shape = MaterialTheme.shapes.medium,
+                        elevation = CardDefaults.cardElevation(8.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    brush = SolidColor(primaryColor),
+                                    shape = MaterialTheme.shapes.medium
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = titleText,
+                                color = Color.White,
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = descriptionText,
+                        color = textColor.copy(alpha = 0.8f),
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.mipmap.ic_launcher_foreground),
+                            contentDescription = "Purrytify",
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Purrytify",
+                            color = textColor.copy(alpha = 0.8f),
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = "$totalDurationString",
+                            color = textColor.copy(alpha = 0.6f),
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        Button(
+                            onClick = {
+                                if (uiState.songs.isNotEmpty()) playSong(uiState.songs[0])
+                            },
+                            shape = CircleShape,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1DB95B)),
+                            contentPadding = PaddingValues(0.dp),
+                            modifier = Modifier.size(44.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.PlayArrow,
+                                contentDescription = "Play",
+                                tint = Color(0xFF191414),
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+            }
+        }
+    }
+    
+    val songListContent = remember(uiState.isLoading, uiState.error, uiState.songs.size) {
+        @Composable {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFF121212))
+                    .padding(horizontal = 16.dp)
+            ) {
+                when {
+                    uiState.isLoading -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(color = accentColor)
+                        }
+                    }
+                    uiState.error != null -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = "Error loading songs",
+                                    color = textColor,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    text = uiState.error ?: "Unknown error",
+                                    color = textColor,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Button(
+                                    onClick = { 
+                                        when (screenType) {
+                                            OnlineSongsScreenType.GLOBAL -> viewModel.fetchGlobalTopSongs()
+                                            OnlineSongsScreenType.COUNTRY -> viewModel.fetchCountryTopSongs()
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = accentColor
+                                    )
+                                ) {
+                                    Text("Retry")
+                                }
+                            }
+                        }
+                    }
+                    uiState.songs.isEmpty() -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "No songs available",
+                                color = textColor,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                    else -> {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(bottom = 80.dp)
+                        ) {
+                            itemsIndexed(uiState.songs) { idx, song ->
+                                NumberedSongItem(
+                                    number = idx + 1,
+                                    song = song,
+                                    onSongClick = { playSong(song) },
+                                    textColor = textColor,
+                                    downloadViewModel = downloadViewModel,
+                                    viewModel = viewModel
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    val offlineContent = remember {
+        @Composable {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp, bottom = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = {
+                            localIsDismissing = true
+                            onDismissWithAnimation()
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.KeyboardArrowDown,
+                            contentDescription = "Back",
+                            tint = textColor
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+                
+                NoInternet()
+            }
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -166,6 +390,7 @@ fun OnlineSongsScreen(
                     colors = listOf(gradientColor, gradientColor2)
                 )
             )
+            .offset(y = offsetY.dp)
             .pointerInput(Unit) {
                 detectVerticalDragGestures { _, dragAmount ->
                     if (dragAmount > 10) {
@@ -199,214 +424,12 @@ fun OnlineSongsScreen(
                         .padding(top = 50.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                Brush.verticalGradient(
-                                    colors = listOf(gradientColor, Color(0xFF121212)),
-                                    startY = 0f,
-                                    endY = 600f
-                                )
-                            )
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 0.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Card(
-                                modifier = Modifier
-                                    .size(200.dp)
-                                    .align(Alignment.CenterHorizontally),
-                                shape = MaterialTheme.shapes.medium,
-                                elevation = CardDefaults.cardElevation(8.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .background(
-                                            brush = SolidColor(primaryColor),
-                                            shape = MaterialTheme.shapes.medium
-                                        ),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = titleText,
-                                        color = Color.White,
-                                        style = MaterialTheme.typography.titleLarge,
-                                        fontWeight = FontWeight.Bold,
-                                        textAlign = TextAlign.Center
-                                    )
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                text = descriptionText,
-                                color = textColor.copy(alpha = 0.8f),
-                                style = MaterialTheme.typography.bodyMedium,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    painter = painterResource(id = R.mipmap.ic_launcher_foreground),
-                                    contentDescription = "Purrytify",
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = "Purrytify",
-                                    color = textColor.copy(alpha = 0.8f),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Text(
-                                    text = "$totalDurationString",
-                                    color = textColor.copy(alpha = 0.6f),
-                                    style = MaterialTheme.typography.bodySmall,
-                                )
-                                Spacer(modifier = Modifier.weight(1f))
-                                Button(
-                                    onClick = {
-                                        if (uiState.songs.isNotEmpty()) playSong(uiState.songs[0])
-                                    },
-                                    shape = CircleShape,
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1DB95B)),
-                                    contentPadding = PaddingValues(0.dp),
-                                    modifier = Modifier.size(44.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.PlayArrow,
-                                        contentDescription = "Play",
-                                        tint = Color(0xFF191414),
-                                        modifier = Modifier.size(32.dp)
-                                    )
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(8.dp))
-                        }
-                    }
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                            .background(Color(0xFF121212))
-                            .padding(horizontal = 16.dp)
-                    ) {
-                        when {
-                            uiState.isLoading -> {
-                                Box(
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    CircularProgressIndicator(color = accentColor)
-                                }
-                            }
-                            uiState.error != null -> {
-                                Box(
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Text(
-                                            text = "Error loading songs",
-                                            color = textColor,
-                                            fontWeight = FontWeight.SemiBold
-                                        )
-                                        Text(
-                                            text = uiState.error ?: "Unknown error",
-                                            color = textColor,
-                                            fontWeight = FontWeight.Medium
-                                        )
-                                        Spacer(modifier = Modifier.height(16.dp))
-                                        Button(
-                                            onClick = { 
-                                                when (screenType) {
-                                                    OnlineSongsScreenType.GLOBAL -> viewModel.fetchGlobalTopSongs()
-                                                    OnlineSongsScreenType.COUNTRY -> viewModel.fetchCountryTopSongs()
-                                                }
-                                            },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = accentColor
-                                            )
-                                        ) {
-                                            Text("Retry")
-                                        }
-                                    }
-                                }
-                            }
-                            uiState.songs.isEmpty() -> {
-                                Box(
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = "No songs available",
-                                        color = textColor,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                }
-                            }
-                            else -> {
-                                LazyColumn(
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentPadding = PaddingValues(bottom = 80.dp)
-                                ) {
-                                    itemsIndexed(uiState.songs) { idx, song ->
-                                        NumberedSongItem(
-                                            number = idx + 1,
-                                            song = song,
-                                            onSongClick = { playSong(song) },
-                                            textColor = textColor,
-                                            downloadViewModel = downloadViewModel,
-                                            viewModel = viewModel
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    headerContent()
+                    songListContent()
                 }
             }
         } else {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp, bottom = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(
-                        onClick = {
-                            localIsDismissing = true
-                            onDismissWithAnimation()
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.KeyboardArrowDown,
-                            contentDescription = "Back",
-                            tint = textColor
-                        )
-                    }
-                    
-                    Spacer(modifier = Modifier.weight(1f))
-                }
-                
-                NoInternet()
-            }
+            offlineContent()
         }
     }
 }
