@@ -9,6 +9,7 @@ import com.msb.purrytify.data.local.entity.DayStreak
 import com.msb.purrytify.data.local.entity.DailyListeningTime
 import com.msb.purrytify.data.local.entity.Artist
 import com.msb.purrytify.data.local.entity.Song
+import com.msb.purrytify.data.local.entity.SongWithPlayCount
 import com.msb.purrytify.data.repository.SoundCapsuleRepository
 import com.msb.purrytify.data.repository.SongRepository
 import com.msb.purrytify.model.ProfileModel
@@ -46,8 +47,8 @@ class SoundCapsuleViewModel @Inject constructor(
     private val _topArtists = MutableStateFlow<List<Artist>>(emptyList())
     val topArtists: StateFlow<List<Artist>> = _topArtists.asStateFlow()
 
-    private val _topSongs = MutableStateFlow<List<Song>>(emptyList())
-    val topSongs: StateFlow<List<Song>> = _topSongs.asStateFlow()
+    private val _topSongsWithPlayCount = MutableStateFlow<List<SongWithPlayCount>>(emptyList())
+    val topSongsWithPlayCount: StateFlow<List<SongWithPlayCount>> = _topSongsWithPlayCount.asStateFlow()
 
     private val _userId = MutableStateFlow<Long?>(null)
     val userId: StateFlow<Long?> = _userId.asStateFlow()
@@ -57,6 +58,13 @@ class SoundCapsuleViewModel @Inject constructor(
 
     private val _streakArtist = MutableStateFlow<Artist?>(null)
     val streakArtist: StateFlow<Artist?> = _streakArtist.asStateFlow()
+
+    // Total counts for songs and artists
+    private val _totalSongCount = MutableStateFlow(0)
+    val totalSongCount: StateFlow<Int> = _totalSongCount.asStateFlow()
+
+    private val _totalArtistCount = MutableStateFlow(0)
+    val totalArtistCount: StateFlow<Int> = _totalArtistCount.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -243,7 +251,8 @@ class SoundCapsuleViewModel @Inject constructor(
                 try {
                     repository.getDayStreaksForCapsule(capsule.id).firstOrNull()?.forEach { streak ->
                         val song = songRepository.getSongById(streak.songId)
-                        appendLine("${streak.startDate.format(formatter)},${streak.endDate.format(formatter)},${streak.streakDays},${song?.title ?: "Unknown"}")
+                        val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+                        appendLine("${streak.startDate.format(dateFormatter)},${streak.endDate.format(dateFormatter)},${streak.streakDays},${song?.title ?: "Unknown"}")
                     }
                 } catch (e: Exception) {
                     appendLine("Failed to load streaks: ${e.message}")
@@ -279,8 +288,20 @@ class SoundCapsuleViewModel @Inject constructor(
                 val songs = repository.getTop5Songs(soundCapsuleId)
                 Log.d("SoundCapsuleViewModel", "Retrieved top songs: ${songs.size} entries")
                 Log.d("SoundCapsuleViewModel", "Top songs data: $songs")
-                _topSongs.value = songs
-                Log.d("SoundCapsuleViewModel", "Current top songs value: ${_topSongs.value}")
+
+                // Load top songs with play counts
+                val songsWithPlayCount = repository.getTop5SongsWithPlayCount(soundCapsuleId)
+                _topSongsWithPlayCount.value = songsWithPlayCount
+                Log.d("SoundCapsuleViewModel", "Loaded top songs with play count: ${songsWithPlayCount.size} entries")
+
+                // Load total counts
+                val totalSongs = repository.getTotalSongCount(soundCapsuleId)
+                _totalSongCount.value = totalSongs
+                Log.d("SoundCapsuleViewModel", "Total songs count: $totalSongs")
+
+                val totalArtists = repository.getTotalArtistCount(soundCapsuleId)
+                _totalArtistCount.value = totalArtists
+                Log.d("SoundCapsuleViewModel", "Total artists count: $totalArtists")
 
             } catch (e: Exception) {
                 _error.value = e.message ?: "An error occurred"

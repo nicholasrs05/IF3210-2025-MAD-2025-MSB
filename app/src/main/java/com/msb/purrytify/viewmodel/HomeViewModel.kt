@@ -21,7 +21,6 @@ class HomeViewModel @Inject constructor(
     private val songRepository: SongRepository,
     private val playerManager: PlayerManager,
     profileModel: ProfileModel,
-    private val soundCapsuleRepository: SoundCapsuleRepository
 ) : ViewModel() {
     
     private val _isLoading = MutableStateFlow(false)
@@ -36,11 +35,6 @@ class HomeViewModel @Inject constructor(
     
     fun playSong(song: Song) {
         viewModelScope.launch {
-            // Update last played timestamp
-            songRepository.updateLastPlayedAt(song.id)
-            soundCapsuleRepository.incrementSongPlayCount(song.id, userId)
-
-            // Play the song using PlayerManager
             playerManager.playSong(song)
         }
     }
@@ -54,12 +48,6 @@ class HomeViewModel @Inject constructor(
             if (songIndex >= 0) {
                 // Set the playlist with the correct starting index
                 playerManager.setPlaylist(songs, songIndex)
-                
-                // Update last played timestamp
-                viewModelScope.launch {
-                    songRepository.updateLastPlayedAt(selectedSong.id)
-                    soundCapsuleRepository.incrementSongPlayCount(selectedSong.id, userId)
-                }
             } else {
                 // If song not found in playlist (shouldn't happen), just play it directly
                 playSong(selectedSong)
@@ -84,12 +72,6 @@ class HomeViewModel @Inject constructor(
             if (songIndex >= 0) {
                 // Set the playlist with the correct starting index
                 playerManager.setPlaylist(songs, songIndex)
-                
-                // Update last played timestamp
-                viewModelScope.launch {
-                    soundCapsuleRepository.incrementSongPlayCount(selectedSong.id, userId)
-                    songRepository.updateLastPlayedAt(selectedSong.id)
-                }
             } else {
                 // If song not found in playlist (shouldn't happen), just play it directly
                 playSong(selectedSong)
