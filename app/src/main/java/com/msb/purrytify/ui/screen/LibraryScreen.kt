@@ -52,10 +52,6 @@ fun LibraryScreen(
         )
     }
 
-//    LaunchedEffect(Unit) {
-//        libraryViewModel.refreshLibrary()
-//    }
-
     Box(
         modifier = Modifier
             .fillMaxSize()

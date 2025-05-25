@@ -106,7 +106,7 @@ class OnlineSongsViewModel @Inject constructor(
             onlineSongRepository.getSongById(songId).collect { result ->
                 when (result) {
                     is Resource.Loading -> {
-                        // Loading state handled by caller if needed
+                       // Do nothing
                     }
                     is Resource.Success -> {
                         result.data?.let { songResponse ->

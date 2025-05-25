@@ -108,8 +108,4 @@ class AudioDeviceReceiver @Inject constructor(
             }
         }
     }
-
-    fun cleanup() {
-        job.cancel()
-    }
-} 
+}

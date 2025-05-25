@@ -30,8 +30,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.rememberAsyncImagePainter
 import com.msb.purrytify.R
 import com.msb.purrytify.utils.FileUtils
-import com.msb.purrytify.viewmodel.LibraryViewModel
-import com.msb.purrytify.viewmodel.HomeViewModel
 import com.msb.purrytify.viewmodel.PlayerViewModel
 import java.util.Locale
 import java.util.concurrent.TimeUnit
@@ -453,10 +451,6 @@ fun AddSongScreen(
                                             artworkPath = artworkUriString,
                                             duration = duration
                                         )
-
-//                                        // Refresh the library and home screen data
-//                                        libraryViewModel.refreshLibrary()
-//                                        homeViewModel.refreshSongs()
 
                                         Toast.makeText(
                                             context,

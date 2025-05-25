@@ -7,7 +7,6 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import coil3.ImageLoader
-import android.net.Uri
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.target.ImageViewTarget

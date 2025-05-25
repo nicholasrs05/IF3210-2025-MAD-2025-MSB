@@ -7,7 +7,6 @@ import com.msb.purrytify.data.ml.model.SongFeature
 import com.msb.purrytify.data.ml.tfidf.TfIdfCalculator
 import com.msb.purrytify.data.ml.knn.KNNCalculator
 import kotlin.math.exp
-import kotlin.math.max
 import kotlin.math.min
 
 

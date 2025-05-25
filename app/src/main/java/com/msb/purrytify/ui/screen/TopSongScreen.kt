@@ -28,9 +28,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.rememberAsyncImagePainter
 import com.msb.purrytify.R
-import com.msb.purrytify.data.local.entity.Song
 import com.msb.purrytify.data.local.entity.SongWithPlayCount
-import com.msb.purrytify.data.local.entity.SoundCapsule
 import com.msb.purrytify.viewmodel.SoundCapsuleViewModel
 import java.util.Locale
 

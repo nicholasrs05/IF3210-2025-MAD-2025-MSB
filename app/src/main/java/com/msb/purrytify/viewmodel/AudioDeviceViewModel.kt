@@ -81,9 +81,6 @@ class AudioDeviceViewModel @Inject constructor(
 
         val activeDevice = _availableDevices.value.find { it.isActive }
 
-        // If no device is explicitly active, the system has a default. We can try to guess it.
-        // Often, if a headset is plugged in, it's the default. Otherwise, it's the earpiece (which we filter out)
-        // or speaker. We will default our selection to the speaker if nothing is active.
         _currentDevice.value = activeDevice
             ?: _availableDevices.value.find { it.type == AudioDeviceType.PHONE_SPEAKER }
                     ?: _availableDevices.value.firstOrNull()

@@ -9,7 +9,6 @@ import com.msb.purrytify.utils.FileDownloadUtil
 import com.msb.purrytify.utils.FileUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -75,16 +74,13 @@ class OnlineSongDownloadRepository @Inject constructor(
 
     private suspend fun findOrCreateArtist(artistName: String, artworkUrl: String): Long {
         val existingArtist = artistRepository.getArtistByName(artistName.lowercase())
-        return if (existingArtist != null) {
-            existingArtist.id
-        } else {
-            artistRepository.insertArtist(
+        return existingArtist?.id
+            ?: artistRepository.insertArtist(
                 Artist(
                     name = artistName,
                     imageUrl = artworkUrl
                 )
             )
-        }
     }
 
     private fun convertDurationStringToMs(duration: String): Long {

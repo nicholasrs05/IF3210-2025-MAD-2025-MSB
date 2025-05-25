@@ -51,10 +51,6 @@ class OnlineSongDownloadViewModel @Inject constructor(
         emit(songRepository.isSongDownloaded(songId, userId))
     }
 
-    fun resetState() {
-        _downloadState.value = DownloadState.Idle
-    }
-
     sealed class DownloadState {
         object Idle : DownloadState()
         data class Downloading(val songId: Long) : DownloadState()

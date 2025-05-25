@@ -53,8 +53,6 @@ class SoundCapsuleViewModel @Inject constructor(
     private val _userId = MutableStateFlow<Long?>(null)
     val userId: StateFlow<Long?> = _userId.asStateFlow()
 
-
-
     // Total counts for songs and artists
     private val _totalSongCount = MutableStateFlow(0)
     val totalSongCount: StateFlow<Int> = _totalSongCount.asStateFlow()
@@ -116,25 +114,6 @@ class SoundCapsuleViewModel @Inject constructor(
         }
     }
 
-    fun loadSoundCapsule(month: Int, year: Int) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            _error.value = null
-            // This will now fetch a single capsule, decide how to integrate or if it's still needed.
-            // For now, it won't update the main list (_soundCapsulesState)
-            try {
-                val soundCapsule = repository.getSoundCapsuleByMonth(userId.value!!, month, year)
-                // If you want to update a specific item or add to the list, handle it here.
-                // For now, this function is a bit disconnected from the list state.
-                // Consider creating a separate state for a single selected/viewed capsule if needed.
-            } catch (e: Exception) {
-                _error.value = e.message ?: "An error occurred"
-            } finally {
-                _isLoading.value = false
-            }
-        }
-    }
-
     suspend fun getLongestDayStreak(soundCapsuleId: Long): DayStreak? {
         val dayStreaks: List<DayStreak>? = repository.getDayStreaksForCapsule(soundCapsuleId).firstOrNull()
         return dayStreaks?.maxByOrNull { it.streakDays }
@@ -163,30 +142,6 @@ class SoundCapsuleViewModel @Inject constructor(
             repository.getArtistById(streakSong.artistId)
         } else {
             null
-        }
-    }
-
-    fun createSoundCapsule(soundCapsule: SoundCapsule) {
-        viewModelScope.launch {
-            val capsuleId = repository.createSoundCapsule(soundCapsule)
-            // _soundCapsuleState.value = soundCapsule.copy(id = capsuleId) // Old logic
-            loadAllSoundCapsules() // Refresh the list
-        }
-    }
-
-    fun updateSoundCapsule(soundCapsule: SoundCapsule) {
-        viewModelScope.launch {
-            repository.updateSoundCapsule(soundCapsule)
-            // _soundCapsuleState.value = soundCapsule // Old logic
-            loadAllSoundCapsules() // Refresh the list
-        }
-    }
-
-    fun deleteSoundCapsule(id: Long) {
-        viewModelScope.launch {
-            repository.deleteSoundCapsule(id)
-            // _soundCapsuleState.value = null // Old logic
-            loadAllSoundCapsules() // Refresh the list
         }
     }
 

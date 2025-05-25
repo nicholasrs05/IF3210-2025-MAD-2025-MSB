@@ -9,20 +9,7 @@ import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.set
 
-/**
- * Utility class for generating QR codes for song sharing
- */
 object QRGenerator {
-    
-    /**
-     * Generate a QR code bitmap for the given song ID
-     * 
-     * @param songId The song ID to encode in the QR code
-     * @param size The size of the QR code bitmap in pixels
-     * @param scheme The URI scheme to use for the deep link
-     * @param host The URI host to use for the deep link
-     * @return A bitmap containing the QR code
-     */
     fun generateSongQRCode(
         songId: String,
         size: Int = 512,
@@ -61,15 +48,6 @@ object QRGenerator {
         }
     }
     
-    /**
-     * Generate a QR code bitmap with song info beneath it
-     * 
-     * @param songId The song ID to encode in the QR code
-     * @param title The song title to display below the QR code
-     * @param artist The artist name to display below the QR code
-     * @param qrSize The size of the QR code part in pixels
-     * @return A bitmap containing the QR code and song info
-     */
     fun generateQRCodeWithInfo(
         songId: String,
         title: String,

@@ -57,13 +57,6 @@ class QRScanner(private val context: Context) {
         barcodeScanner?.close()
     }
     
-    /**
-     * Bind camera use cases to the preview view
-     * 
-     * @param previewView The camera preview view
-     * @param lifecycleOwner The lifecycle owner to bind to
-     * @param onQRCodeDetected Callback for detected QR codes
-     */
     suspend fun startScanning(
         previewView: PreviewView,
         lifecycleOwner: LifecycleOwner,
@@ -98,9 +91,6 @@ class QRScanner(private val context: Context) {
         }
     }
     
-    /**
-     * Process image for QR codes
-     */
     @OptIn(ExperimentalGetImage::class)
     private fun processImageForQR(
         imageProxy: androidx.camera.core.ImageProxy,

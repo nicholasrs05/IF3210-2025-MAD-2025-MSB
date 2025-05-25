@@ -16,12 +16,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import android.util.Log
-import com.msb.purrytify.data.repository.SoundCapsuleRepository
 
 @HiltViewModel
 class LibraryViewModel @Inject constructor(
     application: Application,
-    private val songRepository: SongRepository,
+    songRepository: SongRepository,
     private val playerManager: PlayerManager,
     profileModel: ProfileModel,
 ) : AndroidViewModel(application) {
@@ -42,23 +41,7 @@ class LibraryViewModel @Inject constructor(
     val likedSongs: LiveData<List<Song>> = songRepository.fetchLikedSongs(userId).asLiveData()
     
     val downloadedSongs: LiveData<List<Song>> = songRepository.fetchDownloadedSongs(userId).asLiveData()
-    
-//    init {
-//        refreshLibrary()
-//    }
-    
-//    fun refreshLibrary() {
-//        viewModelScope.launch {
-//            _isLoading.value = true
-//            try {
-//                // The collection happens via LiveData, no explicit refresh needed
-//                // This function is more for future extensions
-//            } finally {
-//                _isLoading.value = false
-//            }
-//        }
-//    }
-    
+
     fun toggleAddSongSheet(show: Boolean) {
         _showAddSongSheet.value = show
     }
@@ -121,15 +104,6 @@ class LibraryViewModel @Inject constructor(
         }
     }
 
-    fun toggleLike(songId: Long) {
-        viewModelScope.launch {
-            val song = songRepository.getSongById(songId)
-            song?.let {
-                songRepository.updateLikeStatus(songId, !it.isLiked)
-            }
-        }
-    }
-    
     fun clearPlaybackError() {
         _playbackError.value = null
     }

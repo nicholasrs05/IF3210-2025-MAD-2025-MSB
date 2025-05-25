@@ -104,11 +104,7 @@ sealed class Screen(
 
     data object Top10Country : Screen("top10_country", "Top 10 Country")
 
-    data object SongDetail : Screen("song/{songId}", "Song Detail") {
-        fun createRoute(songId: String): String {
-            return "song/$songId"
-        }
-    }
+    data object SongDetail : Screen("song/{songId}", "Song Detail")
 
     data object TopArtists : Screen("top_artists/{soundCapsuleId}", "Top Artists") {
         fun createRoute(soundCapsuleId: Long): String {

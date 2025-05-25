@@ -2,7 +2,6 @@ package com.msb.purrytify.data.local.dao
 
 import androidx.room.*
 import com.msb.purrytify.data.local.entity.Artist
-import com.msb.purrytify.data.local.entity.Song
 import kotlinx.coroutines.flow.Flow
 
 @Dao

@@ -8,7 +8,6 @@ import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.msb.purrytify.data.local.entity.Song
 import com.msb.purrytify.data.repository.SongRepository
-import com.msb.purrytify.data.repository.SoundCapsuleRepository
 import com.msb.purrytify.model.ProfileModel
 import com.msb.purrytify.service.PlayerManager
 import com.msb.purrytify.utils.FileUtils

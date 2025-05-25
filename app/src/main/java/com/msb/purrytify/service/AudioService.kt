@@ -50,7 +50,6 @@ import com.msb.purrytify.utils.FileUtils
 import javax.inject.Inject
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
-import kotlinx.coroutines.Job
 
 @AndroidEntryPoint
 class AudioService : Service() {
@@ -701,10 +700,6 @@ class AudioService : Service() {
         timeTrackingJob.cancel()
     }
 
-    fun isCurrentlyPlaying(): Boolean {
-        return _isPlaying.value && mediaPlayer != null
-    }
-
     private fun isMediaPlayerActuallyPlaying(): Boolean {
         return try {
             mediaPlayer?.isPlaying == true && mediaPlayerPrepared
@@ -750,10 +745,6 @@ class AudioService : Service() {
                 currentSongIndex = playlist.indexOfFirst { it.id == currentSong.id }
             }
         }
-    }
-
-    fun setRepeatMode(mode: Int) {
-        repeatMode = mode
     }
 
     fun noRepeat() {

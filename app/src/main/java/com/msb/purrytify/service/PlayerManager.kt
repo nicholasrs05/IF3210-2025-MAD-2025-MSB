@@ -287,14 +287,6 @@ class PlayerManager @Inject constructor(
         return serviceDuration
     }
 
-    fun release() {
-        serviceScope.cancel()
-        if (bound) {
-            context.unbindService(serviceConnection)
-            bound = false
-        }
-    }
-
     fun showAudioDeviceSheet() {
         _showAudioDeviceSheet.value = true
         audioService?.updateAvailableDevices()

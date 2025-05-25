@@ -18,10 +18,6 @@ class ArtistRepository @Inject constructor(
         artistDao.updateArtist(artist)
     }
 
-    suspend fun deleteArtist(artist: Artist) {
-        artistDao.deleteArtist(artist)
-    }
-
     suspend fun getArtistById(id: Long): Artist? {
         return artistDao.getArtistById(id)
     }
@@ -29,12 +25,4 @@ class ArtistRepository @Inject constructor(
     suspend fun getArtistByName(name: String): Artist? {
         return artistDao.getArtistByName(name)
     }
-
-    fun getAllArtists(): Flow<List<Artist>> {
-        return artistDao.getAllArtists()
-    }
-
-    suspend fun deleteArtistById(id: Long) {
-        artistDao.deleteArtistById(id)
-    }
-} 
+}

@@ -14,7 +14,6 @@ import javax.inject.Singleton
 import java.time.LocalDateTime
 import android.util.Log
 import com.msb.purrytify.data.local.dao.SongDao
-import java.time.LocalDate
 
 @Singleton
 class SoundCapsuleRepository @Inject constructor(
@@ -29,10 +28,6 @@ class SoundCapsuleRepository @Inject constructor(
         return soundCapsuleDao.insertSoundCapsule(soundCapsule)
     }
 
-    suspend fun updateSoundCapsule(soundCapsule: SoundCapsule) {
-        soundCapsuleDao.updateSoundCapsule(soundCapsule)
-    }
-
     fun getAllSoundCapsules(ownerId: Long): Flow<List<SoundCapsule>> {
         return soundCapsuleDao.getAllSoundCapsules(ownerId)
     }
@@ -41,62 +36,13 @@ class SoundCapsuleRepository @Inject constructor(
         return soundCapsuleDao.getSoundCapsuleById(id)
     }
 
-    suspend fun getSoundCapsuleByMonth(ownerId: Long, year: Int, month: Int): SoundCapsule? {
-        return soundCapsuleDao.getSoundCapsuleByMonth(ownerId, year, month)
-    }
-
-    suspend fun deleteSoundCapsule(id: Long) {
-        soundCapsuleDao.deleteSoundCapsule(id)
-    }
-
-    // Day Streak methods
-    suspend fun insertDayStreak(dayStreak: DayStreak): Long {
-        return soundCapsuleDao.insertDayStreak(dayStreak)
-    }
-
-    suspend fun updateDayStreak(dayStreak: DayStreak) {
-        soundCapsuleDao.updateDayStreak(dayStreak)
-    }
-
     fun getDayStreaksForCapsule(soundCapsuleId: Long): Flow<List<DayStreak>> {
         return soundCapsuleDao.getDayStreaksForCapsule(soundCapsuleId)
     }
 
-    suspend fun getDayStreakById(id: Long): DayStreak? {
-        return soundCapsuleDao.getDayStreakById(id)
-    }
-
-    suspend fun deleteDayStreaksForCapsule(soundCapsuleId: Long) {
-        soundCapsuleDao.deleteDayStreaksForCapsule(soundCapsuleId)
-    }
-
-    suspend fun deleteDayStreakById(id: Long) {
-        soundCapsuleDao.deleteDayStreakById(id)
-    }
-
-    // Daily Listening Time methods
-    suspend fun insertDailyListeningTime(dailyListeningTime: DailyListeningTime): Long {
-        return soundCapsuleDao.insertDailyListeningTime(dailyListeningTime)
-    }
-
-    suspend fun updateDailyListeningTime(dailyListeningTime: DailyListeningTime) {
-        soundCapsuleDao.updateDailyListeningTime(dailyListeningTime)
-    }
 
     fun getDailyListeningTimesForCapsule(soundCapsuleId: Long): Flow<List<DailyListeningTime>> {
         return soundCapsuleDao.getDailyListeningTimesForCapsule(soundCapsuleId)
-    }
-
-    suspend fun getDailyListeningTimeById(id: Long): DailyListeningTime? {
-        return soundCapsuleDao.getDailyListeningTimeById(id)
-    }
-
-    suspend fun deleteDailyListeningTimesForCapsule(soundCapsuleId: Long) {
-        soundCapsuleDao.deleteDailyListeningTimesForCapsule(soundCapsuleId)
-    }
-
-    suspend fun deleteDailyListeningTimeById(id: Long) {
-        soundCapsuleDao.deleteDailyListeningTimeById(id)
     }
 
     // Monthly Play Count methods
@@ -206,10 +152,6 @@ class SoundCapsuleRepository @Inject constructor(
             Log.e(TAG, "Error in incrementSongPlayCount: ${e.message}", e)
             throw e
         }
-    }
-
-    suspend fun getMonthlyPlayCount(songId: Long, soundCapsuleId: Long): MonthlySongPlayCount? {
-        return soundCapsuleDao.getMonthlyPlayCount(songId, soundCapsuleId)
     }
 
     // Top 5 methods

@@ -3,11 +3,9 @@ package com.msb.purrytify.data.repository
 import android.util.Log
 import com.msb.purrytify.data.api.ApiService
 import com.msb.purrytify.data.model.Profile
-import com.msb.purrytify.data.model.UpdateProfileResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MultipartBody
-import retrofit2.Response
 import javax.inject.Inject
 import javax.inject.Singleton
 

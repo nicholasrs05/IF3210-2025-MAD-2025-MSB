@@ -20,7 +20,6 @@ import com.msb.purrytify.data.repository.OnlineSongRepository
 import com.msb.purrytify.qr.QRSharingService
 import com.msb.purrytify.service.PlayerManager
 import com.msb.purrytify.data.repository.OnlineSongDownloadRepository
-import com.msb.purrytify.viewmodel.AudioDeviceViewModel
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

@@ -14,24 +14,19 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.msb.purrytify.data.local.entity.Artist
 import com.msb.purrytify.data.local.entity.Song
-import com.msb.purrytify.data.repository.ApiSongRepository
 import com.msb.purrytify.data.repository.ArtistRepository
 import com.msb.purrytify.data.repository.SongRepository
-import com.msb.purrytify.data.repository.SoundCapsuleRepository
 import com.msb.purrytify.model.ProfileModel
 import com.msb.purrytify.qr.QRSharingService
 import com.msb.purrytify.service.AudioService
 import com.msb.purrytify.service.PlayerManager
 import com.msb.purrytify.service.RepeatMode
 import com.msb.purrytify.model.AudioDevice
-import com.msb.purrytify.data.local.dao.SongDao
 import com.msb.purrytify.utils.FileUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -68,7 +63,6 @@ class PlayerViewModel @Inject constructor(
     private val _isMiniPlayerVisible = mutableStateOf(false)
     val isMiniPlayerVisible: State<Boolean> = _isMiniPlayerVisible
     private val _isLargePlayerVisible = mutableStateOf(false)
-    val isLargePlayerVisible: State<Boolean> = _isLargePlayerVisible
     val userId = profileModel.currentProfile.value.id
 
     private var audioService: AudioService? = null
@@ -241,18 +235,6 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
-    private fun ensureServiceStarted() {
-        if (audioService == null) {
-            Intent(getApplication(), AudioService::class.java).also { intent ->
-                getApplication<Application>().startService(intent)
-                
-                if (!bound) {
-                    getApplication<Application>().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
-                }
-            }
-        }
-    }
-
     fun setLargePlayerVisible(isVisible: Boolean) {
         playerManager.setLargePlayerVisible(isVisible)
     }
@@ -357,19 +339,6 @@ class PlayerViewModel @Inject constructor(
             val song = songRepository.getSongById(songId)
             _isLiked.value = song?.isLiked == true
         }
-    }
-
-    fun resetCurrentSong() {
-        _currentSong.value = null
-        _isPlaying.value = false
-        _duration.floatValue = 0f
-        _currentPosition.floatValue = 0f
-        _isLiked.value = false
-    }
-
-    fun setCurrentSong(song: Song) {
-        _currentSong.value = song
-        checkLikedStatus(song.id)
     }
 
     fun resumeCurrentSong() {
@@ -496,31 +465,6 @@ class PlayerViewModel @Inject constructor(
         } catch (e: Exception) {
             e.printStackTrace()
             0L
-        }
-    }
-
-    fun playSongById(songIdStr: String) {
-        viewModelScope.launch {
-            try {
-                val songId = songIdStr.toLongOrNull()
-                if (songId != null) {
-                    val song = songRepository.getSongById(songId)
-                    if (song != null) {
-                        // Check if file is accessible before attempting to play
-                        if (!song.isFromApi && !FileUtils.isFileAccessible(getApplication(), song.filePath)) {
-                            _playbackError.value = "Song file not found or moved. Cannot play this song."
-                            return@launch
-                        }
-                        
-                        playSong(song)
-                        setLargePlayerVisible(true)
-                        return@launch
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e("PlayerViewModel", "Error playing song by ID: ${e.message}")
-                _playbackError.value = "Error playing song: ${e.message}"
-            }
         }
     }
 

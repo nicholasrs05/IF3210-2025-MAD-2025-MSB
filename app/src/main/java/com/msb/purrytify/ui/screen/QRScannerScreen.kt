@@ -31,7 +31,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
@@ -42,14 +41,6 @@ import com.msb.purrytify.data.local.entity.Song
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-/**
- * Enhanced QR Scanner Screen with smooth animations and better user experience
- * 
- * @param navigateUp Callback to navigate back
- * @param onQRCodeScanned Callback when a QR code is successfully processed
- * @param playerViewModel The PlayerViewModel to control music playback
- * @param onlineSongsViewModel The OnlineSongsViewModel to fetch songs
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ModernQRScannerScreen(
