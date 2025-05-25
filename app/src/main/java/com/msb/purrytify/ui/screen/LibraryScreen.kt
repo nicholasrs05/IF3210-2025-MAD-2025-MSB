@@ -26,6 +26,7 @@ import com.msb.purrytify.viewmodel.LibraryViewModel
 import com.msb.purrytify.viewmodel.PlayerViewModel
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.ui.zIndex
 
 @Composable
 fun LibraryScreen(
@@ -73,7 +74,9 @@ fun LibraryScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 2.dp),
+                    .padding(horizontal = 8.dp, vertical = 2.dp)
+                    .background(Color(0xFF121212))
+                    .zIndex(1f),
                 horizontalArrangement = Arrangement.Start
             ) {
                 FilterButton(
