@@ -82,23 +82,27 @@ Purrytify merupakan sebuah aplikasi android native yang dikembangkan dengan baha
 
 ## Durasi Persiapan dan Pengerjaan
 
-| NIM      | Pekerjaan                      | Durasi Persiapan | Durasi Pengerjaan |
-|----------|--------------------------------|------------------|-------------------|
-| 13522122 | Login Screen                   | 1 jam            | 5 jam             |
-|          | Auth Logic                     | 1 jam            | 4 jam             |
-|          | Profile Screen                 | 1 jam            | 4 jam             |
-|          | Home Screen                    | 1 jam            | 6 jam             |
-|          | WorkManager                    | 1 jam            | 3 jam             |
-| 13522144 | UI Library                     | 1 jam            | 5 jam             |
-|          | UI Navigation Bar              | 1 jam            | 2 jam             |
-|          | Audio Service, Player Manager  | 1 jam            | 10 jam            |
-|          | UI Mini Player                 | 1 jam            | 5 jam             |
-|          | Network Sensing                | 1 jam            | 2 jam             |
-|          | Notification                   | 1 jam            | 8 jam             |
-|          | Top Songs                      | 1 jam            | 8 jam             |
-|          | Download Online Songs          | 1 jam            | 5 jam             |
-| 13522153 | UI Player                      | 1 jam            | 2 jam             |
-|          | Add Songs                      | 1 jam            | 8 jam             |
-|          | Player View Model              | 1 jam            | 3 jam             |
-|          | RoomDatabase                   | 1 jam            | 4 jam             |
-|          | Edit songs                     | 1 jam            | 4 jam             |
+| NIM      | Pekerjaan                     | Durasi Persiapan | Durasi Pengerjaan |
+|----------|-------------------------------|------------------|-------------------|
+| 13522122 | Login Screen                  | 1 jam            | 5 jam             |
+|          | Auth Logic                    | 1 jam            | 4 jam             |
+|          | Profile Screen                | 1 jam            | 4 jam             |
+|          | Home Screen                   | 1 jam            | 6 jam             |
+|          | WorkManager                   | 1 jam            | 3 jam             |
+| 13522144 | UI Library                    | 1 jam            | 5 jam             |
+|          | UI Navigation Bar             | 1 jam            | 2 jam             |
+|          | Audio Service, Player Manager | 1 jam            | 10 jam            |
+|          | UI Mini Player                | 1 jam            | 5 jam             |
+|          | Network Sensing               | 1 jam            | 2 jam             |
+|          | Notification                  | 1 jam            | 8 jam             |
+|          | Top Songs                     | 1 jam            | 8 jam             |
+|          | Download Online Songs         | 1 jam            | 5 jam             |
+| 13522153 | UI Player                     | 1 jam            | 2 jam             |
+|          | Add Songs                     | 1 jam            | 8 jam             |
+|          | Player View Model             | 1 jam            | 3 jam             |
+|          | RoomDatabase                  | 1 jam            | 4 jam             |
+|          | Edit songs                    | 1 jam            | 4 jam             |        
+|          | Share Songs using DeepLink    | 1 jam            | 8 jam             |
+|          | Share Songs using QR          | 1 jam            | 8 jam             |
+|          | Edit profile                  | 1 jam            | 16 jam            |  
+|          | Recomendation                 | 1 jam            | 8 jam             |  
