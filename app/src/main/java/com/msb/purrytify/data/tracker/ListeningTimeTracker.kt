@@ -50,9 +50,26 @@ class ListeningTimeTracker @Inject constructor() {
     }
 
     fun getAccumulatedMinutes(): Int {
+        return accumulatedMinutes
+    }
+
+    fun getCurrentTotalMinutes(): Int {
+        if (isTracking) {
+            startTime?.let { start ->
+                val now = LocalDateTime.now()
+                val currentSessionMinutes = ChronoUnit.MINUTES.between(start, now).toInt()
+                return accumulatedMinutes + currentSessionMinutes
+            }
+        }
+        return accumulatedMinutes
+    }
+
+    fun flushAccumulatedTime(): Int {
         if (isTracking) {
             accumulateTime()
         }
-        return accumulatedMinutes
+        val minutes = accumulatedMinutes
+        accumulatedMinutes = 0 // Reset accumulated minutes after flushing
+        return minutes
     }
 } 
