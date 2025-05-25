@@ -236,7 +236,7 @@ private fun SongItem(
 
             // Song Image
             Image(
-                painter = if (song.artworkPath != null) {
+                painter = if (song.artworkPath.isNotEmpty()) {
                     rememberAsyncImagePainter(song.artworkPath)
                 } else {
                     painterResource(id = R.drawable.image)
