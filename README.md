@@ -24,12 +24,12 @@ Purrytify merupakan sebuah aplikasi android native yang dikembangkan dengan baha
 8. Network sensing untuk mendeteksi kehilangan sinyal pada saat menggunakan aplikasi
 9. Notification untuk menampilkan lagu yang sedang diputar sekaligus player control
 10. Top songs untuk melihat top 50 lagu global dan top 10 lagu di negara lokasi pengguna
-11. Download online songs untuk mengunduh lagu-lagu yang ada pada top songs 
+11. Download online songs untuk mengunduh lagu-lagu yang ada pada top songs
 12. Share Songs using DeepLink & QR untuk membagikan lagu ke pengguna lain
 13. Edit profile untuk mengubah identitas pengguna
 14. Rekomendasi lagu berdasarkan lagu yang disukai pengguna
 15. Sound capsule untuk melihat statistik penggunaan aplikasi User
-16. External Audio Routing untuk mengubah output audio ke perangkat yang diinginkan 
+16. External Audio Routing untuk mengubah output audio ke perangkat yang diinginkan
 
 ## Daftar Library
 
@@ -58,15 +58,27 @@ Purrytify merupakan sebuah aplikasi android native yang dikembangkan dengan baha
 
 ### Layer Home
 
-![home](images/home.png)
+![home](images/home.jpg)
 
 ### Layar Library
 
-![library](/images/library.png)
+![library](/images/library.jpg)
 
 ### Layar Profile
 
-![profile](/images/profile.png)
+![profile](/images/profile.jpg)
+
+### Layar Edit Profile
+
+![edit_profile](/images/edit_profile.jpg)
+
+### Layar Map
+
+![map](/images/map.jpg)
+
+### Layar Scan QR
+
+![scan_qr](/images/qr_scanner.jpg)
 
 ### Layar Media Player
 
@@ -74,7 +86,7 @@ Purrytify merupakan sebuah aplikasi android native yang dikembangkan dengan baha
 
 ### Mini Player
 
-![library-mini-player](/images/library-mini-player.png)
+![library-mini-player](/images/miniplayer.jpg)
 
 ### Layer Add Song
 
@@ -83,6 +95,30 @@ Purrytify merupakan sebuah aplikasi android native yang dikembangkan dengan baha
 ### Tampilan No Internet
 
 ![internet](/images/internet.png)
+
+### Tampilan Online Songs
+
+![online_songs](/images/top_50_songs.jpg)
+
+### Tampilan Time Listened
+
+![time_listened](/images/time_listened.jpg)
+
+### Tampilan Top Artists
+
+![top_artists](/images/top_artists.jpg)
+
+### Tampilan Top Songs
+
+![top_songs](/images/top_songs.png)
+
+### Tampilan Notifikasi
+
+![notification](/images/notification.jpg)
+
+### Tampilan Ganti Output Audio
+
+![output_audio](/images/audio_output.jpg)
 
 ## Pembagian Kerja
 
@@ -115,8 +151,9 @@ Purrytify merupakan sebuah aplikasi android native yang dikembangkan dengan baha
 |          | Add Songs                     | 1 jam            | 8 jam             |
 |          | Player View Model             | 1 jam            | 3 jam             |
 |          | RoomDatabase                  | 1 jam            | 4 jam             |
-|          | Edit songs                    | 1 jam            | 4 jam             |        
+|          | Edit songs                    | 1 jam            | 4 jam             |
 |          | Share Songs using DeepLink    | 1 jam            | 8 jam             |
 |          | Share Songs using QR          | 1 jam            | 8 jam             |
 |          | Edit profile                  | 1 jam            | 16 jam            |  
 |          | Recomendation                 | 1 jam            | 8 jam             |  
+
