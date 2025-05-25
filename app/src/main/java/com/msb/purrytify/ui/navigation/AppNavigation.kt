@@ -43,15 +43,14 @@ import androidx.navigation.NavType
 import androidx.navigation.navigation
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
-import com.msb.purrytify.ui.screen.FiftyGlobalScreen
-import com.msb.purrytify.ui.screen.TenCountryScreen
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import com.msb.purrytify.data.DummyData
 import com.msb.purrytify.ui.screen.TimeListenedScreen
 import com.msb.purrytify.ui.screen.TopArtistScreen
 import com.msb.purrytify.ui.screen.TopSongScreen
+import com.msb.purrytify.ui.screen.OnlineSongsScreen
+import com.msb.purrytify.ui.screen.OnlineSongsScreenType
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 
 sealed class Screen(
     val route: String,
@@ -390,7 +389,8 @@ fun NavigationComponent(
                                     composable(Screen.FiftyGlobal.route) {
                                         var isDismissing by remember { mutableStateOf(false) }
 
-                                        FiftyGlobalScreen(
+                                        OnlineSongsScreen(
+                                            screenType = OnlineSongsScreenType.GLOBAL,
                                             onDismiss = {
                                                 navController.navigateUp()
                                             },
@@ -407,7 +407,8 @@ fun NavigationComponent(
                                     composable(Screen.Top10Country.route) {
                                         var isDismissing by remember { mutableStateOf(false) }
 
-                                        TenCountryScreen(
+                                        OnlineSongsScreen(
+                                            screenType = OnlineSongsScreenType.COUNTRY,
                                             onDismiss = {
                                                 navController.navigateUp()
                                             },
