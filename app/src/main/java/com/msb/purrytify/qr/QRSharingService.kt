@@ -23,20 +23,21 @@ class QRSharingService @Inject constructor(
     private val qrCacheDir get() = File(context.cacheDir, "qrcodes").apply { mkdirs() }
 
     fun shareSongViaQR(song: Song) {
-        if (!song.isFromApi) {
-            Toast.makeText(context, "Only online songs can be shared via QR code", Toast.LENGTH_LONG).show()
+        if (!song.isFromApi && song.onlineSongId == null) {
+            Toast.makeText(context, "Only online and downloaded songs can be shared via QR code", Toast.LENGTH_LONG).show()
             return
         }
 
         try {
+            val songIdToShare = song.onlineSongId ?: song.id
             val qrBitmap = QRGenerator.generateQRCodeWithInfo(
-                songId = song.id.toString(),
+                songId = songIdToShare.toString(),
                 title = song.title,
                 artist = song.artistName,
                 qrSize = 512
             )
 
-            val qrUri = saveQRBitmapToCache(qrBitmap, "song_${song.id}_${System.currentTimeMillis()}.png")
+            val qrUri = saveQRBitmapToCache(qrBitmap, "song_${songIdToShare}_${System.currentTimeMillis()}.png")
 
             qrUri?.let { uri ->
                 val shareIntent = Intent().apply {

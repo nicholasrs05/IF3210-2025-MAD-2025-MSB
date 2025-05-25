@@ -8,12 +8,11 @@ import android.provider.MediaStore
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
+import androidx.core.net.toUri
 
 object FileUtils {
     fun getPath(context: Context, uri: Uri): String? {
-        // Handle Document Provider
         if (DocumentsContract.isDocumentUri(context, uri)) {
-            // ExternalStorageProvider
             if (isExternalStorageDocument(uri)) {
                 val docId = DocumentsContract.getDocumentId(uri)
                 val split = docId.split(":")
@@ -23,7 +22,6 @@ object FileUtils {
                     return "${context.getExternalFilesDir(null)}/${split[1]}"
                 }
             } 
-            // MediaProvider
             else if (isMediaDocument(uri)) {
                 val docId = DocumentsContract.getDocumentId(uri)
                 val split = docId.split(":")
@@ -79,43 +77,23 @@ object FileUtils {
         return "com.android.providers.media.documents" == uri.authority
     }
 
-    fun saveFileToAppStorage(context: Context, uri: Uri, subfolder: String): String {
-        val contentResolver = context.contentResolver
-        val inputStream = contentResolver.openInputStream(uri) ?: return ""
-
-        val rawName = "${System.currentTimeMillis()}_${uri.lastPathSegment}"
-        val safeFileName = sanitizeFileName(rawName)
-
-        val directory = File(context.filesDir, subfolder).apply {
-            if (!exists()) mkdirs()
-        }
-
-        val file = File(directory, safeFileName)
-        saveInputStreamToFile(inputStream, file)
-
-        return file.absolutePath
-    }
-
     fun sanitizeFileName(fileName: String): String {
         return fileName.replace(Regex("[^a-zA-Z0-9._-]"), "_")
     }
-    
-    private fun saveInputStreamToFile(inputStream: InputStream, file: File) {
-        val outputStream = FileOutputStream(file)
-        val buffer = ByteArray(1024)
-        var read: Int
-        
-        try {
-            while (inputStream.read(buffer).also { read = it } != -1) {
-                outputStream.write(buffer, 0, read)
+
+    fun isFileAccessible(context: Context, filePath: String): Boolean {
+        return try {
+            if (filePath.startsWith("content:")) {
+                val uri = filePath.toUri()
+                context.contentResolver.openInputStream(uri)?.use { true } ?: false
+            } else {
+                // For file paths, check if file exists and is readable
+                val file = File(filePath)
+                file.exists() && file.canRead()
             }
-        } finally {
-            try {
-                inputStream.close()
-                outputStream.close()
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+        } catch (e: Exception) {
+            android.util.Log.w("FileUtils", "File not accessible: $filePath", e)
+            false
         }
     }
 }

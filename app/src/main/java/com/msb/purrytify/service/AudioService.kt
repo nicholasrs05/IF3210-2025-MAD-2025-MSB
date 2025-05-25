@@ -46,6 +46,7 @@ import com.msb.purrytify.data.repository.SoundCapsuleRepository
 import com.msb.purrytify.model.AudioDevice
 import com.msb.purrytify.model.AudioDeviceType
 import com.msb.purrytify.model.ProfileModel
+import com.msb.purrytify.utils.FileUtils
 import javax.inject.Inject
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -110,6 +111,9 @@ class AudioService : Service() {
 
     private val _playbackProgress = MutableStateFlow(0f)
     val playbackProgress: StateFlow<Float> = _playbackProgress.asStateFlow()
+
+    private val _playbackError = MutableStateFlow<String?>(null)
+    val playbackError: StateFlow<String?> = _playbackError.asStateFlow()
 
     private val timeTrackingJob = SupervisorJob()
     private val timeTrackingScope = CoroutineScope(Dispatchers.Main + timeTrackingJob)
@@ -247,6 +251,19 @@ class AudioService : Service() {
 
     private fun prepareAndPlay(song: Song) {
         try {
+            _playbackError.value = null
+            
+            if (!song.isFromApi && !FileUtils.isFileAccessible(applicationContext, song.filePath)) {
+                val errorMessage = if (song.onlineSongId != null) {
+                    "Downloaded song file not found or moved"
+                } else {
+                    "Song file not found or moved"
+                }
+                Log.e("AudioService", "File not accessible: ${song.filePath}")
+                _playbackError.value = errorMessage
+                return
+            }
+            
             releaseMediaPlayer()
 
             mediaPlayer = MediaPlayer()
@@ -269,6 +286,12 @@ class AudioService : Service() {
                 }
             } catch (e: Exception) {
                 Log.e("AudioService", "Error setting data source: ${e.message}")
+                val errorMessage = when {
+                    song.isFromApi -> "Network error: Unable to stream online song"
+                    song.onlineSongId != null -> "File error: Downloaded song file not found"
+                    else -> "File error: Song file not found or moved"
+                }
+                _playbackError.value = errorMessage
                 releaseMediaPlayer()
                 return
             }
@@ -797,5 +820,9 @@ class AudioService : Service() {
 
     fun updateAvailableDevices() {
         audioDeviceManager.updateAvailableDevices()
+    }
+
+    fun clearPlaybackError() {
+        _playbackError.value = null
     }
 }

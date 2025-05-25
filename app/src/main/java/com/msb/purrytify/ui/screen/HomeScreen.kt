@@ -12,6 +12,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -31,6 +32,7 @@ import com.msb.purrytify.data.local.entity.Song
 import com.msb.purrytify.viewmodel.HomeViewModel
 import com.msb.purrytify.viewmodel.PlayerViewModel
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.navigation.NavController
@@ -38,6 +40,17 @@ import com.msb.purrytify.ui.navigation.Screen
 import androidx.core.net.toUri
 import com.msb.purrytify.ui.component.recommendation.RecommendationSection
 import com.msb.purrytify.viewmodel.RecommendationViewModel
+import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.border
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.ui.zIndex
+import kotlinx.coroutines.delay
 
 
 @Composable
@@ -48,6 +61,7 @@ fun HomeScreen(
     navController: NavController? = null,
     onScanQRCode: () -> Unit
 ) {
+    val context = LocalContext.current
     val recentlyPlayedState: State<List<Song>> =
         homeViewModel.recentlyPlayedSongs.observeAsState(initial = emptyList())
     val newSongsState: State<List<Song>> =
@@ -55,6 +69,31 @@ fun HomeScreen(
     val recentlyPlayed: List<Song> = recentlyPlayedState.value
     val newSongs: List<Song> = newSongsState.value
     val recommendedSongs by recommendationViewModel.recommendedSongs.collectAsState()
+    val playbackError by homeViewModel.playbackError.collectAsState()
+    
+    // QR scan success notification state
+    var showQRSuccessNotification by remember { mutableStateOf(false) }
+    val currentSong by playerViewModel.currentSong
+    val isFromQRScan by playerViewModel.isFromQRScan
+    
+    // Show success notification when song is played from QR scan
+    LaunchedEffect(isFromQRScan, currentSong) {
+        if (isFromQRScan && currentSong != null) {
+            showQRSuccessNotification = true
+            delay(4000) // Show for 4 seconds
+            showQRSuccessNotification = false
+            playerViewModel.clearQRScanFlag()
+        }
+    }
+    
+    // Show error messages when playback errors occur
+    LaunchedEffect(playbackError) {
+        playbackError?.let { error ->
+            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+            homeViewModel.clearPlaybackError()
+        }
+    }
+    
     LaunchedEffect(Unit) {
         recommendationViewModel.loadTrendingSongs()
     }
@@ -173,6 +212,24 @@ fun HomeScreen(
                 item {
                     RecentlyPlayedSection(recentlyPlayed, onSongClick = onClickedRecent)
                 }
+            }
+        }
+        
+        // QR Scan Success Notification
+        AnimatedVisibility(
+            visible = showQRSuccessNotification && currentSong != null,
+            enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
+            exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 16.dp)
+                .zIndex(10f)
+        ) {
+            currentSong?.let { song ->
+                QRScanSuccessNotification(
+                    song = song,
+                    onDismiss = { showQRSuccessNotification = false }
+                )
             }
         }
     }
@@ -413,5 +470,92 @@ fun OnlineSongItem(
             overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center
         )
+    }
+}
+
+@Composable
+private fun QRScanSuccessNotification(
+    song: Song,
+    onDismiss: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth(0.95f)
+            .border(
+                width = 1.dp,
+                color = Color(0xFF4CAF50).copy(alpha = 0.3f),
+                shape = RoundedCornerShape(12.dp)
+            ),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF1E1E1E)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Success icon
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(
+                        Color(0xFF4CAF50),
+                        CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = "Success",
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+            
+            Spacer(modifier = Modifier.width(12.dp))
+            
+            // Song info
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "QR Code Scanned Successfully!",
+                    color = Color(0xFF4CAF50),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "Now playing: ${song.title}",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "by ${song.artistName}",
+                    color = Color.Gray,
+                    fontSize = 14.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            
+            // Dismiss button
+            IconButton(
+                onClick = onDismiss,
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Dismiss",
+                    tint = Color.Gray,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
     }
 }

@@ -53,18 +53,6 @@ class SongRepository @Inject constructor(private val songDao: SongDao) {
         return songDao.getNewSongs(userId)
     }
 
-    fun getSongCount(userId: Long): Flow<Int> {
-        return songDao.getSongCount(userId)
-    }
-
-    fun getLikedSongCount(userId: Long): Flow<Int> {
-        return songDao.getLikedSongCount(userId)
-    }
-
-    fun getListenedSongCount(userId: Long): Flow<Int> {
-        return songDao.getListenedSongCount(userId)
-    }
-
     fun fetchDownloadedSongs(userId: Long): Flow<List<Song>> {
         return songDao.getDownloadedSongs(userId)
     }
