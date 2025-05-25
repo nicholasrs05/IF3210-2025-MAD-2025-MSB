@@ -60,13 +60,13 @@ class AudioDeviceManager @Inject constructor(
     fun updateAvailableDevices() {
         val devices = mutableListOf<AudioDevice>()
         val bluetoothDevices = mutableMapOf<String, AudioDevice>()
-        
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val audioOutputDevices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
 
             audioOutputDevices.forEach { deviceInfo ->
                 val deviceType = when (deviceInfo.type) {
-                    AudioDeviceInfo.TYPE_BLUETOOTH_SCO -> AudioDeviceType.BLUETOOTH_DEVICE
+                    // AudioDeviceInfo.TYPE_BLUETOOTH_SCO -> AudioDeviceType.BLUETOOTH_DEVICE
                     AudioDeviceInfo.TYPE_BLUETOOTH_A2DP -> AudioDeviceType.BLUETOOTH_DEVICE
                     AudioDeviceInfo.TYPE_WIRED_HEADSET, AudioDeviceInfo.TYPE_WIRED_HEADPHONES -> AudioDeviceType.WIRED_HEADSET
                     AudioDeviceInfo.TYPE_BUILTIN_SPEAKER -> AudioDeviceType.PHONE_SPEAKER
