@@ -28,6 +28,8 @@ Purrytify merupakan sebuah aplikasi android native yang dikembangkan dengan baha
 12. Share Songs using DeepLink & QR untuk membagikan lagu ke pengguna lain
 13. Edit profile untuk mengubah identitas pengguna
 14. Rekomendasi lagu berdasarkan lagu yang disukai pengguna
+15. Sound capsule untuk melihat statistik penggunaan aplikasi User
+16. External Audio Routing untuk mengubah output audio ke perangkat yang diinginkan 
 
 ## Daftar Library
 
@@ -84,9 +86,9 @@ Purrytify merupakan sebuah aplikasi android native yang dikembangkan dengan baha
 
 ## Pembagian Kerja
 
-| NIM      | Nama                    | Pekerjaan                                                                                                                                                  |
-|----------|-------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 13522122 | Maulvi Ziadinda Maulana | UI Login, UI Home, UI Profile, Authentication Logic, Worker Service, Song with Owner Feature                                                               |
+| NIM      | Nama                    | Pekerjaan                                                                                         |
+|----------|-------------------------|---------------------------------------------------------------------------------------------------|
+| 13522122 | Maulvi Ziadinda Maulana | UI Login, UI Home, UI Profile, Authentication Logic, Worker Service, Song with Owner Feature, Sound Capsule, External Audio Routing     |
 | 13522144 | Nicholas Reymond Sihite | UI Library, UI Navigation Bar, Audio Service, Player Manager, UI Mini Player, Network Sensing (logic + UI), Notification, Top Songs, Download Online Songs |
 | 13522153 | Muhammad Fauzan Azhim   | UI Player, Add Songs, Player View Model, RoomDatabase, Edit songs, Share Songs using DeepLink, Share Songs using QR, Edit Profile, Recommendation          |
 
@@ -99,6 +101,8 @@ Purrytify merupakan sebuah aplikasi android native yang dikembangkan dengan baha
 |          | Profile Screen                | 1 jam            | 4 jam             |
 |          | Home Screen                   | 1 jam            | 6 jam             |
 |          | WorkManager                   | 1 jam            | 3 jam             |
+|          | Sound Capsule                 | 1 jam            | 28 jam            |
+|          | External Audio Routing        | 1 jam            | 12 jam            |
 | 13522144 | UI Library                    | 1 jam            | 5 jam             |
 |          | UI Navigation Bar             | 1 jam            | 2 jam             |
 |          | Audio Service, Player Manager | 1 jam            | 10 jam            |
