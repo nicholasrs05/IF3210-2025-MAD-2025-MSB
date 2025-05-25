@@ -4,6 +4,8 @@ import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -93,37 +95,39 @@ fun TopArtistScreen(
             }
             else -> {
                 // Content
-                Column(
+                LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 18.dp)
                 ) {
-                    // Date
-                    Text(
-                        text = viewModel.getMonthYearString(soundCapsule),
-                        color = Color.White,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Normal,
-                        modifier = Modifier.padding(top = 16.dp)
-                    )
+                    item {
+                        // Date
+                        Text(
+                            text = viewModel.getMonthYearString(soundCapsule),
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Normal,
+                            modifier = Modifier.padding(top = 16.dp)
+                        )
 
-                    // Title
-                    Text(
-                        text = buildAnnotatedString {
-                            append("You listened to ")
-                            withStyle(style = SpanStyle(color = Color(0xFF669BEC))) {
-                                append("${totalArtistCount} artists")
-                            }
-                            append(" this month.")
-                        },
-                        color = Color.White,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
+                        // Title
+                        Text(
+                            text = buildAnnotatedString {
+                                append("You listened to ")
+                                withStyle(style = SpanStyle(color = Color(0xFF669BEC))) {
+                                    append("${totalArtistCount} artists")
+                                }
+                                append(" this month.")
+                            },
+                            color = Color.White,
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
 
                     // Artist List
-                    artists.forEachIndexed { index, artist ->
+                    itemsIndexed(artists) { index, artist ->
                         ArtistItem(
                             artist = artist,
                             rank = index + 1,
@@ -131,6 +135,10 @@ fun TopArtistScreen(
                                 .fillMaxWidth()
                                 .height(108.dp)
                         )
+                    }
+
+                    item {
+                        Spacer(modifier = Modifier.height(60.dp))
                     }
                 }
             }

@@ -50,6 +50,7 @@ import com.msb.purrytify.utils.FileUtils
 import javax.inject.Inject
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.Job
 
 @AndroidEntryPoint
 class AudioService : Service() {
@@ -117,6 +118,7 @@ class AudioService : Service() {
 
     private val timeTrackingJob = SupervisorJob()
     private val timeTrackingScope = CoroutineScope(Dispatchers.Main + timeTrackingJob)
+    private var minuteUpdateJob: kotlinx.coroutines.Job? = null
 
     @Inject
     lateinit var audioDeviceManager: AudioDeviceManager
@@ -271,10 +273,11 @@ class AudioService : Service() {
 
             mediaPlayer?.setOnErrorListener { mp, what, extra ->
                 Log.e("AudioService", "MediaPlayer error: $what, $extra")
+                // Stop time tracking immediately when error occurs
+                pauseTimeTracking()
                 releaseMediaPlayer()
                 _isPlaying.value = false
                 updatePlaybackState()
-                stopTimeTracking()
                 true
             }
 
@@ -432,10 +435,20 @@ class AudioService : Service() {
         serviceScope.launch {
             while (true) {
                 if (_isPlaying.value && mediaPlayer != null && mediaPlayerPrepared) {
-                    val currentPosition = mediaPlayer?.currentPosition ?: 0
-                    val duration = mediaPlayer?.duration ?: 1
-                    _playbackProgress.value = currentPosition.toFloat() / duration.toFloat()
-                    updatePlaybackState()
+                    // Check if MediaPlayer is actually still playing
+                    if (!isMediaPlayerActuallyPlaying() && _isPlaying.value) {
+                        // MediaPlayer stopped but our state says it's playing - sync the state
+                        Log.w("AudioService", "MediaPlayer stopped unexpectedly, syncing state")
+                        _isPlaying.value = false
+                        pauseTimeTracking()
+                        updatePlaybackState()
+                        showNotification()
+                    } else if (isMediaPlayerActuallyPlaying()) {
+                        val currentPosition = mediaPlayer?.currentPosition ?: 0
+                        val duration = mediaPlayer?.duration ?: 1
+                        _playbackProgress.value = currentPosition.toFloat() / duration.toFloat()
+                        updatePlaybackState()
+                    }
                 }
                 delay(1000)
             }
@@ -543,11 +556,20 @@ class AudioService : Service() {
     }
 
     fun resumePlayback() {
-        mediaPlayer?.start()
-        _isPlaying.value = true
-        updatePlaybackState()
-        showNotification()
-        startTimeTracking()
+        try {
+            mediaPlayer?.start()
+            _isPlaying.value = true
+            updatePlaybackState()
+            showNotification()
+            // Only start time tracking if MediaPlayer is actually playing
+            if (isMediaPlayerActuallyPlaying()) {
+                startTimeTracking()
+            }
+        } catch (e: Exception) {
+            Log.e("AudioService", "Error resuming playback: ${e.message}")
+            _isPlaying.value = false
+            updatePlaybackState()
+        }
     }
 
     fun playNext() {
@@ -668,6 +690,12 @@ class AudioService : Service() {
     }
 
     private fun releaseResources() {
+        // Stop time tracking before releasing resources
+        minuteUpdateJob?.cancel()
+        minuteUpdateJob = null
+        if (::listeningTimeTracker.isInitialized) {
+            stopTimeTracking()
+        }
         releaseMediaPlayer()
         mediaSession.release()
         timeTrackingJob.cancel()
@@ -675,6 +703,15 @@ class AudioService : Service() {
 
     fun isCurrentlyPlaying(): Boolean {
         return _isPlaying.value && mediaPlayer != null
+    }
+
+    private fun isMediaPlayerActuallyPlaying(): Boolean {
+        return try {
+            mediaPlayer?.isPlaying == true && mediaPlayerPrepared
+        } catch (e: Exception) {
+            Log.e("AudioService", "Error checking MediaPlayer state: ${e.message}")
+            false
+        }
     }
 
     fun shuffle() {
@@ -741,20 +778,38 @@ class AudioService : Service() {
 
     // Add new time tracking functions
     private fun startTimeTracking() {
-        listeningTimeTracker.startTracking()
-        startMinuteUpdates()
+        if (isMediaPlayerActuallyPlaying()) {
+            Log.d("AudioService", "Starting time tracking for song: ${_currentSong.value?.title}")
+            listeningTimeTracker.startTracking()
+            // Cancel any existing minute update job before starting a new one
+            minuteUpdateJob?.cancel()
+            startMinuteUpdates()
+        } else {
+            Log.w("AudioService", "Cannot start time tracking - MediaPlayer not actually playing")
+        }
     }
 
     private fun pauseTimeTracking() {
+        Log.d("AudioService", "Pausing time tracking")
         listeningTimeTracker.pauseTracking()
+        // Cancel minute updates when pausing
+        minuteUpdateJob?.cancel()
+        minuteUpdateJob = null
     }
 
     private fun stopTimeTracking() {
+        Log.d("AudioService", "Stopping time tracking")
+        // Cancel minute updates when stopping
+        minuteUpdateJob?.cancel()
+        minuteUpdateJob = null
+        
         val minutes = listeningTimeTracker.stopTracking()
+        Log.d("AudioService", "Final time tracking result: $minutes minutes")
         if (minutes > 0) {
             timeTrackingScope.launch {
                 try {
                     _currentSong.value?.let { song ->
+                        Log.d("AudioService", "Final update - song: ${song.title}, minutes: $minutes")
                         soundCapsuleRepository.incrementDailyListeningTime(song.ownerId, minutes)
                     }
                 } catch (e: Exception) {
@@ -765,20 +820,33 @@ class AudioService : Service() {
     }
 
     private fun startMinuteUpdates() {
-        timeTrackingScope.launch {
-            while (isActive && _isPlaying.value) {
+        minuteUpdateJob = timeTrackingScope.launch {
+            Log.d("AudioService", "Starting minute updates coroutine")
+            while (isActive && _isPlaying.value && isMediaPlayerActuallyPlaying()) {
                 delay(60000) // Wait for 1 minute
-                val minutes = listeningTimeTracker.getAccumulatedMinutes()
-                if (minutes > 0) {
-                    try {
-                        _currentSong.value?.let { song ->
-                            soundCapsuleRepository.incrementDailyListeningTime(song.ownerId, minutes)
+                Log.d("AudioService", "Minute update check - isPlaying: ${_isPlaying.value}, actuallyPlaying: ${isMediaPlayerActuallyPlaying()}")
+                
+                // Double-check that we're still actually playing before updating
+                if (_isPlaying.value && isMediaPlayerActuallyPlaying()) {
+                    val minutes = listeningTimeTracker.flushAccumulatedTime()
+                    Log.d("AudioService", "Flushed minutes to update: $minutes")
+                    if (minutes > 0) {
+                        try {
+                            _currentSong.value?.let { song ->
+                                Log.d("AudioService", "Updating listening time for song: ${song.title}, minutes: $minutes")
+                                soundCapsuleRepository.incrementDailyListeningTime(song.ownerId, minutes)
+                            }
+                        } catch (e: Exception) {
+                            Log.e("AudioService", "Error updating listening time: ${e.message}")
                         }
-                    } catch (e: Exception) {
-                        Log.e("AudioService", "Error updating listening time: ${e.message}")
                     }
+                } else {
+                    // If we're no longer actually playing, stop the loop
+                    Log.d("AudioService", "No longer playing, stopping minute updates")
+                    break
                 }
             }
+            Log.d("AudioService", "Minute updates coroutine ended")
         }
     }
 

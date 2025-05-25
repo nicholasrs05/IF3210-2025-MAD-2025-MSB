@@ -1,8 +1,11 @@
 package com.msb.purrytify.ui.screen
 
+import android.text.SpannableString
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
@@ -17,6 +20,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.msb.purrytify.viewmodel.SoundCapsuleViewModel
 import com.msb.purrytify.data.local.entity.DailyListeningTime
+import com.patrykandpatrick.vico.compose.axis.axisLabelComponent
 import com.patrykandpatrick.vico.compose.axis.horizontal.rememberBottomAxis
 import com.patrykandpatrick.vico.compose.axis.vertical.rememberStartAxis
 import com.patrykandpatrick.vico.compose.chart.Chart
@@ -91,6 +95,7 @@ fun TimeListenedScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
                         .padding(horizontal = 18.dp)
                 ) {
                     // Date
@@ -133,7 +138,10 @@ fun TimeListenedScreen(
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(300.dp)
+                                .height(300.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFF1E1E1E)
+                            )
                         ) {
                             Box(
                                 modifier = Modifier
@@ -155,18 +163,24 @@ fun TimeListenedScreen(
                                     startAxis = rememberStartAxis(
                                         valueFormatter = AxisValueFormatter<AxisPosition.Vertical.Start> { value, _ ->
                                             "${value.toInt()}"
-                                        }
+                                        },
+                                        label = axisLabelComponent(color = Color.White),
+                                        labelRotationDegrees = 0f,
                                     ),
                                     bottomAxis = rememberBottomAxis(
                                         valueFormatter = AxisValueFormatter<AxisPosition.Horizontal.Bottom> { value, _ ->
                                             val date = dailyListeningTimes[value.toInt()].date
                                             date.format(DateTimeFormatter.ofPattern("dd"))
-                                        }
+                                        },
+                                        label = axisLabelComponent(color = Color.White),
+                                        labelRotationDegrees = 0f
                                     )
                                 )
                             }
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(60.dp))
                 }
             }
         }

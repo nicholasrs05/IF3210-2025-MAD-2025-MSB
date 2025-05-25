@@ -3,6 +3,8 @@ package com.msb.purrytify.ui.screen
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -94,37 +96,39 @@ fun TopSongScreen(
             }
             else -> {
                 // Content
-                Column(
+                LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 18.dp)
                 ) {
-                    // Date
-                    Text(
-                        text = viewModel.getMonthYearString(soundCapsule),
-                        color = Color.White,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Normal,
-                        modifier = Modifier.padding(top = 16.dp)
-                    )
+                    item {
+                        // Date
+                        Text(
+                            text = viewModel.getMonthYearString(soundCapsule),
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Normal,
+                            modifier = Modifier.padding(top = 16.dp)
+                        )
 
-                    // Title
-                    Text(
-                        text = buildAnnotatedString {
-                            append("You played ")
-                            withStyle(style = SpanStyle(color = Color(0xFFF8E747))) {
-                                append("${totalSongCount} different songs")
-                            }
-                            append(" this month.")
-                        },
-                        color = Color.White,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
+                        // Title
+                        Text(
+                            text = buildAnnotatedString {
+                                append("You played ")
+                                withStyle(style = SpanStyle(color = Color(0xFFF8E747))) {
+                                    append("${totalSongCount} different songs")
+                                }
+                                append(" this month.")
+                            },
+                            color = Color.White,
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
 
                     // Song List
-                    songs.forEachIndexed { index, song ->
+                    itemsIndexed(songs) { index, song ->
                         SongItem(
                             song = song,
                             rank = index + 1,
@@ -132,6 +136,10 @@ fun TopSongScreen(
                                 .fillMaxWidth()
                                 .height(108.dp)
                         )
+                    }
+
+                    item {
+                        Spacer(modifier = Modifier.height(60.dp))
                     }
                 }
             }

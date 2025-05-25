@@ -53,11 +53,7 @@ class SoundCapsuleViewModel @Inject constructor(
     private val _userId = MutableStateFlow<Long?>(null)
     val userId: StateFlow<Long?> = _userId.asStateFlow()
 
-    private val _streakSong = MutableStateFlow<Song?>(null)
-    val streakSong: StateFlow<Song?> = _streakSong.asStateFlow()
 
-    private val _streakArtist = MutableStateFlow<Artist?>(null)
-    val streakArtist: StateFlow<Artist?> = _streakArtist.asStateFlow()
 
     // Total counts for songs and artists
     private val _totalSongCount = MutableStateFlow(0)
@@ -141,21 +137,33 @@ class SoundCapsuleViewModel @Inject constructor(
 
     suspend fun getLongestDayStreak(soundCapsuleId: Long): DayStreak? {
         val dayStreaks: List<DayStreak>? = repository.getDayStreaksForCapsule(soundCapsuleId).firstOrNull()
-        val longestStreak = dayStreaks?.maxByOrNull { it.streakDays }
-        
-        if (longestStreak != null) {
-            // Fetch song details from SongRepository
-            val song = songRepository.getSongById(longestStreak.songId)
-            _streakSong.value = song
-            
-            if (song != null) {
-                // Still need to get artist from SoundCapsuleRepository since we don't have it in SongRepository
-                val artist = repository.getArtistById(song.artistId)
-                _streakArtist.value = artist
-            }
+        return dayStreaks?.maxByOrNull { it.streakDays }
+    }
+
+    suspend fun getTopArtistForCapsule(soundCapsuleId: Long): Artist? {
+        return repository.getTopArtistForCapsule(soundCapsuleId)
+    }
+
+    suspend fun getTopSongForCapsule(soundCapsuleId: Long): Song? {
+        return repository.getTopSongForCapsule(soundCapsuleId)
+    }
+
+    suspend fun getStreakSongForCapsule(soundCapsuleId: Long): Song? {
+        val longestStreak = getLongestDayStreak(soundCapsuleId)
+        return if (longestStreak != null) {
+            songRepository.getSongById(longestStreak.songId)
+        } else {
+            null
         }
-        
-        return longestStreak
+    }
+
+    suspend fun getStreakArtistForCapsule(soundCapsuleId: Long): Artist? {
+        val streakSong = getStreakSongForCapsule(soundCapsuleId)
+        return if (streakSong != null) {
+            repository.getArtistById(streakSong.artistId)
+        } else {
+            null
+        }
     }
 
     fun createSoundCapsule(soundCapsule: SoundCapsule) {
@@ -323,13 +331,12 @@ class SoundCapsuleViewModel @Inject constructor(
     }
 
     suspend fun exportAllSoundCapsulestoCSV(): String {
-        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
         val capsules = _soundCapsulesState.value
         
         return buildString {
             // Header
             appendLine("All Sound Capsules Report")
-            appendLine("Generated at,${LocalDateTime.now().format(formatter)}")
+            appendLine("Generated at,${LocalDateTime.now()}")
             appendLine()
             
             // Column Headers
@@ -342,9 +349,9 @@ class SoundCapsuleViewModel @Inject constructor(
                     val topSong = songRepository.getSongById(capsule.topSongId)?.title ?: "Unknown"
                     
                     appendLine("${capsule.month},${capsule.year},${capsule.timeListenedMinutes}," +
-                            "${topArtist},${topSong},${capsule.lastUpdated.format(formatter)}")
+                            "${topArtist},${topSong},${capsule.lastUpdated}")
                 } catch (e: Exception) {
-                    appendLine("${capsule.month},${capsule.year},${capsule.timeListenedMinutes},Error loading data,Error loading data,${capsule.lastUpdated.format(formatter)}")
+                    appendLine("${capsule.month},${capsule.year},${capsule.timeListenedMinutes},Error loading data,Error loading data,${capsule.lastUpdated}")
                 }
             }
         }
