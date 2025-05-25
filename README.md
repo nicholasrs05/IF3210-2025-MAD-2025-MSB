@@ -40,6 +40,13 @@ Purrytify merupakan sebuah aplikasi android native yang dikembangkan dengan baha
 7. Datastore untuk menyimpan JWT
 8. Android SDK + Kotlin Coroutine untuk network sensing
 9. WorkManager untuk refresh JWT
+10. leakcanary untuk mendeteksi memory leak
+11. Vico Charts untuk menampilkan grafik pada profile pengguna
+12. CameraX untuk mengambil gambar pada saat mengedit profil
+13. Barcode Scanner untuk membaca QR code pada saat membagikan lagu
+14. zxing untuk membuat QR code pada saat membagikan lagu
+15. Play Services location untuk mendapatkan lokasi pengguna
+16. Google Maps untuk memilih lokasi pengguna pada saat mengedit profil
 
 ## Screenshot Aplikasi
 

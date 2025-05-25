@@ -57,7 +57,7 @@ dependencies {
     implementation(libs.core)
     implementation(libs.zxing.android.embedded)
     
-    // Camera and ML Kit
+    // Camera
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
@@ -125,6 +125,5 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
 
     implementation(libs.androidx.media)
-
     debugImplementation(libs.leakcanary.android)
 }
