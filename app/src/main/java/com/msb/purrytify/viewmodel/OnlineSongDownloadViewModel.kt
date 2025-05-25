@@ -28,9 +28,9 @@ class OnlineSongDownloadViewModel @Inject constructor(
     private val _downloadState = MutableStateFlow<DownloadState>(DownloadState.Idle)
     val downloadState: StateFlow<DownloadState> = _downloadState
 
-    fun downloadSong(songResponse: SongResponse) {
+    fun downloadSong(songResponse: SongResponse, songId: Long? = null) {
         viewModelScope.launch {
-            _downloadState.value = DownloadState.Downloading
+            _downloadState.value = DownloadState.Downloading(songId ?: songResponse.id)
             try {
                 if (songRepository.isSongDownloaded(songResponse.id, userId)) {
                     _downloadState.value = DownloadState.AlreadyDownloaded
@@ -57,7 +57,7 @@ class OnlineSongDownloadViewModel @Inject constructor(
 
     sealed class DownloadState {
         object Idle : DownloadState()
-        object Downloading : DownloadState()
+        data class Downloading(val songId: Long) : DownloadState()
         data class Success(val song: Song) : DownloadState()
         object AlreadyDownloaded : DownloadState()
         data class Error(val message: String) : DownloadState()

@@ -2,7 +2,6 @@ package com.msb.purrytify.ui.screen
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
@@ -448,7 +447,16 @@ fun NumberedSongItem(
     
     val downloadState by downloadViewModel.downloadState.collectAsState()
     val isDownloadable = songResponse != null
-    val thisSongIsDownloading = downloadState is OnlineSongDownloadViewModel.DownloadState.Downloading
+    
+    val downloadingSongId = when (downloadState) {
+        is OnlineSongDownloadViewModel.DownloadState.Downloading -> 
+            (downloadState as? OnlineSongDownloadViewModel.DownloadState.Downloading)?.songId
+        else -> null
+    }
+    
+    val downloadingSong = downloadingSongId == songId
+    
+    val isSomeDownloadInProgress = downloadState is OnlineSongDownloadViewModel.DownloadState.Downloading
     
     val isDownloaded by downloadViewModel.isDownloaded(songId).collectAsState(initial = false)
     
@@ -505,7 +513,7 @@ fun NumberedSongItem(
                             .padding(end = 8.dp)
                     )
                 }
-                thisSongIsDownloading -> {
+                downloadingSong -> {
                     CircularProgressIndicator(
                         modifier = Modifier
                             .size(28.dp)
@@ -517,14 +525,17 @@ fun NumberedSongItem(
                 else -> {
                     IconButton(
                         onClick = {
-                            songResponse?.let { downloadViewModel.downloadSong(it) }
+                            songResponse?.let { downloadViewModel.downloadSong(it, songId) }
                         },
-                        enabled = !thisSongIsDownloading
+                        enabled = !isSomeDownloadInProgress
                     ) {
                         Icon(
                             imageVector = Icons.Default.Download,
                             contentDescription = "Download",
-                            tint = textColor.copy(alpha = 0.7f)
+                            tint = if (isSomeDownloadInProgress) 
+                                textColor.copy(alpha = 0.3f) 
+                            else 
+                                textColor.copy(alpha = 0.7f)
                         )
                     }
                 }
