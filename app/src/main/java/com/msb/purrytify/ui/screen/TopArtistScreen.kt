@@ -39,6 +39,7 @@ fun TopArtistScreen(
 ) {
     val soundCapsule by viewModel.currentSoundCapsule.collectAsStateWithLifecycle()
     val artists by viewModel.topArtists.collectAsStateWithLifecycle()
+    val totalArtistCount by viewModel.totalArtistCount.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
 
     LaunchedEffect(soundCapsuleId) {
@@ -111,7 +112,7 @@ fun TopArtistScreen(
                         text = buildAnnotatedString {
                             append("You listened to ")
                             withStyle(style = SpanStyle(color = Color(0xFF669BEC))) {
-                                append("${artists.size} artists")
+                                append("${totalArtistCount} artists")
                             }
                             append(" this month.")
                         },
@@ -207,7 +208,7 @@ private fun ArtistItem(
 
             // Artist Image
             Image(
-                painter = if (artist.imageUrl != null) {
+                painter = if (artist.imageUrl != null && !artist.imageUrl.isEmpty() ) {
                     rememberAsyncImagePainter(artist.imageUrl)
                 } else {
                     painterResource(id = R.drawable.image)

@@ -6,6 +6,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -16,7 +17,7 @@ import com.msb.purrytify.data.local.entity.DayStreak
 import com.msb.purrytify.data.local.entity.Song
 import com.msb.purrytify.data.local.entity.Artist
 import java.time.format.DateTimeFormatter
-import java.time.LocalDateTime
+import java.time.LocalDate
 
 @Composable
 fun DayStreaksSection(
@@ -37,7 +38,8 @@ fun DayStreaksSection(
                 contentDescription = "Song artwork",
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(200.dp),
+                    .height(400.dp)
+                    .clip(RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp)),
                 contentScale = ContentScale.Crop
             )
         }
@@ -58,7 +60,7 @@ fun DayStreaksSection(
             val songTitle = song?.title ?: "Unknown Song"
             val artistName = artist?.name ?: "Unknown Artist"
             Text(
-                text = "You played $songTitle by $artistName day after day. You were on fire",
+                text = "You played $songTitle by $artistName day after day. You were on fire.",
                 color = Color(0xFFB3B3B3),
                 fontSize = 11.sp,
                 lineHeight = 13.sp
@@ -69,7 +71,7 @@ fun DayStreaksSection(
             val dateFormatter = DateTimeFormatter.ofPattern("MMM dd")
             val startDate = streak?.startDate?.format(dateFormatter) ?: ""
             val endDate = streak?.endDate?.format(dateFormatter) ?: ""
-            val year = streak?.endDate?.year ?: LocalDateTime.now().year
+            val year = streak?.endDate?.year ?: LocalDate.now().year
             Text(
                 text = "$startDate-$endDate, $year",
                 color = Color(0xFFB3B3B3),

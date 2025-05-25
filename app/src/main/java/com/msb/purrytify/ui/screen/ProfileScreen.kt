@@ -60,7 +60,6 @@ fun ProfileScreen(
 ) {
     val context = LocalContext.current
     var isConnected by remember { mutableStateOf(true) }
-    var isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
     val scrollState = rememberScrollState()
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -97,11 +96,10 @@ fun ProfileScreen(
                 }
 
                 is ProfileUiState.Success -> {
-                    RectangleGradient()
                     ProfileContent(
                         profile = (profileUiState as ProfileUiState.Success).profile,
                         logout = { logout() },
-                        modifier = if (isLandscape) Modifier.verticalScroll(scrollState) else Modifier,
+                        modifier = Modifier.verticalScroll(scrollState),
                         navController = navController
                     )
                 }
@@ -124,52 +122,72 @@ fun ProfileContent(
     navController: NavController = rememberNavController()
 ) {
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(16.dp),
+        modifier = modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(modifier = Modifier.height(52.dp))
-
+        // Gradient background at the top with profile info
         Box(
-            contentAlignment = Alignment.BottomEnd,
             modifier = Modifier
-                .wrapContentWidth()
-                .width(120.dp)
-                .height(120.dp)
+                .fillMaxWidth()
+                .height(300.dp)
         ) {
-            AsyncImage(
-                model = profile.profilePhotoUrl,
-                contentDescription = "Profile Photo",
+            RectangleGradient()
+            
+            // Profile photo and user info overlaid on gradient
+            Column(
                 modifier = Modifier
-                    .size(120.dp)
-                    .clip(CircleShape)
-                    .background(Color.Gray),
-                contentScale = ContentScale.Crop
-            )
+                    .fillMaxSize()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Box(
+                    contentAlignment = Alignment.BottomEnd,
+                    modifier = Modifier
+                        .wrapContentWidth()
+                        .width(120.dp)
+                        .height(120.dp)
+                ) {
+                    AsyncImage(
+                        model = profile.profilePhotoUrl,
+                        contentDescription = "Profile Photo",
+                        modifier = Modifier
+                            .size(120.dp)
+                            .clip(CircleShape)
+                            .background(Color.Gray),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Column(
+                    Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        text = profile.username,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.White
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = profile.location,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.Gray
+                    )
+                }
+            }
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
-
+        // Content below the gradient
         Column(
-            Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = profile.username,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color.White
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = profile.location,
-                style = MaterialTheme.typography.labelMedium,
-                color = Color.Gray
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
 
         // First row of buttons
         Row {
@@ -244,6 +262,7 @@ fun ProfileContent(
             navController = navController,
             modifier = Modifier.fillMaxWidth()
         )
+        }
     }
 }
 
@@ -251,8 +270,7 @@ fun ProfileContent(
 fun RectangleGradient() {
     Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .fillMaxHeight(0.5f)
+            .fillMaxSize()
             .background(
                 brush = Brush.verticalGradient(
                     colors = listOf(
