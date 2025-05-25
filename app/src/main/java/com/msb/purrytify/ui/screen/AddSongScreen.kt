@@ -35,6 +35,8 @@ import com.msb.purrytify.viewmodel.HomeViewModel
 import com.msb.purrytify.viewmodel.PlayerViewModel
 import java.util.Locale
 import java.util.concurrent.TimeUnit
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -188,7 +190,8 @@ fun AddSongScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(backgroundColor)
-                        .padding(horizontal = 24.dp),
+                        .padding(horizontal = 24.dp)
+                        .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(

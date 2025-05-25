@@ -66,6 +66,8 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.Brush
 import java.util.Locale
 import androidx.core.net.toUri
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 
 
 object EnhancedColorUtils {
@@ -514,7 +516,8 @@ fun PlayerScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(20.dp), // Slightly more padding
+                .padding(20.dp)
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Enhanced header with better contrast
@@ -856,7 +859,8 @@ fun EditSongDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(colorScheme.background)
-                    .padding(horizontal = 24.dp),
+                    .padding(horizontal = 24.dp)
+                    .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
