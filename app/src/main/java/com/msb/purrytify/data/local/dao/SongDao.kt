@@ -33,9 +33,6 @@ interface SongDao {
     @Query("UPDATE songs SET lastPlayedAt = :timestamp WHERE id = :songId")
     suspend fun updateLastPlayedAt(songId: Long, timestamp: Long)
 
-    @Query("UPDATE songs SET playCount = playCount + 1 WHERE id = :songId")
-    suspend fun incrementPlayCount(songId: Long)
-
     @Query("SELECT COUNT(*) FROM songs WHERE ownerId = :ownerId")
     fun getSongCount(ownerId: Long): Flow<Int>
 

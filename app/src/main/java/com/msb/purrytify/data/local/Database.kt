@@ -25,7 +25,7 @@ import com.msb.purrytify.data.local.entity.MonthlySongPlayCount
         Artist::class,
         MonthlySongPlayCount::class
     ],
-    version = 6,
+    version = 9,
     exportSchema = false
 )
 @TypeConverters(DateTimeConverter::class)

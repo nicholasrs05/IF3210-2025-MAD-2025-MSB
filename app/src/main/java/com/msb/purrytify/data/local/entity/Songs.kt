@@ -18,6 +18,5 @@ data class Song(
     val lastPlayedAt: Long? = null,
     val ownerId: Long,
     val isFromApi: Boolean = false,
-    val playCount: Int = 0,
     val onlineSongId: Long? = null
 )

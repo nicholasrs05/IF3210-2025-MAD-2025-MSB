@@ -7,6 +7,7 @@ import com.msb.purrytify.data.local.entity.DailyListeningTime
 import com.msb.purrytify.data.local.entity.Song
 import com.msb.purrytify.data.local.entity.Artist
 import com.msb.purrytify.data.local.entity.MonthlySongPlayCount
+import com.msb.purrytify.data.local.entity.SongWithPlayCount
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -145,36 +146,40 @@ class SoundCapsuleRepository @Inject constructor(
             Log.e(TAG, "Incremented play count for songId: $songId")
 
             // Update day streak
-            val existingStreak = soundCapsuleDao.getDayStreakByDate(soundCapsule.id, currentDate)
+            val currentLocalDate = currentDate.toLocalDate()
+            val existingStreak = soundCapsuleDao.getDayStreakBySoundCapsuleAndSong(soundCapsule.id, songId)
+            
             if (existingStreak != null) {
-                Log.e(TAG, "Found existing streak for date: $currentDate")
-                // If there's an existing streak for today, update it
-                if (existingStreak.songId == songId) {
-                    // Same song, update streak
-                    Log.e(TAG, "Updating existing streak for same song")
+                Log.e(TAG, "Found existing streak for song: $songId")
+                // Check if the last day of the existing streak was yesterday
+                val yesterday = currentLocalDate.minusDays(1)
+                if (existingStreak.endDate == yesterday) {
+                    // Consecutive day - extend the streak
+                    Log.e(TAG, "Extending consecutive streak for song: $songId")
                     soundCapsuleDao.updateDayStreak(existingStreak.copy(
-                        endDate = currentDate,
+                        endDate = currentLocalDate,
                         streakDays = existingStreak.streakDays + 1
                     ))
+                } else if (existingStreak.endDate == currentLocalDate) {
+                    // Same day - don't increment, just log
+                    Log.e(TAG, "Song already played today, not incrementing streak")
                 } else {
-                    // Different song, create new streak
-                    Log.e(TAG, "Creating new streak for different song")
-                    soundCapsuleDao.insertDayStreak(DayStreak(
-                        soundCapsuleId = soundCapsule.id,
-                        songId = songId,
-                        startDate = currentDate,
-                        endDate = currentDate,
+                    // Gap in streak - reset to 1 day
+                    Log.e(TAG, "Gap in streak detected, resetting streak for song: $songId")
+                    soundCapsuleDao.updateDayStreak(existingStreak.copy(
+                        startDate = currentLocalDate,
+                        endDate = currentLocalDate,
                         streakDays = 1
                     ))
                 }
             } else {
-                // No streak for today, create new one
-                Log.e(TAG, "Creating new streak for today")
+                // No existing streak for this song, create new one
+                Log.e(TAG, "Creating new streak for song: $songId")
                 soundCapsuleDao.insertDayStreak(DayStreak(
                     soundCapsuleId = soundCapsule.id,
                     songId = songId,
-                    startDate = currentDate,
-                    endDate = currentDate,
+                    startDate = currentLocalDate,
+                    endDate = currentLocalDate,
                     streakDays = 1
                 ))
             }
@@ -214,6 +219,19 @@ class SoundCapsuleRepository @Inject constructor(
 
     suspend fun getTop5Songs(soundCapsuleId: Long): List<Song> {
         return soundCapsuleDao.getTop5Songs(soundCapsuleId)
+    }
+
+    suspend fun getTop5SongsWithPlayCount(soundCapsuleId: Long): List<SongWithPlayCount> {
+        return soundCapsuleDao.getTop5SongsWithPlayCount(soundCapsuleId)
+    }
+
+    // Count methods for total unique songs and artists
+    suspend fun getTotalSongCount(soundCapsuleId: Long): Int {
+        return soundCapsuleDao.getTotalSongCount(soundCapsuleId)
+    }
+
+    suspend fun getTotalArtistCount(soundCapsuleId: Long): Int {
+        return soundCapsuleDao.getTotalArtistCount(soundCapsuleId)
     }
 
     suspend fun incrementDailyListeningTime(ownerId: Long, minutesToAdd: Int) {

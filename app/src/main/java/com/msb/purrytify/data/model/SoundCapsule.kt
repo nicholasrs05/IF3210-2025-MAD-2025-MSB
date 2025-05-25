@@ -1,6 +1,7 @@
 package com.msb.purrytify.data.model
 
 import java.time.LocalDateTime
+import java.time.LocalDate
 
 data class SoundCapsule(
     val month: String,
@@ -16,12 +17,12 @@ data class SoundCapsule(
 data class DayStreak(
     val songTitle: String,
     val artist: String,
-    val startDate: LocalDateTime,
-    val endDate: LocalDateTime,
+    val startDate: LocalDate,
+    val endDate: LocalDate,
     val streakDays: Int
 )
 
 data class DailyListeningTime(
-    val date: LocalDateTime,
+    val date: LocalDate,
     val minutes: Int
 ) 
